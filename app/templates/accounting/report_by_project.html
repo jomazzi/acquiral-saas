@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Report by Project{% endblock %}
+{% block content %}
+<h3 class="mb-3">Income &amp; Expense by Project / Funder</h3>
+<div class="card card-metric p-3">
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>Project</th><th>Funder</th>
+        <th class="text-right">Income</th><th class="text-right">Expense</th>
+        <th class="text-right">Net</th><th class="text-right">Budget</th><th class="text-right">Remaining</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in summaries %}
+      <tr>
+        <td>{{ s.project.name }}</td>
+        <td>{{ s.funder.name if s.funder else '—' }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(s.income) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(s.expense) }}</td>
+        <td class="text-right {{ 'text-success' if s.net >= 0 else 'text-danger' }}">{{ "{:,.2f}".format(s.net) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(s.budget) if s.budget else '—' }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(s.remaining) if s.budget else '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-muted">No projects yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

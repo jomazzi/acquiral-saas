@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Funders{% endblock %}
+{% block content %}
+<h3 class="mb-3">Funders</h3>
+
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card card-metric p-3">
+      <h6>Add Funder</h6>
+      <form method="post">
+        <div class="mb-2">
+          <input type="text" name="name" class="form-control" placeholder="Funder name" required>
+        </div>
+        <div class="mb-2">
+          <textarea name="notes" class="form-control" placeholder="Notes (optional)" rows="2"></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm">Add</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card card-metric p-3">
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Name</th><th>Projects</th><th></th></tr></thead>
+        <tbody>
+          {% for f in funders %}
+          <tr>
+            <td>{{ f.name }}</td>
+            <td>{{ f.projects|length }}</td>
+            <td class="text-end">{% if current_user.is_admin %}<a href="{{ url_for('accounting.funder_edit', funder_id=f.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="text-muted">No funders yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

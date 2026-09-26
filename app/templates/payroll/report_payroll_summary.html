@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Payroll Summary{% endblock %}
+{% block content %}
+<h3 class="mb-3">Payroll Summary (Posted Runs)</h3>
+<div class="card card-metric p-3">
+  <table class="table table-sm">
+    <thead><tr><th>Period</th><th class="text-right">Gross</th><th class="text-right">Pension (Emp.)</th><th class="text-right">Pension (Er.)</th><th class="text-right">NHF</th><th class="text-right">PAYE</th><th class="text-right">Net Pay</th></tr></thead>
+    <tbody>
+      {% for r in runs %}
+      {% set t = r.totals %}
+      <tr>
+        <td>{{ r.label }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(t.gross) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(t.pension_employee) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(t.pension_employer) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(t.nhf) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(t.paye) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(t.net_pay) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-muted">No posted payroll runs yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Edit Funder{% endblock %}
+{% block content %}
+<h3 class="mb-3">Edit Funder</h3>
+<div class="card card-metric p-4" style="max-width: 480px;">
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      <input type="text" name="name" class="form-control" value="{{ funder.name }}" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Notes</label>
+      <textarea name="notes" class="form-control" rows="3">{{ funder.notes or '' }}</textarea>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary">Save Changes</button>
+      <a href="{{ url_for('accounting.funders') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Invoice {{ invoice.invoice_number }}</h3>
+  <div>
+    <a href="{{ url_for('invoicing.invoice_pdf', invoice_id=invoice.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download"></i> Download PDF</a>
+    <a href="{{ url_for('invoicing.invoices_list') }}" class="btn btn-outline-secondary btn-sm">Back to Invoices</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card card-metric p-4">
+      <div class="d-flex justify-content-between mb-3">
+        <div>
+          <div class="small text-muted">BILL TO</div>
+          <div class="fw-bold">{{ invoice.customer.name }}</div>
+          {% if invoice.customer.email %}<div class="small text-muted">{{ invoice.customer.email }}</div>{% endif %}
+        </div>
+        <div class="text-end">
+          <div class="small text-muted">Issued: {{ invoice.issue_date }}</div>
+          <div class="small text-muted">Due: {{ invoice.due_date or 'On receipt' }}</div>
+          <div>
+            {% if invoice.status == 'paid' %}<span class="badge bg-success">Paid{% if invoice.paid_date %} on {{ invoice.paid_date }}{% endif %}</span>
+            {% elif invoice.status == 'void' %}<span class="badge bg-secondary">Void</span>
+            {% elif invoice.is_overdue %}<span class="badge bg-danger">Overdue</span>
+            {% elif invoice.status == 'sent' %}<span class="badge" style="background: var(--gold-400); color: var(--navy-900);">Sent</span>
+            {% else %}<span class="badge bg-secondary">Draft</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <table class="table table-sm">
+        <thead><tr><th>Description</th><th class="text-end">Qty</th><th class="text-end">Unit Price</th><th class="text-end">Amount</th></tr></thead>
+        <tbody>
+          {% for line in invoice.lines %}
+          <tr>
+            <td>{{ line.description }}</td>
+            <td class="text-end">{{ line.quantity }}</td>
+            <td class="text-end">₦{{ "{:,.2f}".format(line.unit_price) }}</td>
+            <td class="text-end">₦{{ "{:,.2f}".format(line.amount) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="d-flex justify-content-end">
+        <table class="table table-sm" style="max-width: 320px;">
+          <tr><td>Subtotal</td><td class="text-end">₦{{ "{:,.2f}".format(invoice.subtotal) }}</td></tr>
+          {% if invoice.vat_rate %}<tr><td>VAT ({{ invoice.vat_rate }}%)</td><td class="text-end">₦{{ "{:,.2f}".format(invoice.vat_amount) }}</td></tr>{% endif %}
+          <tr class="fw-bold fs-6"><td>Total</td><td class="text-end">₦{{ "{:,.2f}".format(invoice.total) }}</td></tr>
+        </table>
+      </div>
+
+      {% if invoice.notes %}
+      <div class="small text-muted mt-2"><strong>Notes:</strong> {{ invoice.notes }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card card-metric p-3 mb-3">
+      <h6>Actions</h6>
+      {% if invoice.status == 'draft' %}
+        <form method="post" action="{{ url_for('invoicing.invoice_send', invoice_id=invoice.id) }}" class="mb-2">
+          <button class="btn btn-primary btn-sm w-100"><i class="bi bi-send"></i> Send &amp; Post to Journal</button>
+        </form>
+        {% if current_user.is_admin %}
+        <form method="post" action="{{ url_for('invoicing.invoice_void', invoice_id=invoice.id) }}" onsubmit="return confirm('Void this draft invoice?');">
+          <button class="btn btn-outline-danger btn-sm w-100">Void Draft</button>
+        </form>
+        {% endif %}
+      {% elif invoice.status == 'sent' %}
+        <form method="post" action="{{ url_for('invoicing.invoice_record_payment', invoice_id=invoice.id) }}">
+          <label class="form-label small">Received into</label>
+          <select name="bank_account_id" class="form-select form-select-sm mb-2" required id="bank-select">
+            <option value=""></option>
+            {% for a in bank_accounts %}<option value="{{ a.id }}" data-currency="{{ a.currency }}">{{ a.code }} {{ a.name }} {% if a.currency != 'NGN' %}({{ a.currency }}){% endif %}</option>{% endfor %}
+          </select>
+          <div class="mb-2" id="rate-row" style="display:none;">
+            <label class="form-label small">Exchange rate (→₦)</label>
+            <input type="number" step="0.0001" name="exchange_rate" class="form-control form-control-sm">
+          </div>
+          <button class="btn btn-primary btn-sm w-100">Record Payment</button>
+        </form>
+        <script>
+          document.getElementById('bank-select').addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            const cur = opt ? opt.getAttribute('data-currency') : 'NGN';
+            document.getElementById('rate-row').style.display = (cur && cur !== 'NGN') ? 'block' : 'none';
+          });
+        </script>
+      {% elif invoice.status == 'paid' %}
+        <p class="small text-muted mb-0">Paid in full on {{ invoice.paid_date }}.</p>
+      {% else %}
+        <p class="small text-muted mb-0">This invoice is void.</p>
+      {% endif %}
+    </div>
+
+    {% if invoice.sent_journal_entry_id or invoice.payment_journal_entry_id %}
+    <div class="card card-metric p-3">
+      <h6>Journal Postings</h6>
+      {% if invoice.sent_journal_entry_id %}<div class="small"><i class="bi bi-journal-check"></i> Invoice posted to the journal</div>{% endif %}
+      {% if invoice.payment_journal_entry_id %}<div class="small"><i class="bi bi-journal-check"></i> Payment posted to the journal</div>{% endif %}
+      <a href="{{ url_for('accounting.journal_list') }}" class="small">View Journal →</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

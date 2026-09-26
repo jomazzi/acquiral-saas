@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Edit Project{% endblock %}
+{% block content %}
+<h3 class="mb-3">Edit Project</h3>
+<div class="card card-metric p-4" style="max-width: 560px;">
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Project name</label>
+      <input type="text" name="name" class="form-control" value="{{ project.name }}" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Funder</label>
+      <select name="funder_id" class="form-select">
+        <option value="">— No funder / unrestricted —</option>
+        {% for f in funders %}
+        <option value="{{ f.id }}" {% if project.funder_id == f.id %}selected{% endif %}>{{ f.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label small">Budget (₦)</label>
+      <input type="number" step="0.01" name="budget" class="form-control" value="{{ project.budget or 0 }}">
+    </div>
+    <div class="row">
+      <div class="col mb-3">
+        <label class="form-label small">Start date</label>
+        <input type="date" name="start_date" class="form-control" value="{{ project.start_date.isoformat() if project.start_date else '' }}">
+      </div>
+      <div class="col mb-3">
+        <label class="form-label small">End date</label>
+        <input type="date" name="end_date" class="form-control" value="{{ project.end_date.isoformat() if project.end_date else '' }}">
+      </div>
+    </div>
+    <div class="mb-3 form-check">
+      <input type="checkbox" name="active" class="form-check-input" id="active" {% if project.active %}checked{% endif %}>
+      <label class="form-check-label" for="active">Active</label>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary">Save Changes</button>
+      <a href="{{ url_for('accounting.projects') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

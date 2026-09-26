@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Employees</h3>
+  <a href="{{ url_for('payroll.employee_new') }}" class="btn btn-primary btn-sm">+ New Employee</a>
+</div>
+
+<div class="card card-metric p-3">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr><th>Staff ID</th><th>Name</th><th>Role</th><th>Project</th><th class="text-right">Monthly Gross</th><th>Pension</th><th>NHF</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for e in employees %}
+      <tr>
+        <td>{{ e.staff_id or '—' }}</td>
+        <td>{{ e.full_name }}</td>
+        <td>{{ e.role_title or '—' }}</td>
+        <td>{{ e.project.name if e.project else '— General —' }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(e.basic_salary + e.housing_allowance + e.transport_allowance + e.other_allowance) }}</td>
+        <td>{{ 'Yes' if e.pension_opt_in else 'No' }}</td>
+        <td>{{ 'Yes' if e.nhf_opt_in else 'No' }}</td>
+        <td>{{ 'Active' if e.active else 'Inactive' }}</td>
+        <td>
+          <div class="d-flex gap-1">
+            {% if current_user.is_admin %}<a href="{{ url_for('payroll.employee_edit', employee_id=e.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>{% endif %}
+            <form method="post" action="{{ url_for('payroll.employee_toggle', employee_id=e.id) }}">
+              <button class="btn btn-sm btn-outline-secondary">{{ 'Deactivate' if e.active else 'Activate' }}</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" class="text-muted">No employees yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

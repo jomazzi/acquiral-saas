@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}New Journal Entry{% endblock %}
+{% block content %}
+<h3 class="mb-3">New Journal Entry</h3>
+
+<form method="post" class="card card-metric p-4">
+  <div class="row mb-3">
+    <div class="col-md-3">
+      <label class="form-label small">Date</label>
+      <input type="date" name="entry_date" class="form-control" value="{{ today }}" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label small">Reference (cheque/receipt no.)</label>
+      <input type="text" name="reference" class="form-control">
+    </div>
+    <div class="col-md-5">
+      <label class="form-label small">Memo</label>
+      <input type="text" name="memo" class="form-control" placeholder="What is this entry for?">
+    </div>
+  </div>
+
+  <table class="table table-sm" id="lines-table">
+    <thead>
+      <tr>
+        <th style="width:22%">Account</th>
+        <th style="width:14%">Project / Fund</th>
+        <th style="width:18%">Description</th>
+        <th style="width:12%">Debit</th>
+        <th style="width:12%">Credit</th>
+        <th style="width:12%">Rate (→₦)</th>
+        <th style="width:10%">₦ Equivalent</th>
+      </tr>
+    </thead>
+    <tbody id="lines-body">
+      {% for i in range(4) %}
+      <tr>
+        <td>
+          <select name="account_id[]" class="form-select form-select-sm account-select">
+            <option value=""></option>
+            {% for a in accounts %}<option value="{{ a.id }}" data-currency="{{ a.currency }}">{{ a.code }} {{ a.name }} {% if a.currency != 'NGN' %}({{ a.currency }}){% endif %}</option>{% endfor %}
+          </select>
+        </td>
+        <td>
+          <select name="project_id[]" class="form-select form-select-sm">
+            <option value=""></option>
+            {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+          </select>
+        </td>
+        <td><input type="text" name="description[]" class="form-control form-control-sm"></td>
+        <td><input type="number" step="0.01" name="debit[]" class="form-control form-control-sm debit-input"></td>
+        <td><input type="number" step="0.01" name="credit[]" class="form-control form-control-sm credit-input"></td>
+        <td><input type="number" step="0.0001" name="exchange_rate[]" class="form-control form-control-sm rate-input" value="1" disabled></td>
+        <td class="small text-muted ngn-equiv pt-2">—</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="add-line">+ Add line</button>
+    <div class="text-end">
+      <div class="small text-muted">Total Debit (₦ equiv): <span id="total-debit">0.00</span> &nbsp; Total Credit (₦ equiv): <span id="total-credit">0.00</span></div>
+      <div id="balance-msg" class="fw-bold"></div>
+    </div>
+  </div>
+
+  <div class="small text-muted mb-3">
+    Lines against a foreign-currency account (marked with its currency code above) need a Naira exchange rate — enter the actual rate your bank applied. NGN lines don't need one; it's fixed at 1.
+    If a currency-conversion entry doesn't balance exactly because the buy/sell rate differed from the booked rate, add a line to <em>Realized Exchange Gain</em> or <em>Realized Exchange Loss</em> for the difference.
+  </div>
+
+  <button class="btn btn-primary">Post Entry</button>
+</form>
+
+<script>
+function currencyOf(select) {
+  const opt = select.options[select.selectedIndex];
+  return opt ? (opt.getAttribute('data-currency') || 'NGN') : 'NGN';
+}
+
+function updateRow(row) {
+  const select = row.querySelector('.account-select');
+  const rateInput = row.querySelector('.rate-input');
+  const cur = currencyOf(select);
+  if (cur === 'NGN' || !select.value) {
+    rateInput.disabled = true;
+    rateInput.value = 1;
+  } else {
+    rateInput.disabled = false;
+    if (!rateInput.value || rateInput.value == 1) rateInput.value = '';
+  }
+  const deb = parseFloat(row.querySelector('.debit-input').value || 0);
+  const cred = parseFloat(row.querySelector('.credit-input').value || 0);
+  const rate = parseFloat(rateInput.value || (cur === 'NGN' ? 1 : 0));
+  const equivCell = row.querySelector('.ngn-equiv');
+  const amt = deb || cred;
+  equivCell.textContent = amt ? ('₦' + (amt * rate).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})) : '—';
+}
+
+function recalc() {
+  let td = 0, tc = 0;
+  document.querySelectorAll('#lines-body tr').forEach(row => {
+    updateRow(row);
+    const select = row.querySelector('.account-select');
+    const cur = currencyOf(select);
+    const rate = cur === 'NGN' ? 1 : parseFloat(row.querySelector('.rate-input').value || 0);
+    const deb = parseFloat(row.querySelector('.debit-input').value || 0);
+    const cred = parseFloat(row.querySelector('.credit-input').value || 0);
+    td += deb * rate;
+    tc += cred * rate;
+  });
+  document.getElementById('total-debit').textContent = td.toFixed(2);
+  document.getElementById('total-credit').textContent = tc.toFixed(2);
+  const msg = document.getElementById('balance-msg');
+  if (Math.abs(td - tc) < 0.5 && td > 0) {
+    msg.textContent = 'Balanced ✓';
+    msg.className = 'fw-bold text-success';
+  } else {
+    msg.textContent = 'Not balanced — debits must equal credits, in Naira terms';
+    msg.className = 'fw-bold text-danger';
+  }
+}
+document.getElementById('lines-body').addEventListener('input', recalc);
+document.getElementById('lines-body').addEventListener('change', recalc);
+
+document.getElementById('add-line').addEventListener('click', function() {
+  const body = document.getElementById('lines-body');
+  const row = body.rows[0].cloneNode(true);
+  row.querySelectorAll('input').forEach(i => { i.value = ''; });
+  row.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+  row.querySelector('.rate-input').value = 1;
+  row.querySelector('.rate-input').disabled = true;
+  row.querySelector('.ngn-equiv').textContent = '—';
+  body.appendChild(row);
+});
+recalc();
+</script>
+{% endblock %}

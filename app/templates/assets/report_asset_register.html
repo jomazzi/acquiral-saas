@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Asset Register{% endblock %}
+{% block content %}
+<h3 class="mb-3">Fixed Asset Register</h3>
+<div class="card card-metric p-3">
+  <table class="table table-sm">
+    <thead>
+      <tr><th>Asset</th><th>Category</th><th>Acquired</th><th class="text-right">Cost</th><th class="text-right">Acc. Dep.</th><th class="text-right">NBV</th><th>Custodian</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.asset.name }}</td>
+        <td>{{ r.asset.category }}</td>
+        <td>{{ r.asset.acquisition_date }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(r.asset.cost) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(r.acc_dep) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(r.nbv) }}</td>
+        <td>{{ r.asset.custodian or '—' }}</td>
+        <td>{{ r.asset.status }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="text-muted">No assets recorded.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="fw-bold border-top">
+        <td colspan="3">Total (active assets)</td>
+        <td class="text-right">{{ "{:,.2f}".format(total_cost) }}</td>
+        <td></td>
+        <td class="text-right">{{ "{:,.2f}".format(total_nbv) }}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% endblock %}

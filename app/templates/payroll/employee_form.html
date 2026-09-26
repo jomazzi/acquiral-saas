@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Employee' if employee else 'New Employee' }}{% endblock %}
+{% block content %}
+<h3 class="mb-3">{{ 'Edit Employee' if employee else 'New Employee' }}</h3>
+<div class="card card-metric p-4" style="max-width: 640px;">
+  <form method="post">
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Full name</label>
+        <input type="text" name="full_name" class="form-control" value="{{ employee.full_name if employee else '' }}" required>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Staff ID</label>
+        <input type="text" name="staff_id" class="form-control" value="{{ employee.staff_id if employee else '' }}">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Role / title</label>
+        <input type="text" name="role_title" class="form-control" value="{{ employee.role_title if employee else '' }}">
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Project (cost allocation)</label>
+        <select name="project_id" class="form-select">
+          <option value="">— General / unallocated —</option>
+          {% for p in projects %}
+          <option value="{{ p.id }}" {% if employee and employee.project_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <h6 class="mt-2">Monthly Salary Structure (₦)</h6>
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <label class="form-label small">Basic</label>
+        <input type="number" step="0.01" name="basic_salary" class="form-control" value="{{ employee.basic_salary if employee else 0 }}" required>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label small">Housing</label>
+        <input type="number" step="0.01" name="housing_allowance" class="form-control" value="{{ employee.housing_allowance if employee else 0 }}">
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label small">Transport</label>
+        <input type="number" step="0.01" name="transport_allowance" class="form-control" value="{{ employee.transport_allowance if employee else 0 }}">
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label small">Other allowance</label>
+        <input type="number" step="0.01" name="other_allowance" class="form-control" value="{{ employee.other_allowance if employee else 0 }}">
+      </div>
+    </div>
+    <div class="small text-muted mb-3">Pension is calculated on Basic + Housing + Transport only, per the Pension Reform Act.</div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3 form-check ms-1 mt-4">
+        <input type="checkbox" name="pension_opt_in" class="form-check-input" id="pension" {% if not employee or employee.pension_opt_in %}checked{% endif %}>
+        <label class="form-check-label" for="pension">Enrolled in pension (8% employee / 10% employer)</label>
+      </div>
+      <div class="col-md-6 mb-3 form-check ms-1 mt-4">
+        <input type="checkbox" name="nhf_opt_in" class="form-check-input" id="nhf" {% if employee and employee.nhf_opt_in %}checked{% endif %}>
+        <label class="form-check-label" for="nhf">Enrolled in NHF (2.5% of basic)</label>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label small">Annual rent paid (₦) — for rent relief</label>
+        <input type="number" step="0.01" name="annual_rent" class="form-control" value="{{ employee.annual_rent if employee else 0 }}">
+      </div>
+      <div class="col-md-6 mb-3">
+        <label class="form-label small">Start date</label>
+        <input type="date" name="start_date" class="form-control" value="{{ today }}">
+      </div>
+    </div>
+
+    {% if employee %}
+    <div class="alert alert-warning small">Changes here apply going forward only — payslips already generated in past payroll runs are not recalculated.</div>
+    {% endif %}
+
+    <button class="btn btn-primary">{{ 'Save Changes' if employee else 'Save Employee' }}</button>
+  </form>
+</div>
+{% endblock %}

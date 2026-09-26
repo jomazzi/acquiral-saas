@@ -1,0 +1,328 @@
+/* ==========================================================================
+   Acquiral design system
+   Palette: deep navy (trust/finance) + amber gold (value) accent.
+   Type: Sora for headings (distinctive, geometric), IBM Plex Sans for body
+   (professional, high legibility, not the generic default-AI "Inter" look).
+   ========================================================================== */
+
+:root {
+  --navy-900: #081B34;
+  --navy-800: #0F2D52;
+  --navy-700: #163B66;
+  --navy-100: #E7ECF3;
+
+  --gold-600: #B8860B;
+  --gold-500: #C9971F;
+  --gold-400: #D4A017;
+  --gold-100: #FBF1DA;
+
+  --success: #187A56;
+  --success-bg: #E5F5EE;
+  --danger: #B3392E;
+  --danger-bg: #FBEAE8;
+  --warning: #B8860B;
+
+  --ink: #16233B;
+  --muted: #5B6B85;
+  --border: #DCE2EC;
+  --surface: #FFFFFF;
+  --bg: #F3F5F9;
+
+  --radius: 10px;
+  --shadow-sm: 0 1px 3px rgba(15, 45, 82, 0.08);
+  --shadow-md: 0 4px 14px rgba(15, 45, 82, 0.10);
+
+  --font-display: 'Sora', 'Segoe UI', sans-serif;
+  --font-body: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand, .brand-wordmark, .sidebar-brand, .mobile-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   App shell: fixed-width left sidebar + fluid main content, matching the
+   left-hand nav the user asked for (vs. the earlier top navbar). Below
+   the lg breakpoint the sidebar becomes a slide-in offcanvas panel opened
+   by a hamburger button, using Bootstrap's built-in "offcanvas-lg"
+   responsive behavior (no custom JS needed for the show/hide logic).
+   ========================================================================== */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  min-width: 0; /* let content shrink/scroll instead of overflowing */
+}
+
+.demo-banner {
+  background: var(--gold-400);
+  color: var(--navy-900);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.55rem 1rem;
+}
+.demo-banner .alert-link {
+  color: var(--navy-900);
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+/* ---- Mobile top bar (hamburger + brand), hidden at lg+ ---- */
+.mobile-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--navy-900);
+  padding: 0.65rem 1rem;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+.hamburger-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  border-radius: 8px;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+.hamburger-btn:hover { background: rgba(255,255,255,0.1); }
+.mobile-brand {
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  text-decoration: none;
+}
+
+/* ---- Sidebar ---- */
+.acquiral-sidebar {
+  --bs-offcanvas-width: 272px;
+  background: var(--navy-900);
+  color: rgba(255,255,255,0.85);
+}
+.acquiral-sidebar .offcanvas-header {
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-body {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0.9rem;
+}
+.sidebar-brand {
+  color: #fff !important;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1.2rem;
+  text-decoration: none;
+  padding: 0 0.4rem 1.25rem;
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav-sublist {
+  list-style: none;
+  margin: 0.15rem 0 0.5rem;
+  padding: 0;
+}
+
+.side-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: rgba(255,255,255,0.75);
+  font-weight: 500;
+  font-size: 0.92rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-bottom: 0.15rem;
+}
+.side-link i:first-child { font-size: 1.05rem; width: 1.2rem; text-align: center; }
+.side-link span { flex: 1 1 auto; }
+.side-link:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.06);
+}
+.side-link.active {
+  color: var(--navy-900);
+  background: var(--gold-400);
+  font-weight: 600;
+}
+.side-link.active i { color: var(--navy-900); }
+.submenu-caret {
+  font-size: 0.7rem !important;
+  width: auto !important;
+  transition: transform 0.15s ease;
+}
+.side-link[aria-expanded="true"] .submenu-caret { transform: rotate(180deg); }
+
+.side-sublink {
+  display: block;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.87rem;
+  padding: 0.45rem 0.7rem 0.45rem 2.4rem;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.side-sublink:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.side-sublink.active { color: var(--gold-400); font-weight: 600; }
+
+.sidebar-user {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+.sidebar-user .dropdown-menu {
+  border: none;
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius);
+}
+
+/* Bootstrap's offcanvas-lg becomes a static, always-visible column at
+   lg+; below lg it's the standard fixed slide-in overlay. We just need
+   to give it a fixed width once it's part of the normal flex flow.
+   IMPORTANT: Bootstrap's own responsive-offcanvas CSS resets
+   background-color to transparent with !important at this same
+   breakpoint (so an offcanvas blends into the page once it's "always
+   open") -- our navy background has to win that fight with !important
+   too, or the sidebar silently becomes invisible (light text on the
+   page's own light background) at desktop widths. Found by actually
+   rendering the page, not just reading the markup. */
+@media (min-width: 992px) {
+  .acquiral-sidebar {
+    width: 272px;
+    flex: 0 0 272px;
+    background: var(--navy-900) !important;
+  }
+}
+
+/* ---- Cards ---- */
+.card-metric {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  background: var(--surface);
+}
+.card-metric h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ---- Buttons ---- */
+.btn-primary {
+  background: var(--navy-800);
+  border-color: var(--navy-800);
+}
+.btn-primary:hover, .btn-primary:focus {
+  background: var(--navy-700);
+  border-color: var(--navy-700);
+}
+.btn-outline-primary {
+  color: var(--navy-800);
+  border-color: var(--navy-800);
+}
+.btn-outline-primary:hover {
+  background: var(--navy-800);
+  border-color: var(--navy-800);
+}
+.btn-gold {
+  background: var(--gold-400);
+  border-color: var(--gold-400);
+  color: var(--navy-900);
+  font-weight: 600;
+}
+.btn-gold:hover {
+  background: var(--gold-600);
+  border-color: var(--gold-600);
+  color: #fff;
+}
+
+/* ---- Tables ---- */
+.table thead th {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+}
+.table-sm td, .table-sm th { padding: .55rem .75rem; }
+.text-right { text-align: right; }
+
+/* ---- Badges ---- */
+.badge.bg-success { background: var(--success) !important; }
+.badge.bg-danger { background: var(--danger) !important; }
+.badge.bg-secondary { background: var(--muted) !important; }
+.badge.bg-dark { background: var(--navy-900) !important; }
+
+/* ---- Alerts ---- */
+.alert-success { background: var(--success-bg); color: var(--success); border-color: transparent; }
+.alert-danger { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+
+/* ---- Progress bars ---- */
+.progress { height: 8px; border-radius: 6px; background: var(--navy-100); }
+
+/* ---- Text utility colors matched to palette ---- */
+.text-success { color: var(--success) !important; }
+.text-danger { color: var(--danger) !important; }
+
+/* ---- Icon accents ---- */
+.icon-badge {
+  width: 40px; height: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  background: var(--navy-100);
+  color: var(--navy-800);
+  font-size: 1.1rem;
+}
+.icon-badge.gold { background: var(--gold-100); color: var(--gold-600); }
+
+/* ---- Footer ---- */
+footer.app-footer {
+  margin-top: 3rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+footer.app-footer a { color: var(--navy-800); text-decoration: none; font-weight: 600; }
+footer.app-footer a:hover { text-decoration: underline; }
+
+/* ---- Logo mark (used inline via SVG in templates) ---- */
+.brand-mark {
+  width: 30px; height: 30px;
+  flex-shrink: 0;
+}

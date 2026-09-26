@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}New Invoice{% endblock %}
+{% block content %}
+<h3 class="mb-3">New Invoice</h3>
+
+<form method="post" class="card card-metric p-4">
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label class="form-label small">Customer</label>
+      <select name="customer_id" class="form-select" required>
+        <option value=""></option>
+        {% for c in customers %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small">Issue Date</label>
+      <input type="date" name="issue_date" class="form-control" value="{{ today }}" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small">Due Date</label>
+      <input type="date" name="due_date" class="form-control">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small">VAT %</label>
+      <input type="number" step="0.1" name="vat_rate" class="form-control" value="{{ default_vat_rate }}">
+    </div>
+  </div>
+
+  <table class="table table-sm" id="lines-table">
+    <thead>
+      <tr>
+        <th style="width:50%">Description</th>
+        <th style="width:15%">Qty</th>
+        <th style="width:17%">Unit Price</th>
+        <th style="width:18%">Amount</th>
+      </tr>
+    </thead>
+    <tbody id="lines-body">
+      {% for i in range(3) %}
+      <tr>
+        <td><input type="text" name="description[]" class="form-control form-control-sm"></td>
+        <td><input type="number" step="0.01" name="quantity[]" class="form-control form-control-sm qty-input" value="1"></td>
+        <td><input type="number" step="0.01" name="unit_price[]" class="form-control form-control-sm price-input"></td>
+        <td class="small pt-2 line-amount">₦0.00</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="add-line">+ Add line</button>
+    <div class="text-end small">
+      <div>Subtotal: <strong id="subtotal">₦0.00</strong></div>
+      <div>VAT: <strong id="vat-amount">₦0.00</strong></div>
+      <div class="fs-6">Total: <strong id="grand-total">₦0.00</strong></div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label small">Notes (shown on the invoice)</label>
+    <textarea name="notes" class="form-control" rows="2" placeholder="Payment instructions, terms, etc."></textarea>
+  </div>
+
+  <button class="btn btn-primary">Create Draft Invoice</button>
+</form>
+
+<script>
+function recalcLine(row) {
+  const qty = parseFloat(row.querySelector('.qty-input').value || 0);
+  const price = parseFloat(row.querySelector('.price-input').value || 0);
+  row.querySelector('.line-amount').textContent = '₦' + (qty * price).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function recalc() {
+  let subtotal = 0;
+  document.querySelectorAll('#lines-body tr').forEach(row => {
+    recalcLine(row);
+    const qty = parseFloat(row.querySelector('.qty-input').value || 0);
+    const price = parseFloat(row.querySelector('.price-input').value || 0);
+    subtotal += qty * price;
+  });
+  const vatRate = parseFloat(document.querySelector('[name=vat_rate]').value || 0);
+  const vat = subtotal * vatRate / 100;
+  document.getElementById('subtotal').textContent = '₦' + subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  document.getElementById('vat-amount').textContent = '₦' + vat.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  document.getElementById('grand-total').textContent = '₦' + (subtotal + vat).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+document.getElementById('lines-body').addEventListener('input', recalc);
+document.querySelector('[name=vat_rate]').addEventListener('input', recalc);
+
+document.getElementById('add-line').addEventListener('click', function() {
+  const body = document.getElementById('lines-body');
+  const row = body.rows[0].cloneNode(true);
+  row.querySelectorAll('input').forEach(i => { i.value = i.classList.contains('qty-input') ? '1' : ''; });
+  row.querySelector('.line-amount').textContent = '₦0.00';
+  body.appendChild(row);
+});
+recalc();
+</script>
+{% endblock %}

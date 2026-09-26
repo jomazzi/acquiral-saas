@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Import Statement — {{ account.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Import Statement — {{ account.code }} {{ account.name }}</h3>
+  <a href="{{ url_for('banking.bank_accounts') }}" class="btn btn-outline-secondary btn-sm">Back</a>
+</div>
+
+<div class="card card-metric p-4" style="max-width: 560px;">
+  <form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label class="form-label small">Statement file</label>
+      <input type="file" name="statement_file" class="form-control" accept=".csv,.xlsx,.xlsm,.pdf" required>
+      <div class="form-text">CSV, Excel (.xlsx), or PDF only. A scanned/image-only PDF cannot be read — export a
+        text-based statement from your bank's online portal instead. CSV or Excel is the most reliable option;
+        PDF parsing works well for statements with a visible table grid, but a PDF with no ruling at all relies
+        on guessing column positions from text alignment and can occasionally miss a row — after importing a
+        PDF, check the imported count looks right, and prefer CSV/Excel if your bank offers it.</div>
+    </div>
+    <button class="btn btn-primary"><i class="bi bi-upload"></i> Import</button>
+  </form>
+</div>
+
+<div class="small text-muted mt-3" style="max-width: 560px;">
+  Expected columns: a <strong>Date</strong> column, plus either a single <strong>Amount</strong> column
+  (positive for money in, negative for money out) or separate <strong>Debit</strong>/<strong>Credit</strong>
+  columns. A <strong>Description</strong>/<strong>Narration</strong> column is used if present. Most Nigerian
+  bank statement exports (GTBank, Zenith, UBA, Access, First Bank, etc.) match this shape automatically.
+</div>
+{% endblock %}

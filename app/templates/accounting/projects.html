@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+<h3 class="mb-3">Projects</h3>
+
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card card-metric p-3">
+      <h6>Add Project</h6>
+      <form method="post">
+        <div class="mb-2">
+          <input type="text" name="name" class="form-control" placeholder="Project name" required>
+        </div>
+        <div class="mb-2">
+          <select name="funder_id" class="form-select">
+            <option value="">— No funder / unrestricted —</option>
+            {% for f in funders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Budget (₦)</label>
+          <input type="number" step="0.01" name="budget" class="form-control">
+        </div>
+        <div class="row">
+          <div class="col mb-2">
+            <label class="form-label small">Start date</label>
+            <input type="date" name="start_date" class="form-control">
+          </div>
+          <div class="col mb-2">
+            <label class="form-label small">End date</label>
+            <input type="date" name="end_date" class="form-control">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm">Add Project</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card card-metric p-3">
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Project</th><th>Funder</th><th class="text-right">Budget</th><th></th></tr></thead>
+        <tbody>
+          {% for p in projects %}
+          <tr>
+            <td>{{ p.name }}{% if not p.funder %}<span class="badge bg-warning text-dark ms-1">no funder</span>{% endif %}</td>
+            <td>{{ p.funder.name if p.funder else '—' }}</td>
+            <td class="text-right">{{ "₦{:,.0f}".format(p.budget) if p.budget else '—' }}</td>
+            <td class="text-end">{% if current_user.is_admin %}<a href="{{ url_for('accounting.project_edit', project_id=p.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>{% endif %}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-muted">No projects yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

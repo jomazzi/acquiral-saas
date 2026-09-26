@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Trial Balance{% endblock %}
+{% block content %}
+<h3 class="mb-3">Trial Balance</h3>
+<div class="small text-muted mb-2">Foreign-currency accounts show their native balance and the Naira equivalent used for totals.</div>
+<div class="card card-metric p-3">
+  <table class="table table-sm">
+    <thead><tr><th>Code</th><th>Account</th><th>Native Balance</th><th class="text-right">Debit (₦)</th><th class="text-right">Credit (₦)</th></tr></thead>
+    <tbody>
+      {% for a, d, c, d_base, c_base in rows %}
+      <tr>
+        <td>{{ a.code }}</td>
+        <td>{{ a.name }}</td>
+        <td>{% if a.currency != 'NGN' %}{{ a.symbol }}{{ "{:,.2f}".format(d if d else c) }} {{ a.currency }}{% else %}—{% endif %}</td>
+        <td class="text-right">{{ "{:,.2f}".format(d_base) if d_base else '' }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(c_base) if c_base else '' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="text-muted">No transactions yet.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="fw-bold border-top">
+        <td colspan="3">Total</td>
+        <td class="text-right">{{ "{:,.2f}".format(total_debit) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(total_credit) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% endblock %}

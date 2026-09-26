@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Bank Reconciliation{% endblock %}
+{% block content %}
+<h3 class="mb-3">Bank Reconciliation</h3>
+<p class="text-muted small">Import a CSV, Excel, or PDF bank statement for an account, then match its
+  transactions against the journal — or post new entries for anything not yet recorded (bank charges,
+  interest, an unrecorded deposit).</p>
+
+<div class="card card-metric p-3">
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Account</th><th>Currency</th><th class="text-end">Unmatched</th><th></th></tr></thead>
+    <tbody>
+      {% for a in accounts %}
+      <tr>
+        <td>{{ a.code }} {{ a.name }}</td>
+        <td>{{ a.currency }}</td>
+        <td class="text-end">
+          {% if counts[a.id] %}<span class="badge bg-warning text-dark">{{ counts[a.id] }}</span>{% else %}<span class="text-muted">0</span>{% endif %}
+        </td>
+        <td class="text-end">
+          <a href="{{ url_for('banking.reconcile', account_id=a.id) }}" class="btn btn-sm btn-outline-secondary">Reconcile</a>
+          <a href="{{ url_for('banking.import_statement', account_id=a.id) }}" class="btn btn-sm btn-primary"><i class="bi bi-upload"></i> Import Statement</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="text-muted">No cash/bank accounts found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

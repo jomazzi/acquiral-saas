@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Income Statement{% endblock %}
+{% block content %}
+<h3 class="mb-3">Income Statement {% if selected_project %}— {{ selected_project.name }}{% endif %}</h3>
+
+<form method="get" class="mb-3">
+  <select name="project_id" class="form-select form-select-sm" style="max-width:280px" onchange="this.form.submit()">
+    <option value="">All projects (organisation-wide)</option>
+    {% for p in projects %}
+    <option value="{{ p.id }}" {% if selected_project and p.id == selected_project.id %}selected{% endif %}>{{ p.name }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="card card-metric p-3">
+  <h6>Income</h6>
+  <table class="table table-sm">
+    <tbody>
+      {% for a, amt in income_rows %}
+      <tr><td>{{ a.code }} {{ a.name }}</td><td class="text-right">{{ "{:,.2f}".format(amt) }}</td></tr>
+      {% else %}
+      <tr><td class="text-muted">No income recorded.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr class="fw-bold border-top"><td>Total Income</td><td class="text-right">{{ "{:,.2f}".format(total_income) }}</td></tr></tfoot>
+  </table>
+
+  <h6 class="mt-3">Expenses</h6>
+  <table class="table table-sm">
+    <tbody>
+      {% for a, amt in expense_rows %}
+      <tr><td>{{ a.code }} {{ a.name }}</td><td class="text-right">{{ "{:,.2f}".format(amt) }}</td></tr>
+      {% else %}
+      <tr><td class="text-muted">No expenses recorded.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr class="fw-bold border-top"><td>Total Expenses</td><td class="text-right">{{ "{:,.2f}".format(total_expense) }}</td></tr></tfoot>
+  </table>
+
+  <div class="fs-5 fw-bold mt-2 {{ 'text-success' if net >= 0 else 'text-danger' }}">
+    Net Surplus / (Deficit): ₦{{ "{:,.2f}".format(net) }}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+# Render "Blueprint" -- optional one-shot way to provision both the web
+# service and the database together. See DEPLOYMENT.md for how to use
+# this (Render Dashboard -> New -> Blueprint) or for the equivalent
+# manual click-through steps if you'd rather set it up by hand.
+#
+# IMPORTANT: `plan: starter` is used for the database deliberately, NOT
+# a free tier. Render's free Postgres instances expire and get deleted
+# after a set period -- fine for a throwaway demo, not acceptable for
+# real financial data. Starter is the cheapest tier that doesn't expire.
+services:
+  - type: web
+    name: acquiral
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /
+    preDeployCommand: sh scripts/release.sh
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: acquiral-db
+          property: connectionString
+
+databases:
+  - name: acquiral-db
+    plan: starter
+    databaseName: acquiral
+    user: acquiral

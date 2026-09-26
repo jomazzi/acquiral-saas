@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Journal{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Journal Entries</h3>
+  <a href="{{ url_for('accounting.journal_new') }}" class="btn btn-primary btn-sm">+ New Entry</a>
+</div>
+
+{% for e in entries %}
+<div class="card card-metric p-3 mb-3">
+  <div class="d-flex justify-content-between">
+    <div>
+      <strong>{{ e.entry_date }}</strong> — {{ e.memo or 'No memo' }}
+      {% if e.reference %}<span class="badge bg-secondary">{{ e.reference }}</span>{% endif %}
+      {% if e.is_multi_currency %}<span class="badge bg-dark"><i class="bi bi-currency-exchange"></i> multi-currency</span>{% endif %}
+    </div>
+    <form method="post" action="{{ url_for('accounting.journal_delete', entry_id=e.id) }}" onsubmit="return confirm('Delete this entry?');">
+      <button class="btn btn-sm btn-outline-danger">Delete</button>
+    </form>
+  </div>
+  <table class="table table-sm mt-2 mb-0">
+    <thead><tr><th>Account</th><th>Project</th><th>Description</th><th class="text-right">Debit</th><th class="text-right">Credit</th><th class="text-right">₦ Equiv. (Dr/Cr)</th></tr></thead>
+    <tbody>
+      {% for l in e.lines %}
+      <tr>
+        <td>{{ l.account.code }} {{ l.account.name }}</td>
+        <td>{{ l.project.name if l.project else '—' }}</td>
+        <td>{{ l.description or '' }}</td>
+        <td class="text-right">{{ l.account.symbol }}{{ "{:,.2f}".format(l.debit) if l.debit else '' }}</td>
+        <td class="text-right">{{ l.account.symbol }}{{ "{:,.2f}".format(l.credit) if l.credit else '' }}</td>
+        <td class="text-right small text-muted">
+          {% if l.account.currency != 'NGN' %}
+            {% if l.debit %}₦{{ "{:,.2f}".format(l.debit_base) }} @{{ l.exchange_rate }}{% endif %}
+            {% if l.credit %}₦{{ "{:,.2f}".format(l.credit_base) }} @{{ l.exchange_rate }}{% endif %}
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-muted">No journal entries yet. <a href="{{ url_for('accounting.journal_new') }}">Post the first one</a>.</p>
+{% endfor %}
+{% endblock %}

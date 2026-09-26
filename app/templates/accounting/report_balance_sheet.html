@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Balance Sheet{% endblock %}
+{% block content %}
+<h3 class="mb-3">Balance Sheet</h3>
+<div class="small text-muted mb-3">All totals in ₦ (Naira). Foreign-currency accounts also show their native balance.</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card card-metric p-3">
+      <h6>Assets</h6>
+      <table class="table table-sm">
+        <tbody>
+          {% for a, native, base in assets %}
+          <tr>
+            <td>{{ a.code }} {{ a.name }}{% if a.currency != 'NGN' %} <span class="small text-muted">({{ a.symbol }}{{ "{:,.2f}".format(native) }} {{ a.currency }})</span>{% endif %}</td>
+            <td class="text-right">{{ "{:,.2f}".format(-base if a.contra else base) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot><tr class="fw-bold border-top"><td>Total Assets</td><td class="text-right">{{ "{:,.2f}".format(total_assets) }}</td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card card-metric p-3 mb-3">
+      <h6>Liabilities</h6>
+      <table class="table table-sm">
+        <tbody>
+          {% for a, native, base in liabilities %}
+          <tr><td>{{ a.code }} {{ a.name }}</td><td class="text-right">{{ "{:,.2f}".format(base) }}</td></tr>
+          {% else %}
+          <tr><td class="text-muted">None</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot><tr class="fw-bold border-top"><td>Total Liabilities</td><td class="text-right">{{ "{:,.2f}".format(total_liabilities) }}</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="card card-metric p-3">
+      <h6>Equity / Net Assets</h6>
+      <table class="table table-sm">
+        <tbody>
+          {% for a, native, base in equity %}
+          <tr><td>{{ a.code }} {{ a.name }}</td><td class="text-right">{{ "{:,.2f}".format(base) }}</td></tr>
+          {% endfor %}
+          <tr><td>Current Year Surplus/(Deficit)</td><td class="text-right">{{ "{:,.2f}".format(net_surplus) }}</td></tr>
+        </tbody>
+        <tfoot><tr class="fw-bold border-top"><td>Total Equity</td><td class="text-right">{{ "{:,.2f}".format(total_equity) }}</td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="mt-3 small text-muted">
+  Assets (₦{{ "{:,.2f}".format(total_assets) }}) should equal Liabilities + Equity (₦{{ "{:,.2f}".format(total_liabilities + total_equity) }}).
+</div>
+{% endblock %}

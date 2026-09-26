@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Fixed Assets{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Fixed Assets</h3>
+  <a href="{{ url_for('assets.asset_new') }}" class="btn btn-primary btn-sm">+ New Asset</a>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card card-metric p-3">
+      <div class="text-muted small">Total Cost (active assets)</div>
+      <div class="fs-5 fw-bold">₦{{ "{:,.2f}".format(total_cost) }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-metric p-3">
+      <div class="text-muted small">Accumulated Depreciation</div>
+      <div class="fs-5 fw-bold">₦{{ "{:,.2f}".format(total_acc_dep) }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-metric p-3">
+      <div class="text-muted small">Net Book Value</div>
+      <div class="fs-5 fw-bold text-success">₦{{ "{:,.2f}".format(total_nbv) }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card card-metric p-3 mb-3">
+  <h6>Run Depreciation</h6>
+  <form method="post" action="{{ url_for('assets.run_depreciation') }}" class="d-flex gap-2 align-items-end">
+    <div>
+      <label class="form-label small">As of date</label>
+      <input type="date" name="as_of" class="form-control form-control-sm" value="{{ today }}" required>
+    </div>
+    <button class="btn btn-sm btn-outline-primary">Calculate &amp; Post</button>
+  </form>
+  <div class="small text-muted mt-1">Posts straight-line depreciation for every active asset from its last depreciation date up to the date chosen.</div>
+</div>
+
+<div class="card card-metric p-3">
+  <table class="table table-sm">
+    <thead><tr><th>Asset</th><th>Category</th><th>Project</th><th class="text-right">Cost</th><th class="text-right">Acc. Dep.</th><th class="text-right">NBV</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.asset.name }}{% if r.asset.serial_number %}<div class="small text-muted">S/N: {{ r.asset.serial_number }}</div>{% endif %}</td>
+        <td>{{ r.asset.category }}</td>
+        <td>{{ r.asset.project.name if r.asset.project else '—' }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(r.asset.cost) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(r.acc_dep) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(r.nbv) }}</td>
+        <td>
+          <span class="badge {% if r.asset.status == 'In Use' %}bg-success{% elif r.asset.status == 'Under Repair' %}bg-warning{% else %}bg-secondary{% endif %}">{{ r.asset.status }}</span>
+        </td>
+        <td>
+          {% if r.asset.status != 'Disposed' %}
+          <button class="btn btn-sm btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#dispose-{{ r.asset.id }}">Dispose</button>
+          <div class="collapse mt-2" id="dispose-{{ r.asset.id }}">
+            <form method="post" action="{{ url_for('assets.asset_dispose', asset_id=r.asset.id) }}">
+              <input type="date" name="disposal_date" class="form-control form-control-sm mb-1" required>
+              <input type="number" step="0.01" name="disposal_value" class="form-control form-control-sm mb-1" placeholder="Disposal proceeds">
+              <button class="btn btn-sm btn-danger w-100">Confirm</button>
+            </form>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="text-muted">No assets recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

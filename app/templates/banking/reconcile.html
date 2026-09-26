@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Reconcile — {{ account.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Reconcile — {{ account.code }} {{ account.name }}</h3>
+  <div>
+    <a href="{{ url_for('banking.import_statement', account_id=account.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-upload"></i> Import Another Statement</a>
+    <a href="{{ url_for('banking.bank_accounts') }}" class="btn btn-outline-secondary btn-sm">Back</a>
+  </div>
+</div>
+
+<h6 class="mt-2">Unmatched ({{ unmatched|length }})</h6>
+{% if not unmatched %}
+<div class="card card-metric p-3 text-muted small">Nothing unmatched — every imported transaction has been matched or ignored.</div>
+{% endif %}
+{% for t in unmatched %}
+<div class="card card-metric p-3 mb-2">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <div class="fw-bold">{{ t.description }}</div>
+      <div class="small text-muted">{{ t.txn_date }}</div>
+    </div>
+    <div class="text-end">
+      <div class="fw-bold {{ 'text-success' if t.is_deposit else 'text-danger' }}">
+        {{ '+' if t.is_deposit else '' }}{{ account.symbol }}{{ "{:,.2f}".format(t.amount) }}
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-3 g-2">
+    <div class="col-md-6">
+      <form method="post" action="{{ url_for('banking.match_existing', txn_id=t.id) }}" class="d-flex gap-2">
+        <select name="journal_line_id" class="form-select form-select-sm" required>
+          <option value="">Match to existing journal line…</option>
+          {% for l in candidate_lines %}
+          <option value="{{ l.id }}">{{ l.entry.entry_date }} — {{ l.description or l.entry.memo }} ({{ account.symbol }}{{ "{:,.2f}".format(l.debit if l.debit else l.credit) }} {{ 'Dr' if l.debit else 'Cr' }})</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-primary text-nowrap">Match</button>
+      </form>
+    </div>
+    <div class="col-md-6">
+      <form method="post" action="{{ url_for('banking.match_new', txn_id=t.id) }}" class="d-flex gap-2">
+        <select name="contra_account_id" class="form-select form-select-sm" required>
+          <option value="">Post as new entry against…</option>
+          {% for a in other_accounts %}
+          <option value="{{ a.id }}">{{ a.code }} {{ a.name }}</option>
+          {% endfor %}
+        </select>
+        <input type="hidden" name="memo" value="{{ t.description }}">
+        <button class="btn btn-sm btn-outline-success text-nowrap">Post &amp; Match</button>
+      </form>
+    </div>
+  </div>
+  <div class="mt-2">
+    <form method="post" action="{{ url_for('banking.ignore_txn', txn_id=t.id) }}" onsubmit="return confirm('Ignore this transaction? It will not be posted to the journal.');" class="d-inline">
+      <button class="btn btn-sm btn-outline-secondary">Ignore</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{% if matched %}
+<h6 class="mt-4">Recently Matched</h6>
+<div class="card card-metric p-3">
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Date</th><th>Description</th><th class="text-end">Amount</th><th></th></tr></thead>
+    <tbody>
+      {% for t in matched %}
+      <tr>
+        <td>{{ t.txn_date }}</td>
+        <td>{{ t.description }}</td>
+        <td class="text-end {{ 'text-success' if t.is_deposit else 'text-danger' }}">{{ '+' if t.is_deposit else '' }}{{ account.symbol }}{{ "{:,.2f}".format(t.amount) }}</td>
+        <td class="text-end">
+          <form method="post" action="{{ url_for('banking.unmatch_txn', txn_id=t.id) }}" class="d-inline">
+            <button class="btn btn-sm btn-link p-0">Undo match</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if ignored_count %}
+<div class="small text-muted mt-3">{{ ignored_count }} transaction(s) ignored for this account.</div>
+{% endif %}
+{% endblock %}

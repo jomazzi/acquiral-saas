@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ app_name }} — {{ app_tagline }}</title>
+  <meta name="description" content="{{ app_tagline }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .hero {
+      background: radial-gradient(circle at 20% 20%, var(--navy-700), var(--navy-900) 65%);
+      color: #fff;
+      padding: 5rem 0 6rem;
+    }
+    .hero h1 { color: #fff; font-size: 2.6rem; }
+    .hero .lead { color: rgba(255,255,255,0.85); font-size: 1.15rem; max-width: 640px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: rgba(212,160,23,0.15); color: var(--gold-400);
+      border: 1px solid rgba(212,160,23,0.4);
+      padding: .35rem .9rem; border-radius: 999px; font-size: .8rem; font-weight: 600;
+      margin-bottom: 1.25rem;
+    }
+    .feature-card { border: 1px solid var(--border); border-radius: 14px; padding: 1.75rem; height: 100%; background: #fff; }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--navy-100); color: var(--navy-800); font-size: 1.4rem; margin-bottom: 1rem;
+    }
+    .section { padding: 4.5rem 0; }
+    .cta-band { background: var(--navy-900); color: #fff; border-radius: 20px; padding: 3rem; text-align: center; }
+    .nav-landing { background: transparent; padding: 1.25rem 0; }
+    .stat { text-align: center; }
+    .stat .num { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--gold-400); }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <div class="container">
+      <nav class="nav-landing d-flex justify-content-between align-items-center mb-5">
+        <a href="{{ url_for('landing') }}" class="navbar-brand d-flex align-items-center gap-2" style="color:#fff;">
+          <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="10" fill="#D4A017"/>
+            <path d="M20 9 L30 31 H25.5 L23.3 25.5 H16.7 L14.5 31 H10 L20 9 Z M20 15.5 L17.6 21.5 H22.4 L20 15.5 Z" fill="#0F2D52"/>
+          </svg>
+          <span style="font-size:1.2rem;">{{ app_name }}</span>
+        </a>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light">Log in</a>
+          <a href="{{ url_for('auth.signup') }}" class="btn btn-gold">Start free</a>
+        </div>
+      </nav>
+
+      <div class="row align-items-center">
+        <div class="col-lg-7">
+          <div class="hero-badge"><i class="bi bi-flag"></i> Built for Nigerian organisations</div>
+          <h1 class="mb-3">Fund accounting, fixed assets and payroll — built for how Nigerian NGOs and businesses actually work.</h1>
+          <p class="lead mb-4">Track every donor-funded project separately, keep a proper fixed-asset register, and run payroll under the Nigeria Tax Act 2025 — all from one place, without wrestling generic accounting software into shape.</p>
+          <div class="d-flex gap-3">
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg">Start free</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg">Log in to your workspace</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container section">
+    <div class="text-center mb-5">
+      <h2>Everything a donor-funded organisation needs to keep clean books</h2>
+      <p class="text-muted">Not a generic ledger with your project names bolted on — built around fund accounting from the ground up.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+          <h5>True double-entry bookkeeping</h5>
+          <p class="text-muted mb-0">Every transaction balances automatically, with reporting by project and by funder — exactly what donor accountability requires.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-box-seam"></i></div>
+          <h5>Fixed asset tracking</h5>
+          <p class="text-muted mb-0">Register equipment and vehicles, tag them to the grants that funded them, and let straight-line depreciation post itself.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-cash-stack"></i></div>
+          <h5>Nigerian payroll, done right</h5>
+          <p class="text-muted mb-0">PAYE under the Nigeria Tax Act 2025, pension, and NHF calculated automatically and posted straight to the ledger.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-kanban"></i></div>
+          <h5>Project &amp; funder reporting</h5>
+          <p class="text-muted mb-0">See income, expense, budget and remaining balance for every grant, side by side, any time you need it.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-shield-lock"></i></div>
+          <h5>Role-based access</h5>
+          <p class="text-muted mb-0">Admins and staff users see the same clean interface, with sensible guardrails on who can edit what.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+          <h5>Runs where you need it</h5>
+          <p class="text-muted mb-0">On one office computer, or hosted centrally for your whole organisation — your data, your infrastructure.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container pb-5">
+    <div class="cta-band">
+      <h3 class="mb-3" style="color:#fff;">Ready to see your books, clearly.</h3>
+      <p class="mb-4" style="color:rgba(255,255,255,0.8);">Log in to your organisation's workspace to get started.</p>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-gold btn-lg">Log in</a>
+    </div>
+  </div>
+
+  <footer class="app-footer text-center">
+    {{ app_name }} — a product of <a href="{{ company_url }}" target="_blank" rel="noopener">{{ company_name }}</a>
+  </footer>
+
+</body>
+</html>

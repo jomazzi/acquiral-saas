@@ -1,0 +1,10 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-Migrate==4.0.7
+psycopg2-binary==2.9.9
+Werkzeug==3.0.3
+reportlab==4.4.10
+openpyxl==3.1.5
+pdfplumber==0.11.9
+gunicorn==22.0.0

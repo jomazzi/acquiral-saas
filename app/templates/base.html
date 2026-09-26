@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+{% macro navlink(endpoint, icon, label) %}
+  <li class="nav-item">
+    <a class="side-link {{ 'active' if request.endpoint == endpoint else '' }}" href="{{ url_for(endpoint) }}">
+      <i class="bi {{ icon }}"></i> <span>{{ label }}</span>
+    </a>
+  </li>
+{% endmacro %}
+
+<!-- Mobile top bar: brand + hamburger. Hidden at lg+, where the sidebar is
+     always visible. Deliberately OUTSIDE .app-shell: .app-shell is a row
+     flex container (sidebar beside main content), and a flex row's
+     default align-items:stretch would otherwise stretch this horizontal
+     bar to fill the full page height as a third "column" instead of
+     sitting above everything as a normal block-level header. -->
+<header class="mobile-topbar d-lg-none">
+  <button class="hamburger-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Open menu">
+    <i class="bi bi-list"></i>
+  </button>
+  <a class="mobile-brand" href="{{ url_for('accounting.dashboard') }}">
+    <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="#D4A017"/>
+      <path d="M20 9 L30 31 H25.5 L23.3 25.5 H16.7 L14.5 31 H10 L20 9 Z M20 15.5 L17.6 21.5 H22.4 L20 15.5 Z" fill="#0F2D52"/>
+    </svg>
+    {{ app_name }}
+  </a>
+</header>
+
+<div class="app-shell">
+
+  <!-- Sidebar: a normal static column at lg+, an offcanvas slide-in panel below lg. -->
+  <div class="offcanvas-lg offcanvas-start acquiral-sidebar" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
+    <div class="offcanvas-header d-lg-none">
+      <a class="mobile-brand" id="sidebarLabel" href="{{ url_for('accounting.dashboard') }}">
+        <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="10" fill="#D4A017"/>
+          <path d="M20 9 L30 31 H25.5 L23.3 25.5 H16.7 L14.5 31 H10 L20 9 Z M20 15.5 L17.6 21.5 H22.4 L20 15.5 Z" fill="#0F2D52"/>
+        </svg>
+        {{ app_name }}
+      </a>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
+    </div>
+
+    <div class="offcanvas-body sidebar-body">
+      <a class="sidebar-brand d-none d-lg-flex" href="{{ url_for('accounting.dashboard') }}">
+        <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="10" fill="#D4A017"/>
+          <path d="M20 9 L30 31 H25.5 L23.3 25.5 H16.7 L14.5 31 H10 L20 9 Z M20 15.5 L17.6 21.5 H22.4 L20 15.5 Z" fill="#0F2D52"/>
+        </svg>
+        {{ app_name }}
+      </a>
+
+      <ul class="nav-list flex-grow-1">
+        {{ navlink('accounting.dashboard', 'bi-grid-1x2', 'Dashboard') }}
+        {{ navlink('accounting.journal_list', 'bi-journal-text', 'Journal') }}
+        {{ navlink('accounting.accounts_list', 'bi-diagram-3', 'Accounts') }}
+        {{ navlink('accounting.projects', 'bi-kanban', 'Projects') }}
+        {{ navlink('accounting.funders', 'bi-building', 'Funders') }}
+        {{ navlink('assets.assets_list', 'bi-box-seam', 'Assets') }}
+        {{ navlink('payroll.employees_list', 'bi-people', 'Employees') }}
+        {{ navlink('payroll.payroll_runs', 'bi-cash-stack', 'Payroll') }}
+        {{ navlink('invoicing.customers_list', 'bi-person-vcard', 'Customers') }}
+        {{ navlink('invoicing.invoices_list', 'bi-receipt', 'Invoices') }}
+
+        <li class="nav-item">
+          <a class="side-link {{ 'active' if request.endpoint and request.endpoint.startswith('banking.') else '' }}" href="{{ url_for('banking.bank_accounts') }}">
+            <i class="bi bi-bank"></i> <span>Bank Reconciliation</span>
+          </a>
+        </li>
+
+        {% set report_endpoints = ['accounting.report_trial_balance', 'accounting.report_income_statement',
+                                    'accounting.report_by_project', 'accounting.report_balance_sheet',
+                                    'assets.report_asset_register', 'payroll.report_payroll_summary'] %}
+        <li class="nav-item">
+          <a class="side-link {{ 'active' if request.endpoint in report_endpoints else '' }}" href="#reportsSubmenu"
+             data-bs-toggle="collapse" role="button" aria-expanded="{{ 'true' if request.endpoint in report_endpoints else 'false' }}">
+            <i class="bi bi-bar-chart"></i> <span>Reports</span> <i class="bi bi-chevron-down submenu-caret"></i>
+          </a>
+          <div class="collapse {{ 'show' if request.endpoint in report_endpoints else '' }}" id="reportsSubmenu">
+            <ul class="nav-sublist">
+              <li><a class="side-sublink {{ 'active' if request.endpoint == 'accounting.report_trial_balance' else '' }}" href="{{ url_for('accounting.report_trial_balance') }}">Trial Balance</a></li>
+              <li><a class="side-sublink {{ 'active' if request.endpoint == 'accounting.report_income_statement' else '' }}" href="{{ url_for('accounting.report_income_statement') }}">Income Statement</a></li>
+              <li><a class="side-sublink {{ 'active' if request.endpoint == 'accounting.report_by_project' else '' }}" href="{{ url_for('accounting.report_by_project') }}">By Project / Funder</a></li>
+              <li><a class="side-sublink {{ 'active' if request.endpoint == 'accounting.report_balance_sheet' else '' }}" href="{{ url_for('accounting.report_balance_sheet') }}">Balance Sheet</a></li>
+              <li><a class="side-sublink {{ 'active' if request.endpoint == 'assets.report_asset_register' else '' }}" href="{{ url_for('assets.report_asset_register') }}">Asset Register</a></li>
+              <li><a class="side-sublink {{ 'active' if request.endpoint == 'payroll.report_payroll_summary' else '' }}" href="{{ url_for('payroll.report_payroll_summary') }}">Payroll Summary</a></li>
+            </ul>
+          </div>
+        </li>
+
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        {{ navlink('auth.users_list', 'bi-shield-lock', 'Users') }}
+        {% endif %}
+      </ul>
+
+      {% if current_user.is_authenticated %}
+      <div class="sidebar-user dropdown">
+        <a class="side-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+          <i class="bi bi-person-circle"></i> <span>{{ current_user.full_name or current_user.username }}</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">Change Password</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Log out</a></li>
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <main class="app-main">
+    {% if is_demo_org %}
+    <div class="demo-banner text-center">
+      <i class="bi bi-info-circle"></i> You're exploring the shared Acquiral demo — it's read-only, so nothing you change here is saved.
+      <a href="{{ url_for('auth.signup') }}" class="alert-link">Sign up for your own organization &rarr;</a>
+    </div>
+    {% endif %}
+    <div class="container-fluid py-4">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, msg in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+              {{ msg }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+
+      <footer class="app-footer text-center">
+        {{ app_name }} — a product of <a href="{{ company_url }}" target="_blank" rel="noopener">{{ company_name }}</a>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

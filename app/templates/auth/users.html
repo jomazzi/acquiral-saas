@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<h3 class="mb-3">Manage Users</h3>
+
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card card-metric p-3">
+      <h6>Add User</h6>
+      <form method="post">
+        <div class="mb-2">
+          <input type="text" name="username" class="form-control" placeholder="Username" required>
+        </div>
+        <div class="mb-2">
+          <input type="text" name="full_name" class="form-control" placeholder="Full name">
+        </div>
+        <div class="mb-2">
+          <select name="role" class="form-select">
+            <option value="user">Staff user</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <input type="password" name="password" class="form-control" placeholder="Temporary password" required minlength="6">
+        </div>
+        <button class="btn btn-primary btn-sm">Add User</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="card card-metric p-3">
+      <table class="table table-sm align-middle">
+        <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for u in all_users %}
+          <tr>
+            <td>{{ u.username }}</td>
+            <td>{{ u.full_name or '—' }}</td>
+            <td><span class="badge {{ 'bg-dark' if u.role == 'admin' else 'bg-secondary' }}">{{ u.role }}</span></td>
+            <td>{{ 'Active' if u.active else 'Inactive' }}</td>
+            <td class="text-end">
+              <div class="d-flex gap-1 justify-content-end">
+                <form method="post" action="{{ url_for('auth.user_toggle', user_id=u.id) }}">
+                  <button class="btn btn-sm btn-outline-secondary" {% if u.id == current_user.id %}disabled{% endif %}>
+                    {{ 'Deactivate' if u.active else 'Activate' }}
+                  </button>
+                </form>
+                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#reset-{{ u.id }}">Reset PW</button>
+              </div>
+              <div class="collapse mt-2" id="reset-{{ u.id }}">
+                <form method="post" action="{{ url_for('auth.user_reset_password', user_id=u.id) }}" class="d-flex gap-1">
+                  <input type="password" name="new_password" class="form-control form-control-sm" placeholder="New password" minlength="6" required>
+                  <button class="btn btn-sm btn-primary">Set</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

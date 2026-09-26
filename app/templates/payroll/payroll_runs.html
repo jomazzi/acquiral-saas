@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Payroll{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Payroll Runs</h3>
+  <a href="{{ url_for('payroll.payroll_new') }}" class="btn btn-primary btn-sm">+ New Payroll Run</a>
+</div>
+
+<div class="card card-metric p-3">
+  <table class="table table-sm">
+    <thead><tr><th>Period</th><th>Status</th><th class="text-right">Net Pay</th><th class="text-right">PAYE</th><th></th></tr></thead>
+    <tbody>
+      {% for r in runs %}
+      <tr>
+        <td>{{ r.label }}</td>
+        <td><span class="badge {{ 'bg-success' if r.status == 'posted' else 'bg-secondary' }}">{{ r.status }}</span></td>
+        <td class="text-right">{{ "{:,.2f}".format(r.totals.net_pay) }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(r.totals.paye) }}</td>
+        <td><a href="{{ url_for('payroll.payroll_detail', run_id=r.id) }}" class="btn btn-sm btn-outline-primary">View</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="text-muted">No payroll runs yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
