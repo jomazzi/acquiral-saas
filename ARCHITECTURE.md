@@ -1,4 +1,4 @@
-# Acquiral SaaS — Multi-Tenant Architecture (Phases 1–7)
+# Acquiral SaaS — Multi-Tenant Architecture (Phases 1–8)
 
 ## Tenancy model
 
@@ -487,10 +487,124 @@ Run `PYTHONPATH=. python3 scripts/seed_demo.py` once after a fresh
 deploy to create the demo tenant; `--reset` wipes and recreates it if
 the seed data ever needs to change.
 
+## Phase 8: Audit-Readiness — Report Exports, Attachments, Comparatives
+
+Prompted by a real question from Social Action's accountant: aside from
+day-to-day convenience, does the software make the *annual external
+audit* easier, and what would help more? Three of six proposed
+audit-readiness features were selected to build:
+
+### Report period filtering (foundation for the other two)
+
+Before this phase, none of the 4 accounting reports (Trial Balance,
+Income Statement, By-Project, Balance Sheet) had **any** date filtering
+— each summed every journal line ever posted, all-time. This had to be
+fixed first, since "prior-year comparative" is meaningless without a
+period to compare.
+
+Trial Balance and Balance Sheet are **point-in-time** reports (an
+`as_of` date; cumulative from the beginning of time up to that date —
+this is standard accounting practice, not a bug: a trial balance always
+reflects the running balance of every account to date). Income
+Statement and By-Project are **flow-based** reports over a date range
+(`start`/`end`, defaulting to 1 Jan of the current year through today).
+Both report templates now render a small form so the user can pick
+their own period.
+
+### Comparative (prior-year) figures
+
+Every report now also computes the same figures for **exactly one year
+earlier** (`_prior_year_date()` in `app/blueprints/accounting/routes.py`
+shifts a date back one calendar year, falling back from Feb 29 to Feb 28
+when the prior year isn't a leap year) and renders them alongside the
+current figures in a muted "Prior Yr" column — the comparison an
+external auditor expects to see on every one of these four statements.
+
+Because Trial Balance and Balance Sheet are cumulative-to-date, the
+"prior year" column is *not* "last year's entries only" — it's the
+running balance as it stood exactly a year ago. A journal entry from two
+years ago still contributes to the Trial Balance's prior-year total,
+same as it contributes to this year's. Income Statement and By-Project,
+being flow-based, compare like-for-like periods (a same-length window
+shifted back one year).
+
+### PDF / Excel export of all 4 reports
+
+Each report has `/export/pdf` and `/export/xlsx` routes
+(`app/reports/pdf_export.py` via reportlab, matching the existing
+navy/gold invoice/payslip branding; `app/reports/excel_export.py` via
+openpyxl, with a formatted header row, bold totals, frozen panes, and
+real numeric cell types) — this is the difference between "the
+accountant re-types numbers off a screen for the auditor" and "the
+accountant hands over a file."
+
+### Supporting document attachments on journal entries
+
+The single most audit-relevant gap: an external auditor doesn't just
+want a number, they want to see the receipt, invoice, or grant letter
+behind it (this is the whole idea of an "audit trail" of *evidence*, not
+just amounts). `journal_attachments` (migration `0f1b81015c9f`) lets a
+user attach one or more files to any journal entry.
+
+- **Storage**: local disk under `app.instance_path/attachments/<org_id>/<uuid4>.<ext>`
+  (`app/attachments.py`) — outside the git repo, outside the app
+  package, matching this project's zero-external-dependency deployment
+  story (no S3 bucket/credentials to configure for a self-hosted or
+  on-prem install). The on-disk filename is always a fresh UUID, never
+  the browser-supplied name, to avoid path-traversal and collisions; the
+  original filename is kept only as a display column.
+- **Validation**: extension allowlist (`pdf, jpg, jpeg, png, gif, webp,
+  doc, docx, xls, xlsx, csv, txt` — deliberately no executables), 15MB
+  cap, rejected with a flashed message rather than a 500.
+- **Tenant isolation**: `journal_attachments` is a normal
+  `TenantScopedMixin` table with the same RLS policy as everything else
+  (added to the `ARRAY[...]` in `scripts/setup_rls.sql`), *and* every
+  route additionally filters by `entry_id` — proven by
+  `scripts/rls_adversarial_test.py`'s three attacks on this table, and
+  by `scripts/smoke_test.py` confirming a second organization gets 404
+  trying to view, download, or delete another org's attachment by a
+  known UUID.
+- **Delete-with-cleanup**: removing an attachment removes both the DB
+  row and the file on disk; deleting the whole journal entry cascades
+  the same cleanup (`cascade="all, delete-orphan"` on the ORM
+  relationship plus a manual `delete_attachment_file()` call per
+  attachment after the DB commit, since a cascade delete only cleans up
+  rows, not files on disk).
+
+### A test-harness pitfall worth documenting (not an app bug)
+
+While diagnosing an apparent bug — an uploaded attachment confirmed
+present in the database not showing up on the very next `/journal` page
+load, in a debugging script — the actual cause turned out to be the
+*test script*, not the app: the script wrapped an entire sequence of
+`test_client()` calls inside one long-lived `with app.app_context():`
+block. Flask only tears down and recreates the SQLAlchemy session
+between *separate* app contexts; reusing one manually-pushed context
+across several simulated "requests" means they all share the same
+session and identity map, so a `JournalEntry` object loaded (with an
+empty `.attachments` collection) before the upload stayed cached with
+that stale empty collection on every later access — even though the
+underlying database row was correct and a raw query for it worked fine.
+
+A real deployment can't hit this: every actual HTTP request gets its own
+fresh request/app context and Flask-SQLAlchemy session, torn down at the
+end of the request via `teardown_appcontext`. Confirmed by adding an
+explicit `db.session.remove()` between simulated requests in the test
+script (which is what a real WSGI request cycle does implicitly) — the
+attachment then appeared correctly. `scripts/smoke_test.py` was written
+the right way from the start (it never wraps `test_client()` calls in a
+shared outer `app_context()`), which is why this never showed up there.
+
 ## What's NOT in this codebase yet
 
 A custom domain is not wired up yet (deployment currently targets a
 platform-provided URL, per the agreed scope for that phase) — see
 `DEPLOYMENT.md`'s "Custom domain" section for the follow-up steps
 whenever that's ready. All items from the original 8-point roadmap are
-otherwise complete.
+complete, plus Phase 8's report exports, comparatives, and attachments.
+
+Two further audit-readiness ideas were discussed but **not** selected
+for this phase, so they remain unbuilt: an activity/audit log of who
+changed what and when, and period locking (preventing edits to a month
+once it's been closed/audited). Worth revisiting if the external auditor
+asks for either specifically.

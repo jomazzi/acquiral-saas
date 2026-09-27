@@ -195,4 +195,33 @@ for table, name_col in [("bank_statement_imports", "original_filename"), ("bank_
     assert not rows, f"ATTACK 3 SUCCEEDED (BAD) on {table}: SELECT with no tenant context returned rows: {rows}"
     print(f"[OK] Attack 3 blocked on {table}: no tenant context set returns zero rows")
 
+# ---------------------------------------------------------------------
+# journal_attachments: same three attacks, added with the Phase 8
+# document-attachments feature. Particularly worth proving here since
+# the app-level isolation for downloads/deletes relies on a route doing
+# `.filter_by(id=..., entry_id=...)` -- RLS is the backstop if that
+# route filter were ever forgotten or written wrong.
+# ---------------------------------------------------------------------
+for table, name_col in [("journal_attachments", "original_filename")]:
+    row = psql_super(f"SELECT id, organization_id FROM {table} WHERE organization_id = '{org1_id}' LIMIT 1")
+    if not row:
+        print(f"[SKIP] no {table} row for org1 to test against -- run scripts/smoke_test.py first")
+        continue
+    known_id, _ = row[0]
+
+    rows = run(f"SELECT organization_id, {name_col} FROM {table}", tenant=org2_id)
+    leaked = [r for r in rows if r[0] == org1_id]
+    assert not leaked, f"ATTACK 1 SUCCEEDED (BAD) on {table}: unfiltered SELECT under org2 tenant leaked org1 rows: {leaked}"
+    print(f"[OK] Attack 1 blocked on {table}: unfiltered SELECT under org2 tenant returns zero org1 rows")
+
+    rows = run(f"SELECT id FROM {table} WHERE id = %s", (known_id,), tenant=org2_id)
+    assert not rows, f"ATTACK 2 SUCCEEDED (BAD) on {table}: fetched org1's row by known id under org2 tenant: {rows}"
+    rows = run(f"SELECT id FROM {table} WHERE id = %s", (known_id,), tenant=org1_id)
+    assert rows, f"sanity check failed on {table}: correct tenant should see its own row"
+    print(f"[OK] Attack 2 blocked on {table} (known-id lookup denied under wrong tenant, allowed under correct one)")
+
+    rows = run(f"SELECT id FROM {table}", tenant=None)
+    assert not rows, f"ATTACK 3 SUCCEEDED (BAD) on {table}: SELECT with no tenant context returned rows: {rows}"
+    print(f"[OK] Attack 3 blocked on {table}: no tenant context set returns zero rows")
+
 print("\nALL ADVERSARIAL RLS TESTS PASSED")

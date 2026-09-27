@@ -1,44 +1,86 @@
 {% extends "base.html" %}
 {% block title %}Income Statement{% endblock %}
 {% block content %}
-<h3 class="mb-3">Income Statement {% if selected_project %}— {{ selected_project.name }}{% endif %}</h3>
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+  <h3 class="mb-0">Income Statement {% if selected_project %}— {{ selected_project.name }}{% endif %}</h3>
+  <div class="d-flex gap-2">
+    <a class="btn btn-sm btn-outline-secondary"
+       href="{{ url_for('accounting.report_income_statement_export', fmt='pdf', start=start.isoformat(), end=end.isoformat(), project_id=selected_project.id if selected_project else none) }}">Download PDF</a>
+    <a class="btn btn-sm btn-outline-secondary"
+       href="{{ url_for('accounting.report_income_statement_export', fmt='xlsx', start=start.isoformat(), end=end.isoformat(), project_id=selected_project.id if selected_project else none) }}">Download Excel</a>
+  </div>
+</div>
 
-<form method="get" class="mb-3">
-  <select name="project_id" class="form-select form-select-sm" style="max-width:280px" onchange="this.form.submit()">
-    <option value="">All projects (organisation-wide)</option>
-    {% for p in projects %}
-    <option value="{{ p.id }}" {% if selected_project and p.id == selected_project.id %}selected{% endif %}>{{ p.name }}</option>
-    {% endfor %}
-  </select>
+<form method="get" class="d-flex align-items-end gap-2 mb-3 flex-wrap">
+  <div>
+    <label class="form-label small mb-0">From</label>
+    <input type="date" name="start" value="{{ start.isoformat() }}" class="form-control form-control-sm">
+  </div>
+  <div>
+    <label class="form-label small mb-0">To</label>
+    <input type="date" name="end" value="{{ end.isoformat() }}" class="form-control form-control-sm">
+  </div>
+  <div>
+    <label class="form-label small mb-0">Project</label>
+    <select name="project_id" class="form-select form-select-sm" style="max-width:280px">
+      <option value="">All projects (organisation-wide)</option>
+      {% for p in projects %}
+      <option value="{{ p.id }}" {% if selected_project and p.id == selected_project.id %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-sm btn-primary">Apply</button>
 </form>
+<div class="small text-muted mb-2">
+  Comparative column is the same-length period one year earlier ({{ prior_start.isoformat() }} to {{ prior_end.isoformat() }}).
+</div>
 
 <div class="card card-metric p-3">
   <h6>Income</h6>
   <table class="table table-sm">
+    <thead><tr><th></th><th class="text-right">₦</th><th class="text-right border-left text-muted">Prior Yr ₦</th></tr></thead>
     <tbody>
       {% for a, amt in income_rows %}
-      <tr><td>{{ a.code }} {{ a.name }}</td><td class="text-right">{{ "{:,.2f}".format(amt) }}</td></tr>
+      <tr>
+        <td>{{ a.code }} {{ a.name }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(amt) }}</td>
+        <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_income_by_account.get(a.id, 0)) }}</td>
+      </tr>
       {% else %}
-      <tr><td class="text-muted">No income recorded.</td></tr>
+      <tr><td class="text-muted" colspan="3">No income recorded.</td></tr>
       {% endfor %}
     </tbody>
-    <tfoot><tr class="fw-bold border-top"><td>Total Income</td><td class="text-right">{{ "{:,.2f}".format(total_income) }}</td></tr></tfoot>
+    <tfoot><tr class="fw-bold border-top">
+      <td>Total Income</td>
+      <td class="text-right">{{ "{:,.2f}".format(total_income) }}</td>
+      <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_total_income) }}</td>
+    </tr></tfoot>
   </table>
 
   <h6 class="mt-3">Expenses</h6>
   <table class="table table-sm">
+    <thead><tr><th></th><th class="text-right">₦</th><th class="text-right border-left text-muted">Prior Yr ₦</th></tr></thead>
     <tbody>
       {% for a, amt in expense_rows %}
-      <tr><td>{{ a.code }} {{ a.name }}</td><td class="text-right">{{ "{:,.2f}".format(amt) }}</td></tr>
+      <tr>
+        <td>{{ a.code }} {{ a.name }}</td>
+        <td class="text-right">{{ "{:,.2f}".format(amt) }}</td>
+        <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_expense_by_account.get(a.id, 0)) }}</td>
+      </tr>
       {% else %}
-      <tr><td class="text-muted">No expenses recorded.</td></tr>
+      <tr><td class="text-muted" colspan="3">No expenses recorded.</td></tr>
       {% endfor %}
     </tbody>
-    <tfoot><tr class="fw-bold border-top"><td>Total Expenses</td><td class="text-right">{{ "{:,.2f}".format(total_expense) }}</td></tr></tfoot>
+    <tfoot><tr class="fw-bold border-top">
+      <td>Total Expenses</td>
+      <td class="text-right">{{ "{:,.2f}".format(total_expense) }}</td>
+      <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_total_expense) }}</td>
+    </tr></tfoot>
   </table>
 
   <div class="fs-5 fw-bold mt-2 {{ 'text-success' if net >= 0 else 'text-danger' }}">
     Net Surplus / (Deficit): ₦{{ "{:,.2f}".format(net) }}
+    <span class="fs-6 text-muted fw-normal">(prior year: ₦{{ "{:,.2f}".format(prior_net) }})</span>
   </div>
 </div>
 {% endblock %}

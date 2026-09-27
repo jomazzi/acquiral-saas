@@ -77,6 +77,7 @@ class JournalEntry(TenantScopedMixin, db.Model):
     created_by = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     lines = db.relationship("JournalLine", backref="entry", cascade="all, delete-orphan", lazy=True)
+    attachments = db.relationship("JournalAttachment", backref="entry", cascade="all, delete-orphan", lazy=True)
 
     @property
     def total_debit_base(self):
@@ -115,6 +116,30 @@ class JournalLine(TenantScopedMixin, db.Model):
     @property
     def credit_base(self):
         return round((self.credit or 0) * (self.exchange_rate or 1), 2)
+
+
+class JournalAttachment(TenantScopedMixin, db.Model):
+    """Supporting documentation (a receipt, invoice, contract, grant
+    letter, etc.) attached to a journal entry -- added so an external
+    auditor can find the backing document for a sampled transaction
+    inside the app rather than the accountant having to separately dig
+    it out of email or a filing cabinet on request.
+
+    The actual file bytes live on disk (see app/attachments.py), named
+    by a random UUID rather than the user's original filename -- this
+    avoids both filename collisions between organizations sharing a
+    disk and path-traversal risk from an attacker-controlled filename.
+    original_filename is kept purely for display and for the name the
+    browser is offered on download."""
+    __tablename__ = "journal_attachments"
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    entry_id = db.Column(UUID(as_uuid=True), db.ForeignKey("journal_entries.id"), nullable=False)
+    stored_filename = db.Column(db.String(64), nullable=False)  # <uuid4>.<ext>, on disk under ATTACHMENTS_DIR/<org_id>/
+    original_filename = db.Column(db.String(255), nullable=False)
+    content_type = db.Column(db.String(120))
+    file_size = db.Column(db.Integer)
+    uploaded_by = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"), nullable=True)
+    uploaded_at = db.Column(db.DateTime, server_default=db.func.now())
 
 
 def seed_default_accounts(organization_id):

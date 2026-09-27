@@ -1,23 +1,45 @@
 {% extends "base.html" %}
 {% block title %}Balance Sheet{% endblock %}
 {% block content %}
-<h3 class="mb-3">Balance Sheet</h3>
-<div class="small text-muted mb-3">All totals in ₦ (Naira). Foreign-currency accounts also show their native balance.</div>
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+  <h3 class="mb-0">Balance Sheet</h3>
+  <div class="d-flex gap-2">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('accounting.report_balance_sheet_export', fmt='pdf', as_of=as_of.isoformat()) }}">Download PDF</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('accounting.report_balance_sheet_export', fmt='xlsx', as_of=as_of.isoformat()) }}">Download Excel</a>
+  </div>
+</div>
+<form method="get" class="d-flex align-items-end gap-2 mb-3">
+  <div>
+    <label class="form-label small mb-0">As of</label>
+    <input type="date" name="as_of" value="{{ as_of.isoformat() }}" class="form-control form-control-sm">
+  </div>
+  <button class="btn btn-sm btn-primary">Apply</button>
+</form>
+<div class="small text-muted mb-3">
+  All totals in ₦ (Naira). Foreign-currency accounts also show their native balance.
+  "Prior Yr" is the same date one year earlier ({{ prior_as_of.isoformat() }}).
+</div>
 
 <div class="row g-3">
   <div class="col-md-6">
     <div class="card card-metric p-3">
       <h6>Assets</h6>
       <table class="table table-sm">
+        <thead><tr><th></th><th class="text-right">₦</th><th class="text-right border-left text-muted">Prior Yr ₦</th></tr></thead>
         <tbody>
           {% for a, native, base in assets %}
           <tr>
             <td>{{ a.code }} {{ a.name }}{% if a.currency != 'NGN' %} <span class="small text-muted">({{ a.symbol }}{{ "{:,.2f}".format(native) }} {{ a.currency }})</span>{% endif %}</td>
             <td class="text-right">{{ "{:,.2f}".format(-base if a.contra else base) }}</td>
+            <td class="text-right border-left text-muted">{{ "{:,.2f}".format((-1 if a.contra else 1) * prior_balances.get(a.id, 0)) }}</td>
           </tr>
           {% endfor %}
         </tbody>
-        <tfoot><tr class="fw-bold border-top"><td>Total Assets</td><td class="text-right">{{ "{:,.2f}".format(total_assets) }}</td></tr></tfoot>
+        <tfoot><tr class="fw-bold border-top">
+          <td>Total Assets</td>
+          <td class="text-right">{{ "{:,.2f}".format(total_assets) }}</td>
+          <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_total_assets) }}</td>
+        </tr></tfoot>
       </table>
     </div>
   </div>
@@ -25,26 +47,48 @@
     <div class="card card-metric p-3 mb-3">
       <h6>Liabilities</h6>
       <table class="table table-sm">
+        <thead><tr><th></th><th class="text-right">₦</th><th class="text-right border-left text-muted">Prior Yr ₦</th></tr></thead>
         <tbody>
           {% for a, native, base in liabilities %}
-          <tr><td>{{ a.code }} {{ a.name }}</td><td class="text-right">{{ "{:,.2f}".format(base) }}</td></tr>
+          <tr>
+            <td>{{ a.code }} {{ a.name }}</td>
+            <td class="text-right">{{ "{:,.2f}".format(base) }}</td>
+            <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_balances.get(a.id, 0)) }}</td>
+          </tr>
           {% else %}
-          <tr><td class="text-muted">None</td></tr>
+          <tr><td class="text-muted" colspan="3">None</td></tr>
           {% endfor %}
         </tbody>
-        <tfoot><tr class="fw-bold border-top"><td>Total Liabilities</td><td class="text-right">{{ "{:,.2f}".format(total_liabilities) }}</td></tr></tfoot>
+        <tfoot><tr class="fw-bold border-top">
+          <td>Total Liabilities</td>
+          <td class="text-right">{{ "{:,.2f}".format(total_liabilities) }}</td>
+          <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_total_liabilities) }}</td>
+        </tr></tfoot>
       </table>
     </div>
     <div class="card card-metric p-3">
       <h6>Equity / Net Assets</h6>
       <table class="table table-sm">
+        <thead><tr><th></th><th class="text-right">₦</th><th class="text-right border-left text-muted">Prior Yr ₦</th></tr></thead>
         <tbody>
           {% for a, native, base in equity %}
-          <tr><td>{{ a.code }} {{ a.name }}</td><td class="text-right">{{ "{:,.2f}".format(base) }}</td></tr>
+          <tr>
+            <td>{{ a.code }} {{ a.name }}</td>
+            <td class="text-right">{{ "{:,.2f}".format(base) }}</td>
+            <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_balances.get(a.id, 0)) }}</td>
+          </tr>
           {% endfor %}
-          <tr><td>Current Year Surplus/(Deficit)</td><td class="text-right">{{ "{:,.2f}".format(net_surplus) }}</td></tr>
+          <tr>
+            <td>Current Year Surplus/(Deficit)</td>
+            <td class="text-right">{{ "{:,.2f}".format(net_surplus) }}</td>
+            <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_net_surplus) }}</td>
+          </tr>
         </tbody>
-        <tfoot><tr class="fw-bold border-top"><td>Total Equity</td><td class="text-right">{{ "{:,.2f}".format(total_equity) }}</td></tr></tfoot>
+        <tfoot><tr class="fw-bold border-top">
+          <td>Total Equity</td>
+          <td class="text-right">{{ "{:,.2f}".format(total_equity) }}</td>
+          <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_total_equity) }}</td>
+        </tr></tfoot>
       </table>
     </div>
   </div>

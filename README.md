@@ -1,4 +1,4 @@
-# Acquiral SaaS (Phases 1–7)
+# Acquiral SaaS (Phases 1–8)
 
 Multi-tenant rebuild of Acquiral — fund accounting, fixed assets,
 Nigerian payroll, invoicing, and bank reconciliation, a product of
@@ -32,6 +32,11 @@ Admiral Sentinel. This package covers:
   shared, read-only sample organization (fictional data only), safe to
   link from admiralsentinel.com. Every write is blocked centrally for
   that tenant, so it never needs a reset job. See `scripts/seed_demo.py`.
+- **Phase 8**: Audit-readiness — period filtering plus prior-year
+  comparative figures on all 4 accounting reports, one-click PDF/Excel
+  export of each report, and supporting-document attachments (receipts,
+  invoices, grant letters) on journal entries, with the same tenant
+  isolation guarantees as every other table.
 
 See `ARCHITECTURE.md` for how tenant isolation actually works and why —
 read it before touching auth or adding a new tenant-scoped table. See
@@ -96,10 +101,15 @@ sudo -u postgres psql -d acquiral_dev -f scripts/setup_rls.sql   # re-apply (ide
 
 ## Roadmap
 
-Every item from the original 8-point roadmap is now complete except a
-custom domain for the deployed app (currently targets a
-platform-provided URL — see `DEPLOYMENT.md`'s "Custom domain" section
-for the follow-up steps whenever that's ready). Legal documents (Terms
-of Service, Privacy Policy, Data Processing Agreement, and NDPA
-compliance notes) were drafted separately as living documents — ask for
-their links if you need them again.
+Every item from the original 8-point roadmap is now complete, plus
+Phase 8's report exports/comparatives/attachments, except a custom
+domain for the deployed app (currently targets a platform-provided URL
+— see `DEPLOYMENT.md`'s "Custom domain" section for the follow-up steps
+whenever that's ready). Legal documents (Terms of Service, Privacy
+Policy, Data Processing Agreement, and NDPA compliance notes) were
+drafted separately as living documents — ask for their links if you
+need them again.
+
+Two further audit-readiness ideas were discussed but not built (not
+selected for this phase): an activity/audit log of who changed what and
+when, and period locking (blocking edits to a month once it's closed).

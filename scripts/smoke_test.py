@@ -338,4 +338,108 @@ if True:
     assert r.status_code == 404, "TENANT LEAK: Org2 could open Org1's bank statement import page"
     print("[OK] Org2 gets 404 trying to import a statement against Org1's bank account by known UUID")
 
+    # -----------------------------------------------------------------
+    # Phase 8: report exports (PDF/Excel), prior-year comparatives, and
+    # journal-entry document attachments.
+    # -----------------------------------------------------------------
+    with app.app_context():
+        org1 = Organization.query.filter_by(name="Social Action NGO").first()
+        set_tenant(org1.id)
+        from app.models.accounting import Account as AccountModel3
+        cash1 = AccountModel3.query.filter_by(code="1000").first()
+        income1 = AccountModel3.query.filter_by(type="Income").first()
+        cash1_id, income1_id = str(cash1.id), str(income1.id)
+        db.session.commit()
+
+    # A prior-year entry, so the comparative column has something to show.
+    r = c1.post("/journal/new", data={
+        "entry_date": "2025-09-15", "memo": "2025 grant", "reference": "",
+        "account_id[]": [cash1_id, income1_id], "project_id[]": ["", ""],
+        "debit[]": ["300000", "0"], "credit[]": ["0", "300000"],
+        "exchange_rate[]": ["1", "1"], "description[]": ["a", "b"],
+    }, follow_redirects=True)
+    assert r.status_code == 200
+    print("[OK] Org1 posted a prior-year (2025) journal entry for comparative testing")
+
+    r = c1.get("/reports/trial-balance?as_of=2026-09-27")
+    assert r.status_code == 200 and b"Prior Yr" in r.data
+    print("[OK] Trial balance renders with a prior-year comparative column")
+
+    for report, fmt, magic in [
+        ("trial-balance", "pdf", b"%PDF"), ("trial-balance", "xlsx", b"PK"),
+        ("income-statement", "pdf", b"%PDF"), ("income-statement", "xlsx", b"PK"),
+        ("by-project", "pdf", b"%PDF"), ("by-project", "xlsx", b"PK"),
+        ("balance-sheet", "pdf", b"%PDF"), ("balance-sheet", "xlsx", b"PK"),
+    ]:
+        r = c1.get(f"/reports/{report}/export/{fmt}?as_of=2026-09-27&start=2026-01-01&end=2026-12-31")
+        assert r.status_code == 200 and r.data[:len(magic)] == magic, f"{report} {fmt} export failed"
+    print("[OK] All 4 reports export cleanly as both PDF and Excel")
+
+    # Supporting-document attachments on a journal entry.
+    with app.app_context():
+        from app.models.accounting import JournalEntry as JE
+        org1 = Organization.query.filter_by(name="Social Action NGO").first()
+        set_tenant(org1.id)
+        an_entry = JE.query.filter_by(organization_id=org1.id).order_by(JE.entry_date.desc()).first()
+        an_entry_id = str(an_entry.id)
+        db.session.commit()
+
+    r = c1.post(f"/journal/{an_entry_id}/attachments",
+                data={"attachment_file": (io.BytesIO(b"%PDF-fake grant letter"), "grant_letter.pdf")},
+                content_type="multipart/form-data", follow_redirects=True)
+    assert b"Attached grant_letter.pdf" in r.data, r.data[:500]
+    print("[OK] Org1 attached a supporting document to a journal entry")
+
+    r = c1.get("/journal")
+    assert b"grant_letter.pdf" in r.data
+    print("[OK] Attached document appears on the journal listing page")
+
+    r = c2.get("/journal")
+    assert b"grant_letter.pdf" not in r.data, "TENANT LEAK: Org2 can see Org1's attachment filename!"
+    print("[OK] Org2 cannot see Org1's attachment on its own (empty) journal listing")
+
+    with app.app_context():
+        from app.models.accounting import JournalAttachment
+        org1 = Organization.query.filter_by(name="Social Action NGO").first()
+        set_tenant(org1.id)
+        att = JournalAttachment.query.filter_by(organization_id=org1.id).first()
+        att_id = str(att.id)
+        db.session.commit()
+
+    r = c1.get(f"/journal/{an_entry_id}/attachments/{att_id}")
+    assert r.status_code == 200 and r.data == b"%PDF-fake grant letter"
+    print("[OK] Org1 downloaded the attachment and got back the exact bytes uploaded")
+
+    r = c2.get(f"/journal/{an_entry_id}/attachments/{att_id}")
+    assert r.status_code == 404, "TENANT LEAK: Org2 could download Org1's attachment by known UUID"
+    print("[OK] Org2 gets 404 trying to download Org1's attachment by known UUID")
+
+    r = c2.post(f"/journal/{an_entry_id}/attachments/{att_id}/delete", follow_redirects=True)
+    assert r.status_code == 404, "TENANT LEAK: Org2 could delete Org1's attachment by known UUID"
+    print("[OK] Org2 gets 404 trying to delete Org1's attachment by known UUID")
+
+    r = c1.post(f"/journal/{an_entry_id}/attachments",
+                data={"attachment_file": (io.BytesIO(b"MZ fake exe"), "virus.exe")},
+                content_type="multipart/form-data", follow_redirects=True)
+    assert b"aren&#39;t accepted" in r.data or b"aren't accepted" in r.data, r.data[:500]
+    print("[OK] Executable upload rejected by extension allowlist")
+
+    # A second attachment, which gets removed -- leaving the FIRST one
+    # (grant_letter.pdf) in place so the RLS adversarial test that runs
+    # after this script still has a journal_attachments row to attack.
+    r = c1.post(f"/journal/{an_entry_id}/attachments",
+                data={"attachment_file": (io.BytesIO(b"%PDF-superseded budget"), "old_budget.pdf")},
+                content_type="multipart/form-data", follow_redirects=True)
+    assert b"Attached old_budget.pdf" in r.data, r.data[:500]
+    with app.app_context():
+        org1 = Organization.query.filter_by(name="Social Action NGO").first()
+        set_tenant(org1.id)
+        from app.models.accounting import JournalAttachment as JA2
+        old_att = JA2.query.filter_by(organization_id=org1.id, original_filename="old_budget.pdf").first()
+        old_att_id = str(old_att.id)
+        db.session.commit()
+    r = c1.post(f"/journal/{an_entry_id}/attachments/{old_att_id}/delete", follow_redirects=True)
+    assert b"Removed old_budget.pdf" in r.data, r.data[:500]
+    print("[OK] Org1 removed one attachment successfully, leaving the other in place")
+
 print("\nALL SMOKE TESTS PASSED")

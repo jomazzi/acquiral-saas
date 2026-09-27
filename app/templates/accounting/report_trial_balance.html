@@ -1,22 +1,46 @@
 {% extends "base.html" %}
 {% block title %}Trial Balance{% endblock %}
 {% block content %}
-<h3 class="mb-3">Trial Balance</h3>
-<div class="small text-muted mb-2">Foreign-currency accounts show their native balance and the Naira equivalent used for totals.</div>
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+  <h3 class="mb-0">Trial Balance</h3>
+  <div class="d-flex gap-2">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('accounting.report_trial_balance_export', fmt='pdf', as_of=as_of.isoformat()) }}">Download PDF</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('accounting.report_trial_balance_export', fmt='xlsx', as_of=as_of.isoformat()) }}">Download Excel</a>
+  </div>
+</div>
+<form method="get" class="d-flex align-items-end gap-2 mb-3">
+  <div>
+    <label class="form-label small mb-0">As of</label>
+    <input type="date" name="as_of" value="{{ as_of.isoformat() }}" class="form-control form-control-sm">
+  </div>
+  <button class="btn btn-sm btn-primary">Apply</button>
+</form>
+<div class="small text-muted mb-2">
+  Foreign-currency accounts show their native balance and the Naira equivalent used for totals.
+  Comparative column is the same date one year earlier ({{ prior_as_of.isoformat() }}).
+</div>
 <div class="card card-metric p-3">
   <table class="table table-sm">
-    <thead><tr><th>Code</th><th>Account</th><th>Native Balance</th><th class="text-right">Debit (₦)</th><th class="text-right">Credit (₦)</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Code</th><th>Account</th><th>Native Balance</th>
+        <th class="text-right">Debit (₦)</th><th class="text-right">Credit (₦)</th>
+        <th class="text-right border-left">Prior Yr Debit (₦)</th><th class="text-right">Prior Yr Credit (₦)</th>
+      </tr>
+    </thead>
     <tbody>
-      {% for a, d, c, d_base, c_base in rows %}
+      {% for a, d, c, d_base, c_base, pd_base, pc_base in rows %}
       <tr>
         <td>{{ a.code }}</td>
         <td>{{ a.name }}</td>
         <td>{% if a.currency != 'NGN' %}{{ a.symbol }}{{ "{:,.2f}".format(d if d else c) }} {{ a.currency }}{% else %}—{% endif %}</td>
         <td class="text-right">{{ "{:,.2f}".format(d_base) if d_base else '' }}</td>
         <td class="text-right">{{ "{:,.2f}".format(c_base) if c_base else '' }}</td>
+        <td class="text-right border-left text-muted">{{ "{:,.2f}".format(pd_base) if pd_base else '' }}</td>
+        <td class="text-right text-muted">{{ "{:,.2f}".format(pc_base) if pc_base else '' }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="5" class="text-muted">No transactions yet.</td></tr>
+      <tr><td colspan="7" class="text-muted">No transactions yet.</td></tr>
       {% endfor %}
     </tbody>
     <tfoot>
@@ -24,6 +48,8 @@
         <td colspan="3">Total</td>
         <td class="text-right">{{ "{:,.2f}".format(total_debit) }}</td>
         <td class="text-right">{{ "{:,.2f}".format(total_credit) }}</td>
+        <td class="text-right border-left text-muted">{{ "{:,.2f}".format(prior_total_debit) }}</td>
+        <td class="text-right text-muted">{{ "{:,.2f}".format(prior_total_credit) }}</td>
       </tr>
     </tfoot>
   </table>

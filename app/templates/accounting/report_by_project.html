@@ -1,7 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Report by Project{% endblock %}
 {% block content %}
-<h3 class="mb-3">Income &amp; Expense by Project / Funder</h3>
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+  <h3 class="mb-0">Income &amp; Expense by Project / Funder</h3>
+  <div class="d-flex gap-2">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('accounting.report_by_project_export', fmt='pdf', start=start.isoformat(), end=end.isoformat()) }}">Download PDF</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('accounting.report_by_project_export', fmt='xlsx', start=start.isoformat(), end=end.isoformat()) }}">Download Excel</a>
+  </div>
+</div>
+<form method="get" class="d-flex align-items-end gap-2 mb-3">
+  <div>
+    <label class="form-label small mb-0">From</label>
+    <input type="date" name="start" value="{{ start.isoformat() }}" class="form-control form-control-sm">
+  </div>
+  <div>
+    <label class="form-label small mb-0">To</label>
+    <input type="date" name="end" value="{{ end.isoformat() }}" class="form-control form-control-sm">
+  </div>
+  <button class="btn btn-sm btn-primary">Apply</button>
+</form>
+<div class="small text-muted mb-2">
+  Prior Yr columns are the same-length period one year earlier ({{ prior_start.isoformat() }} to {{ prior_end.isoformat() }}).
+</div>
 <div class="card card-metric p-3">
   <table class="table table-sm">
     <thead>
@@ -9,6 +29,9 @@
         <th>Project</th><th>Funder</th>
         <th class="text-right">Income</th><th class="text-right">Expense</th>
         <th class="text-right">Net</th><th class="text-right">Budget</th><th class="text-right">Remaining</th>
+        <th class="text-right border-left text-muted">Prior Yr Income</th>
+        <th class="text-right text-muted">Prior Yr Expense</th>
+        <th class="text-right text-muted">Prior Yr Net</th>
       </tr>
     </thead>
     <tbody>
@@ -21,9 +44,12 @@
         <td class="text-right {{ 'text-success' if s.net >= 0 else 'text-danger' }}">{{ "{:,.2f}".format(s.net) }}</td>
         <td class="text-right">{{ "{:,.2f}".format(s.budget) if s.budget else '—' }}</td>
         <td class="text-right">{{ "{:,.2f}".format(s.remaining) if s.budget else '—' }}</td>
+        <td class="text-right border-left text-muted">{{ "{:,.2f}".format(s.prior_income) }}</td>
+        <td class="text-right text-muted">{{ "{:,.2f}".format(s.prior_expense) }}</td>
+        <td class="text-right text-muted">{{ "{:,.2f}".format(s.prior_net) }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="7" class="text-muted">No projects yet.</td></tr>
+      <tr><td colspan="10" class="text-muted">No projects yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>
