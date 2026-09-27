@@ -199,7 +199,29 @@ def parse_pdf(file_bytes):
     Either way this only works on a text-based/table PDF -- a scanned
     image-only PDF will not parse, by design (see module docstring)."""
     header_row, all_rows = None, []
-    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+    try:
+        pdf_ctx = pdfplumber.open(io.BytesIO(file_bytes))
+    except Exception as exc:
+        # pdfminer raises its own exception types (not ours) for a
+        # password-protected PDF or one with a malformed/corrupted
+        # structure -- both are common for bank-issued statement PDFs
+        # (many Nigerian banks encrypt the download with the account
+        # number or the customer's date of birth as the password).
+        # Without this, either case previously reached the user as a
+        # raw 500 Internal Server Error instead of an actionable
+        # message, since pdfplumber.open() fails before any of our own
+        # error handling below ever runs.
+        raise StatementParseError(
+            "This PDF could not be opened -- it may be password-protected "
+            "(common for bank-issued statement downloads) or corrupted. "
+            "If it's password-protected, remove the password first (open it "
+            "in a PDF reader, enter the password, then 'Print to PDF' or "
+            "'Save As' to produce an unprotected copy) and re-import that "
+            "file. CSV or Excel exports from your bank, if available, avoid "
+            "this issue entirely."
+        ) from exc
+
+    with pdf_ctx as pdf:
         for settings in _PDF_TABLE_STRATEGIES:
             header_row, all_rows = _extract_tables(pdf, settings)
             if header_row is not None:
