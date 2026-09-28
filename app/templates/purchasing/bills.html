@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Bills{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Bills</h3>
+  <a href="{{ url_for('purchasing.bill_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> New Bill</a>
+</div>
+
+{% if outstanding_total %}
+<div class="card card-metric p-3 mb-3 d-inline-flex flex-row align-items-center gap-3">
+  <div class="icon-badge"><i class="bi bi-exclamation-circle"></i></div>
+  <div>
+    <div class="text-muted small">Total Outstanding (unpaid bills)</div>
+    <div class="fs-5 fw-bold">₦{{ "{:,.2f}".format(outstanding_total) }}</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card card-metric p-3">
+  <table class="table table-sm mb-0">
+    <thead>
+      <tr>
+        <th>Number</th><th>Vendor</th><th>Bill Date</th><th>Due</th>
+        <th class="text-end">Total</th><th>Status</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bills %}
+      <tr>
+        <td>{{ b.bill_number }}</td>
+        <td>{{ b.vendor.name }}</td>
+        <td>{{ b.bill_date }}</td>
+        <td>{{ b.due_date or '—' }}</td>
+        <td class="text-end">₦{{ "{:,.2f}".format(b.total) }}</td>
+        <td>
+          {% if b.status == 'paid' %}<span class="badge bg-success">Paid</span>
+          {% elif b.status == 'void' %}<span class="badge bg-secondary">Void</span>
+          {% elif b.is_overdue %}<span class="badge bg-danger">Overdue</span>
+          {% elif b.status == 'open' %}<span class="badge" style="background: var(--gold-400); color: var(--navy-900);">Open</span>
+          {% else %}<span class="badge bg-secondary">Draft</span>
+          {% endif %}
+        </td>
+        <td class="text-end"><a href="{{ url_for('purchasing.bill_detail', bill_id=b.id) }}" class="btn btn-sm btn-outline-secondary">View</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="text-muted">No bills yet. <a href="{{ url_for('purchasing.bill_new') }}">Enter one</a>.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

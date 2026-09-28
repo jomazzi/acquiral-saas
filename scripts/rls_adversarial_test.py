@@ -202,7 +202,8 @@ for table, name_col in [("bank_statement_imports", "original_filename"), ("bank_
 # `.filter_by(id=..., entry_id=...)` -- RLS is the backstop if that
 # route filter were ever forgotten or written wrong.
 # ---------------------------------------------------------------------
-for table, name_col in [("journal_attachments", "original_filename")]:
+for table, name_col in [("journal_attachments", "original_filename"),
+                         ("vendors", "name"), ("bills", "bill_number"), ("bill_lines", "description")]:
     row = psql_super(f"SELECT id, organization_id FROM {table} WHERE organization_id = '{org1_id}' LIMIT 1")
     if not row:
         print(f"[SKIP] no {table} row for org1 to test against -- run scripts/smoke_test.py first")

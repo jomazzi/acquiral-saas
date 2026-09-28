@@ -70,6 +70,7 @@ def create_app():
     from app.blueprints.payroll.routes import payroll_bp
     from app.blueprints.invoicing.routes import invoicing_bp
     from app.blueprints.banking.routes import banking_bp
+    from app.blueprints.purchasing.routes import purchasing_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(accounting_bp)
@@ -77,6 +78,7 @@ def create_app():
     app.register_blueprint(payroll_bp)
     app.register_blueprint(invoicing_bp)
     app.register_blueprint(banking_bp)
+    app.register_blueprint(purchasing_bp)
 
     APP_NAME = "Acquiral"
     APP_TAGLINE = "Fund accounting, fixed assets and Nigerian payroll — in one place."

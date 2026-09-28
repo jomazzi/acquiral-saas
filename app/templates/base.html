@@ -66,6 +66,8 @@
         {{ navlink('payroll.payroll_runs', 'bi-cash-stack', 'Payroll') }}
         {{ navlink('invoicing.customers_list', 'bi-person-vcard', 'Customers') }}
         {{ navlink('invoicing.invoices_list', 'bi-receipt', 'Invoices') }}
+        {{ navlink('purchasing.vendors_list', 'bi-truck', 'Vendors') }}
+        {{ navlink('purchasing.bills_list', 'bi-file-earmark-text', 'Bills') }}
 
         <li class="nav-item">
           <a class="side-link {{ 'active' if request.endpoint and request.endpoint.startswith('banking.') else '' }}" href="{{ url_for('banking.bank_accounts') }}">
@@ -141,5 +143,6 @@
 </div>
 
 <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

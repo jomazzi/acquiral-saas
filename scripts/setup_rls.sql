@@ -45,7 +45,10 @@ BEGIN
         'invoice_lines',
         'bank_statement_imports',
         'bank_transactions',
-        'journal_attachments'
+        'journal_attachments',
+        'vendors',
+        'bills',
+        'bill_lines'
     ]
     LOOP
         EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);

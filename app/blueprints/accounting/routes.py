@@ -84,6 +84,43 @@ def account_balance_base(account, as_of=None):
 # Dashboard
 # ---------------------------------------------------------------------------
 
+def _monthly_trend(bank_accounts, n_months=6):
+    """Income, expense and cash-position series for the trailing n_months
+    (oldest first), for the Dashboard's trend chart. Cash is an as-of
+    snapshot at each month's end (a point-in-time balance); income/expense
+    are flows summed within each month, matching how the rest of the app
+    already distinguishes point-in-time (Trial Balance/Balance Sheet)
+    from flow (Income Statement) figures via _as_of_query/_range_query."""
+    from calendar import monthrange
+
+    months = []
+    y, m = date.today().year, date.today().month
+    for _ in range(n_months):
+        months.append((y, m))
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    months.reverse()
+
+    labels, income_series, expense_series, cash_series = [], [], [], []
+    for (y, m) in months:
+        start = date(y, m, 1)
+        end = date(y, m, monthrange(y, m)[1])
+        labels.append(start.strftime("%b %Y"))
+
+        lines = _range_query(JournalLine.query.join(Account), start, end) \
+            .filter(Account.type.in_(["Income", "Expense"])).all()
+        inc = sum(l.credit_base - l.debit_base for l in lines if l.account.type == "Income")
+        exp = sum(l.debit_base - l.credit_base for l in lines if l.account.type == "Expense")
+        income_series.append(round(inc, 2))
+        expense_series.append(round(exp, 2))
+
+        cash = sum(account_balance_base(a, as_of=end) for a in bank_accounts)
+        cash_series.append(round(cash, 2))
+
+    return {"labels": labels, "income": income_series, "expense": expense_series, "cash": cash_series}
+
+
 @accounting_bp.route("/dashboard")
 @login_required
 def dashboard():
@@ -99,6 +136,30 @@ def dashboard():
 
     total_income = sum(balances_base.get(a.id, 0) for a in accounts if a.type == "Income")
     total_expense = sum(balances_base.get(a.id, 0) for a in accounts if a.type == "Expense")
+
+    # Top expense categories (all-time), for the "where the money goes"
+    # donut -- capped at 8 slices so a large chart of accounts doesn't
+    # produce an unreadable legend; anything beyond that is lumped in.
+    expense_rows = sorted(
+        ((a.name, balances_base.get(a.id, 0)) for a in accounts if a.type == "Expense" and balances_base.get(a.id, 0) > 0.01),
+        key=lambda row: -row[1],
+    )
+    if len(expense_rows) > 8:
+        other_total = sum(v for _, v in expense_rows[8:])
+        expense_rows = expense_rows[:8] + [("Other", other_total)]
+    expense_breakdown = {"labels": [r[0] for r in expense_rows], "values": [round(r[1], 2) for r in expense_rows]}
+
+    # Accounts Payable / Accounts Receivable snapshot for the "money owed
+    # to you vs money you owe" comparison -- these are the control
+    # accounts themselves, so the figure reflects EVERY posting that
+    # touched them (Invoices/Bills, but also a manual journal entry or a
+    # fixed asset bought "on payable"), not just rows in those tables.
+    ar_account = next((a for a in accounts if a.code == "2300"), None)
+    ap_account = next((a for a in accounts if a.code == "2000"), None)
+    receivables = balances_base.get(ar_account.id, 0) if ar_account else 0
+    payables = balances_base.get(ap_account.id, 0) if ap_account else 0
+
+    trend = _monthly_trend(bank_accounts)
 
     projects = Project.query.filter_by(active=True).all()
     project_summaries = []
@@ -128,6 +189,8 @@ def dashboard():
         recent_entries=recent_entries, bank_breakdown=bank_breakdown,
         asset_count=asset_count, total_nbv=total_nbv,
         employee_count=employee_count, latest_payroll=latest_payroll,
+        trend=trend, expense_breakdown=expense_breakdown,
+        receivables=receivables, payables=payables,
     )
 
 

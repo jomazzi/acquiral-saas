@@ -93,6 +93,44 @@
 </div>
 {% endif %}
 
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="card card-metric p-3">
+      <h6><i class="bi bi-bar-chart-line"></i> Income vs Expense (last 6 months)</h6>
+      <canvas id="chart-income-expense" height="220"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card card-metric p-3">
+      <h6><i class="bi bi-graph-up"></i> Cash Position Trend</h6>
+      <canvas id="chart-cash-trend" height="220"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="card card-metric p-3">
+      <h6><i class="bi bi-pie-chart"></i> Where the Money Goes (expenses, all-time)</h6>
+      {% if expense_breakdown.labels %}
+      <canvas id="chart-expense-breakdown" height="220"></canvas>
+      {% else %}
+      <p class="text-muted small mb-0">No expenses posted yet.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card card-metric p-3">
+      <h6><i class="bi bi-arrow-left-right"></i> Money Owed To You vs Money You Owe</h6>
+      <canvas id="chart-ar-ap" height="220"></canvas>
+      <div class="d-flex justify-content-between small text-muted mt-2">
+        <span>Accounts Receivable: <strong class="text-success">₦{{ "{:,.2f}".format(receivables) }}</strong></span>
+        <span>Accounts Payable: <strong class="text-danger">₦{{ "{:,.2f}".format(payables) }}</strong></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row g-3">
   <div class="col-lg-7">
     <div class="card card-metric p-3">
@@ -139,4 +177,90 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script>
+(function() {
+  // Palette pulled from the site's own design tokens (style.css) so the
+  // charts read as part of Acquiral rather than generic Chart.js defaults.
+  const NAVY = '#0F2D52', GOLD = '#D4A017', SUCCESS = '#187A56', DANGER = '#B3392E',
+        FX = '#D2691E', NAVY_LIGHT = '#5B84B0', GOLD_DARK = '#B8860B', MUTED = '#5B6B85';
+  const CATEGORY_COLORS = [NAVY, GOLD, SUCCESS, FX, NAVY_LIGHT, GOLD_DARK, DANGER, MUTED, '#7A8CA8'];
+
+  Chart.defaults.font.family = "'IBM Plex Sans', 'Segoe UI', sans-serif";
+  Chart.defaults.color = MUTED;
+
+  const trend = {{ trend | tojson }};
+  const expenseBreakdown = {{ expense_breakdown | tojson }};
+  const receivables = {{ receivables }};
+  const payables = {{ payables }};
+
+  new Chart(document.getElementById('chart-income-expense'), {
+    type: 'bar',
+    data: {
+      labels: trend.labels,
+      datasets: [
+        { label: 'Income', data: trend.income, backgroundColor: SUCCESS, borderRadius: 4 },
+        { label: 'Expense', data: trend.expense, backgroundColor: DANGER, borderRadius: 4 },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => '₦' + v.toLocaleString() } } },
+    },
+  });
+
+  new Chart(document.getElementById('chart-cash-trend'), {
+    type: 'line',
+    data: {
+      labels: trend.labels,
+      datasets: [{
+        label: 'Cash & Bank (₦ equiv.)', data: trend.cash,
+        borderColor: NAVY, backgroundColor: 'rgba(15, 45, 82, 0.08)',
+        fill: true, tension: 0.3, pointRadius: 3,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => '₦' + v.toLocaleString() } } },
+    },
+  });
+
+  {% if expense_breakdown.labels %}
+  new Chart(document.getElementById('chart-expense-breakdown'), {
+    type: 'doughnut',
+    data: {
+      labels: expenseBreakdown.labels,
+      datasets: [{ data: expenseBreakdown.values, backgroundColor: CATEGORY_COLORS, borderWidth: 2, borderColor: '#fff' }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
+    },
+  });
+  {% endif %}
+
+  new Chart(document.getElementById('chart-ar-ap'), {
+    type: 'bar',
+    data: {
+      labels: ['Receivable', 'Payable'],
+      datasets: [{ data: [receivables, payables], backgroundColor: [SUCCESS, DANGER], borderRadius: 4 }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      // When neither balance has any activity yet, Chart.js would
+      // otherwise auto-scale the axis to an odd 0-1 range -- give it a
+      // sensible floor so a brand-new org's dashboard still looks right.
+      scales: { x: { beginAtZero: true, suggestedMax: Math.max(receivables, payables, 100000),
+                     ticks: { callback: v => '₦' + v.toLocaleString() } } },
+    },
+  });
+})();
+</script>
 {% endblock %}

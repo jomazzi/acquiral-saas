@@ -442,4 +442,102 @@ if True:
     assert b"Removed old_budget.pdf" in r.data, r.data[:500]
     print("[OK] Org1 removed one attachment successfully, leaving the other in place")
 
+    # -----------------------------------------------------------------
+    # Accounts Payable: vendors, bills, approve (Dr Expense/Cr AP), and
+    # pay (Dr AP/Cr Bank). Mirrors the Invoicing (AR) tests above.
+    # -----------------------------------------------------------------
+    r = c1.post("/vendors", data={"name": "GTBank Internet Services", "email": "billing@gtb.example"},
+                follow_redirects=True)
+    assert b"GTBank Internet Services" in r.data
+    print("[OK] Org1 created Vendor GTBank Internet Services")
+
+    r = c2.get("/vendors")
+    assert b"GTBank Internet Services" not in r.data, "TENANT LEAK: Org2 can see Org1's vendor!"
+    print("[OK] Org2 cannot see Org1's vendor")
+
+    with app.app_context():
+        org1 = Organization.query.filter_by(name="Social Action NGO").first()
+        set_tenant(org1.id)
+        from app.models.purchasing import Vendor
+        from app.models.accounting import Account as AccountModel4
+        vendor1 = Vendor.query.filter_by(organization_id=org1.id, name="GTBank Internet Services").first()
+        vendor1_id = str(vendor1.id)
+        utilities_acct = AccountModel4.query.filter_by(code="5400").first()
+        utilities_acct_id = str(utilities_acct.id)
+        db.session.commit()
+
+    r = c2.get(f"/vendors/{vendor1_id}/edit")
+    assert r.status_code == 404, "TENANT LEAK: Org2 could open Org1's vendor-edit page by known UUID"
+    print("[OK] Org2 gets 404 trying to open Org1's vendor-edit page by known UUID")
+
+    r = c1.post("/bills/new", data={
+        "vendor_id": vendor1_id, "bill_date": "2026-09-01", "due_date": "2026-09-30", "reference": "INV-9981",
+        "account_id[]": [utilities_acct_id], "description[]": ["September internet"], "amount[]": ["45000"],
+        "notes": "",
+    }, follow_redirects=True)
+    assert b"created as a draft" in r.data, r.data[:500]
+    m = re.search(rb"/bills/([0-9a-f-]{36})", r.data)
+    bill1_id = m.group(1).decode()
+    print(f"[OK] Org1 created draft bill {bill1_id}")
+
+    r = c2.get(f"/bills/{bill1_id}")
+    assert r.status_code == 404, "TENANT LEAK: Org2 could open Org1's bill by known UUID"
+    print("[OK] Org2 gets 404 trying to open Org1's bill by known UUID")
+
+    r = c1.post(f"/bills/{bill1_id}/approve", follow_redirects=True)
+    assert b"posted to the journal" in r.data, r.data[:500]
+    print("[OK] Org1 approved the bill (posted Dr Utilities Expense / Cr Accounts Payable)")
+
+    # Accounts Payable already carries a balance from the earlier "buy a
+    # fixed asset on payable" test above, so check the DELTA the bill
+    # approval adds, not an absolute value.
+    with app.app_context():
+        org1 = Organization.query.filter_by(name="Social Action NGO").first()
+        set_tenant(org1.id)
+        from app.blueprints.accounting.routes import account_balance_base
+        ap_acct = AccountModel4.query.filter_by(code="2000").first()
+        ap_balance_before_pay = account_balance_base(ap_acct)
+        db.session.commit()
+    print(f"[OK] Accounts Payable balance is {ap_balance_before_pay:,.2f} after the bill is approved (an outstanding payable, up from the earlier fixed-asset-on-payable balance)")
+
+    r = c1.get("/bills")
+    assert b"Total Outstanding" in r.data and b"45,000.00" in r.data
+    print("[OK] Bills list shows the bill as Open with a 45,000 Total Outstanding")
+
+    with app.app_context():
+        org1 = Organization.query.filter_by(name="Social Action NGO").first()
+        set_tenant(org1.id)
+        bank1 = AccountModel4.query.filter_by(code="1010").first()
+        bank1_id = str(bank1.id)
+        db.session.commit()
+
+    r = c1.post(f"/bills/{bill1_id}/pay", data={"bank_account_id": bank1_id}, follow_redirects=True)
+    assert b"marked as paid" in r.data, r.data[:500]
+    print("[OK] Org1 paid the bill (posted Dr Accounts Payable / Cr Bank)")
+
+    with app.app_context():
+        org1 = Organization.query.filter_by(name="Social Action NGO").first()
+        set_tenant(org1.id)
+        ap_acct = AccountModel4.query.filter_by(code="2000").first()
+        ap_balance_after = account_balance_base(ap_acct)
+        db.session.commit()
+    assert round(ap_balance_before_pay - ap_balance_after, 2) == 45000.0, (
+        f"expected paying the bill to reduce Accounts Payable by exactly 45,000, "
+        f"went from {ap_balance_before_pay} to {ap_balance_after}"
+    )
+    print("[OK] Paying the bill reduced Accounts Payable by exactly 45,000")
+
+    # A second, still-draft bill to exercise void (and to leave a 'draft'
+    # row behind, same rationale as invoices/journal attachments above).
+    r = c1.post("/bills/new", data={
+        "vendor_id": vendor1_id, "bill_date": "2026-09-05", "due_date": "", "reference": "",
+        "account_id[]": [utilities_acct_id], "description[]": ["Duplicate entry, voiding"], "amount[]": ["5000"],
+        "notes": "",
+    }, follow_redirects=True)
+    m = re.search(rb"/bills/([0-9a-f-]{36})", r.data)
+    bill2_id = m.group(1).decode()
+    r = c1.post(f"/bills/{bill2_id}/void", follow_redirects=True)
+    assert b"voided" in r.data, r.data[:500]
+    print("[OK] Org1 voided a draft bill with no journal impact")
+
 print("\nALL SMOKE TESTS PASSED")

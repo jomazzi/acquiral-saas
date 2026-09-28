@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Edit Vendor{% endblock %}
+{% block content %}
+<h3 class="mb-3">Edit Vendor</h3>
+
+<form method="post" class="card card-metric p-4" style="max-width: 560px;">
+  <div class="mb-2">
+    <label class="form-label small">Name</label>
+    <input type="text" name="name" class="form-control" value="{{ vendor.name }}" required>
+  </div>
+  <div class="mb-2">
+    <label class="form-label small">Email</label>
+    <input type="email" name="email" class="form-control" value="{{ vendor.email or '' }}">
+  </div>
+  <div class="mb-2">
+    <label class="form-label small">Phone</label>
+    <input type="text" name="phone" class="form-control" value="{{ vendor.phone or '' }}">
+  </div>
+  <div class="mb-2">
+    <label class="form-label small">Address</label>
+    <textarea name="address" class="form-control" rows="2">{{ vendor.address or '' }}</textarea>
+  </div>
+  <div class="mb-2">
+    <label class="form-label small">Notes</label>
+    <textarea name="notes" class="form-control" rows="2">{{ vendor.notes or '' }}</textarea>
+  </div>
+  <div class="form-check mb-3">
+    <input type="checkbox" name="active" class="form-check-input" id="active" {% if vendor.active %}checked{% endif %}>
+    <label class="form-check-label" for="active">Active</label>
+  </div>
+  <button class="btn btn-primary">Save</button>
+  <a href="{{ url_for('purchasing.vendors_list') }}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+{% endblock %}
