@@ -51,6 +51,13 @@ class Account(TenantScopedMixin, db.Model):
     active = db.Column(db.Boolean, default=True)
     currency = db.Column(db.String(3), default=BASE_CURRENCY)
     is_cash_or_bank = db.Column(db.Boolean, default=False)
+    # Bank-identifying details, relevant only when is_cash_or_bank is set --
+    # shown on the Chart of Accounts and useful for matching a physical
+    # bank statement to the right ledger account at a glance. The bank's
+    # own name is already part of the account name (e.g. "Zenith Bank -
+    # USD Grant Account"), so it isn't duplicated as a separate field.
+    account_number = db.Column(db.String(50))
+    bank_branch = db.Column(db.String(150))
 
     # Account codes unique WITHIN an org's chart of accounts only.
     __table_args__ = (db.UniqueConstraint("organization_id", "code", name="uq_account_org_code"),)

@@ -11,14 +11,27 @@
   <div class="card card-metric p-3 mb-3">
     <h6>{{ type }}</h6>
     <table class="table table-sm mb-0">
-      <thead><tr><th>Code</th><th>Name</th><th>Currency</th><th class="text-right">Balance</th></tr></thead>
+      <thead><tr><th>Code</th><th>Name</th><th>Currency</th><th class="text-right">Balance</th><th></th></tr></thead>
       <tbody>
         {% for a in grouped[type] %}
         <tr>
           <td>{{ a.code }}</td>
-          <td>{{ a.name }}{% if a.is_cash_or_bank %} <i class="bi bi-bank text-muted" title="Cash/bank account"></i>{% endif %}</td>
+          <td>
+            {{ a.name }}
+            {% if a.is_cash_or_bank %}
+            <i class="bi bi-bank {{ 'text-fx-account' if a.currency != 'NGN' else 'text-muted' }}" title="{{ 'Cash/bank account (foreign currency)' if a.currency != 'NGN' else 'Cash/bank account' }}"></i>
+            {% endif %}
+            {% if a.is_cash_or_bank and (a.account_number or a.bank_branch) %}
+            <div class="small text-muted">
+              {% if a.account_number %}Acct: {{ a.account_number }}{% endif %}
+              {% if a.account_number and a.bank_branch %} · {% endif %}
+              {% if a.bank_branch %}{{ a.bank_branch }}{% endif %}
+            </div>
+            {% endif %}
+          </td>
           <td>{{ a.currency }}</td>
           <td class="text-right">{{ a.symbol }}{{ "{:,.2f}".format(balances.get(a.id, 0)) }}</td>
+          <td class="text-right"><a href="{{ url_for('accounting.account_edit', account_id=a.id) }}" class="small">Edit</a></td>
         </tr>
         {% endfor %}
       </tbody>

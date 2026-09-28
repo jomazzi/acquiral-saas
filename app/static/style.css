@@ -21,6 +21,11 @@
   --danger: #B3392E;
   --danger-bg: #FBEAE8;
   --warning: #B8860B;
+  /* Distinct from --gold/--warning on purpose: this marks a foreign-currency
+     account specifically (e.g. the bank icon on a USD/EUR/GBP account in
+     the Chart of Accounts), so it needs to read as its own signal rather
+     than blend with the gold accent used everywhere else in the theme. */
+  --fx-accent: #D2691E;
 
   --ink: #16233B;
   --muted: #5B6B85;
@@ -298,6 +303,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .brand-wordmark, .sidebar-brand, .mobile-
 /* ---- Text utility colors matched to palette ---- */
 .text-success { color: var(--success) !important; }
 .text-danger { color: var(--danger) !important; }
+.text-fx-account { color: var(--fx-accent) !important; }
 
 /* ---- Icon accents ---- */
 .icon-badge {

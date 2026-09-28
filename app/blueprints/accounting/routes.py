@@ -158,6 +158,8 @@ def account_new():
         contra = bool(request.form.get("contra"))
         currency = request.form.get("currency") or "NGN"
         is_cash_or_bank = bool(request.form.get("is_cash_or_bank"))
+        account_number = request.form.get("account_number", "").strip() or None
+        bank_branch = request.form.get("bank_branch", "").strip() or None
         if Account.query.filter_by(code=code).first():
             flash(f"Account code {code} already exists.", "error")
         else:
@@ -165,11 +167,36 @@ def account_new():
                 organization_id=current_user.organization_id,
                 code=code, name=name, type=type_, contra=contra,
                 currency=currency, is_cash_or_bank=is_cash_or_bank,
+                account_number=account_number, bank_branch=bank_branch,
             ))
             db.session.commit()
             flash("Account created.", "success")
             return redirect(url_for("accounting.accounts_list"))
     return render_template("accounting/account_form.html", types=ACCOUNT_TYPES, currencies=CURRENCIES)
+
+
+@accounting_bp.route("/accounts/<uuid:account_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def account_edit(account_id):
+    account = Account.query.filter_by(id=account_id).first_or_404()
+    if request.method == "POST":
+        new_code = request.form["code"].strip()
+        if new_code != account.code and Account.query.filter_by(code=new_code).first():
+            flash(f"Account code {new_code} already exists.", "error")
+            return render_template("accounting/account_form.html", types=ACCOUNT_TYPES, currencies=CURRENCIES, account=account)
+        account.code = new_code
+        account.name = request.form["name"].strip()
+        account.type = request.form["type"]
+        account.contra = bool(request.form.get("contra"))
+        account.currency = request.form.get("currency") or "NGN"
+        account.is_cash_or_bank = bool(request.form.get("is_cash_or_bank"))
+        account.account_number = request.form.get("account_number", "").strip() or None
+        account.bank_branch = request.form.get("bank_branch", "").strip() or None
+        db.session.commit()
+        flash("Account updated.", "success")
+        return redirect(url_for("accounting.accounts_list"))
+    return render_template("accounting/account_form.html", types=ACCOUNT_TYPES, currencies=CURRENCIES, account=account)
 
 
 # ---------------------------------------------------------------------------
