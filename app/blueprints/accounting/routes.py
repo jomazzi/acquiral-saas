@@ -284,8 +284,36 @@ def project_edit(project_id):
 @accounting_bp.route("/journal")
 @login_required
 def journal_list():
-    entries = JournalEntry.query.order_by(JournalEntry.entry_date.desc(), JournalEntry.created_at.desc()).all()
-    return render_template("accounting/journal.html", entries=entries)
+    query = JournalEntry.query.order_by(JournalEntry.entry_date.desc(), JournalEntry.created_at.desc())
+
+    start_raw = request.args.get("start", "").strip()
+    end_raw = request.args.get("end", "").strip()
+    start = end = None
+    try:
+        if start_raw:
+            start = datetime.strptime(start_raw, "%Y-%m-%d").date()
+            query = query.filter(JournalEntry.entry_date >= start)
+    except ValueError:
+        start_raw = ""
+    try:
+        if end_raw:
+            end = datetime.strptime(end_raw, "%Y-%m-%d").date()
+            query = query.filter(JournalEntry.entry_date <= end)
+    except ValueError:
+        end_raw = ""
+
+    page = request.args.get("page", 1, type=int)
+    if page < 1:
+        page = 1
+    pagination = query.paginate(page=page, per_page=25, error_out=False)
+
+    return render_template(
+        "accounting/journal.html",
+        entries=pagination.items,
+        pagination=pagination,
+        start=start_raw,
+        end=end_raw,
+    )
 
 
 @accounting_bp.route("/journal/new", methods=["GET", "POST"])

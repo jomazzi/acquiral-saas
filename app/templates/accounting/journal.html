@@ -6,6 +6,28 @@
   <a href="{{ url_for('accounting.journal_new') }}" class="btn btn-primary btn-sm">+ New Entry</a>
 </div>
 
+<form method="get" class="card card-metric p-3 mb-3 d-flex flex-row flex-wrap gap-3 align-items-end">
+  <div>
+    <label class="form-label small mb-1">From</label>
+    <input type="date" name="start" value="{{ start }}" class="form-control form-control-sm">
+  </div>
+  <div>
+    <label class="form-label small mb-1">To</label>
+    <input type="date" name="end" value="{{ end }}" class="form-control form-control-sm">
+  </div>
+  <div>
+    <button class="btn btn-sm btn-outline-primary">Filter</button>
+    {% if start or end %}
+    <a href="{{ url_for('accounting.journal_list') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+    {% endif %}
+  </div>
+  {% if pagination.total %}
+  <div class="ms-auto small text-muted">
+    {{ pagination.total }} entr{{ 'y' if pagination.total == 1 else 'ies' }}{% if start or end %} in range{% endif %}
+  </div>
+  {% endif %}
+</form>
+
 {% for e in entries %}
 <div class="card card-metric p-3 mb-3">
   <div class="d-flex justify-content-between">
@@ -67,6 +89,35 @@
   </div>
 </div>
 {% else %}
+{% if start or end %}
+<p class="text-muted">No journal entries in this date range. <a href="{{ url_for('accounting.journal_list') }}">Clear the filter</a>.</p>
+{% else %}
 <p class="text-muted">No journal entries yet. <a href="{{ url_for('accounting.journal_new') }}">Post the first one</a>.</p>
+{% endif %}
 {% endfor %}
+
+{% if pagination and pagination.pages > 1 %}
+<nav class="d-flex justify-content-between align-items-center mt-3">
+  <div class="small text-muted">
+    Page {{ pagination.page }} of {{ pagination.pages }}
+  </div>
+  <ul class="pagination pagination-sm mb-0">
+    <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+      <a class="page-link" href="{{ url_for('accounting.journal_list', page=pagination.prev_num, start=start, end=end) if pagination.has_prev else '#' }}">Previous</a>
+    </li>
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <li class="page-item {{ 'active' if p == pagination.page }}">
+        <a class="page-link" href="{{ url_for('accounting.journal_list', page=p, start=start, end=end) }}">{{ p }}</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+    {% endfor %}
+    <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+      <a class="page-link" href="{{ url_for('accounting.journal_list', page=pagination.next_num, start=start, end=end) if pagination.has_next else '#' }}">Next</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
 {% endblock %}
