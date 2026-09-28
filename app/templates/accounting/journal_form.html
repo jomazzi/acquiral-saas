@@ -49,7 +49,7 @@
         <td><input type="text" name="description[]" class="form-control form-control-sm"></td>
         <td><input type="number" step="0.01" name="debit[]" class="form-control form-control-sm debit-input"></td>
         <td><input type="number" step="0.01" name="credit[]" class="form-control form-control-sm credit-input"></td>
-        <td><input type="number" step="0.0001" name="exchange_rate[]" class="form-control form-control-sm rate-input" value="1" disabled></td>
+        <td><input type="number" step="0.0001" name="exchange_rate[]" class="form-control form-control-sm rate-input bg-light" value="1" readonly></td>
         <td class="small text-muted ngn-equiv pt-2">—</td>
       </tr>
       {% endfor %}
@@ -83,10 +83,12 @@ function updateRow(row) {
   const rateInput = row.querySelector('.rate-input');
   const cur = currencyOf(select);
   if (cur === 'NGN' || !select.value) {
-    rateInput.disabled = true;
+    rateInput.readOnly = true;
+    rateInput.classList.add('bg-light');
     rateInput.value = 1;
   } else {
-    rateInput.disabled = false;
+    rateInput.readOnly = false;
+    rateInput.classList.remove('bg-light');
     if (!rateInput.value || rateInput.value == 1) rateInput.value = '';
   }
   const deb = parseFloat(row.querySelector('.debit-input').value || 0);
@@ -129,7 +131,8 @@ document.getElementById('add-line').addEventListener('click', function() {
   row.querySelectorAll('input').forEach(i => { i.value = ''; });
   row.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
   row.querySelector('.rate-input').value = 1;
-  row.querySelector('.rate-input').disabled = true;
+  row.querySelector('.rate-input').readOnly = true;
+  row.querySelector('.rate-input').classList.add('bg-light');
   row.querySelector('.ngn-equiv').textContent = '—';
   body.appendChild(row);
 });
