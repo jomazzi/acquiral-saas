@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Log in — {{ app_name }}</title>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
@@ -17,10 +17,7 @@
       <div class="col-md-4">
         <div class="text-center mb-4">
           <a href="{{ url_for('landing') }}" class="d-inline-flex align-items-center gap-2 text-decoration-none">
-            <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-              <rect width="40" height="40" rx="10" fill="#D4A017"/>
-              <path d="M20 9 L30 31 H25.5 L23.3 25.5 H16.7 L14.5 31 H10 L20 9 Z M20 15.5 L17.6 21.5 H22.4 L20 15.5 Z" fill="#0F2D52"/>
-            </svg>
+            <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="Acquiral">
             <span style="font-family:'Sora',sans-serif; font-weight:700; color:#fff; font-size:1.3rem;">{{ app_name }}</span>
           </a>
         </div>

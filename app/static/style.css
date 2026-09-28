@@ -327,8 +327,9 @@ footer.app-footer {
 footer.app-footer a { color: var(--navy-800); text-decoration: none; font-weight: 600; }
 footer.app-footer a:hover { text-decoration: underline; }
 
-/* ---- Logo mark (used inline via SVG in templates) ---- */
+/* ---- Logo mark (the Acquiral "A" icon, static/logo-mark.png) ---- */
 .brand-mark {
   width: 30px; height: 30px;
   flex-shrink: 0;
+  object-fit: contain;
 }

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
@@ -32,10 +32,7 @@
     <i class="bi bi-list"></i>
   </button>
   <a class="mobile-brand" href="{{ url_for('accounting.dashboard') }}">
-    <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-      <rect width="40" height="40" rx="10" fill="#D4A017"/>
-      <path d="M20 9 L30 31 H25.5 L23.3 25.5 H16.7 L14.5 31 H10 L20 9 Z M20 15.5 L17.6 21.5 H22.4 L20 15.5 Z" fill="#0F2D52"/>
-    </svg>
+    <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="Acquiral">
     {{ app_name }}
   </a>
 </header>
@@ -46,10 +43,7 @@
   <div class="offcanvas-lg offcanvas-start acquiral-sidebar" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
     <div class="offcanvas-header d-lg-none">
       <a class="mobile-brand" id="sidebarLabel" href="{{ url_for('accounting.dashboard') }}">
-        <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <rect width="40" height="40" rx="10" fill="#D4A017"/>
-          <path d="M20 9 L30 31 H25.5 L23.3 25.5 H16.7 L14.5 31 H10 L20 9 Z M20 15.5 L17.6 21.5 H22.4 L20 15.5 Z" fill="#0F2D52"/>
-        </svg>
+        <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="Acquiral">
         {{ app_name }}
       </a>
       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
@@ -57,10 +51,7 @@
 
     <div class="offcanvas-body sidebar-body">
       <a class="sidebar-brand d-none d-lg-flex" href="{{ url_for('accounting.dashboard') }}">
-        <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-          <rect width="40" height="40" rx="10" fill="#D4A017"/>
-          <path d="M20 9 L30 31 H25.5 L23.3 25.5 H16.7 L14.5 31 H10 L20 9 Z M20 15.5 L17.6 21.5 H22.4 L20 15.5 Z" fill="#0F2D52"/>
-        </svg>
+        <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="Acquiral">
         {{ app_name }}
       </a>
 
