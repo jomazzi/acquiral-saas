@@ -123,7 +123,7 @@ def create_app():
         flash("You're in the shared Acquiral demo — explore freely, nothing you change here is saved.", "success")
         return redirect(url_for("accounting.dashboard"))
 
-    @app.route("/internal/seed-demo", methods=["POST"])
+    @app.route("/internal/seed-demo", methods=["GET", "POST"])
     def internal_seed_demo():
         """One-time, manually-triggered hook to bring this deploy's own
         database up to date and seed the public demo org: runs
