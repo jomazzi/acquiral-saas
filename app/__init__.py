@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 import uuid
 
 from flask import Flask, g, render_template, redirect, url_for, request, flash
@@ -119,6 +122,37 @@ def create_app():
         login_user(demo_user)
         flash("You're in the shared Acquiral demo — explore freely, nothing you change here is saved.", "success")
         return redirect(url_for("accounting.dashboard"))
+
+    @app.route("/internal/seed-demo", methods=["POST"])
+    def internal_seed_demo():
+        """One-time, manually-triggered hook to run scripts/seed_demo.py
+        against this deploy's own database.
+
+        Exists ONLY because the Render Free plan offers neither a Shell
+        tab nor a configurable Pre-Deploy Command, so there is no other
+        way to run a one-off script against the database from outside a
+        request -- the platform's web process is the only thing with a
+        working DB connection. Guarded by a random token set as the
+        ADMIN_SEED_TOKEN env var (never committed, never defaulted) so
+        this isn't just an open "wipe and reseed the demo" endpoint
+        sitting on the public internet.
+
+        Safe to leave in place (seed_demo.py itself is idempotent -- a
+        second run just prints "already exists" and exits), but once the
+        demo org is seeded, removing ADMIN_SEED_TOKEN from the environment
+        (or removing this route in a follow-up commit) closes it off.
+        """
+        expected = os.environ.get("ADMIN_SEED_TOKEN")
+        if not expected or request.args.get("token") != expected:
+            return "Not found", 404
+        result = subprocess.run(
+            [sys.executable, "scripts/seed_demo.py"] + (["--reset"] if request.args.get("reset") == "1" else []),
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            env={**os.environ, "PYTHONPATH": "."},
+            capture_output=True, text=True, timeout=180,
+        )
+        output = f"exit code: {result.returncode}\n\n--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}"
+        return output, 200, {"Content-Type": "text/plain"}
 
     @app.before_request
     def apply_tenant_context():
