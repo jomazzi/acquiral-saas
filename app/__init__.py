@@ -125,34 +125,67 @@ def create_app():
 
     @app.route("/internal/seed-demo", methods=["POST"])
     def internal_seed_demo():
-        """One-time, manually-triggered hook to run scripts/seed_demo.py
-        against this deploy's own database.
+        """One-time, manually-triggered hook to bring this deploy's own
+        database up to date and seed the public demo org: runs
+        `flask db upgrade`, applies scripts/setup_rls.sql (via psycopg2
+        rather than shelling out to `psql`, which isn't installed in
+        this image -- see Dockerfile's comment on staying dependency-free),
+        then runs scripts/seed_demo.py.
 
         Exists ONLY because the Render Free plan offers neither a Shell
         tab nor a configurable Pre-Deploy Command, so there is no other
-        way to run a one-off script against the database from outside a
-        request -- the platform's web process is the only thing with a
+        way to run these one-off steps against the database from outside
+        a request -- the platform's web process is the only thing with a
         working DB connection. Guarded by a random token set as the
         ADMIN_SEED_TOKEN env var (never committed, never defaulted) so
-        this isn't just an open "wipe and reseed the demo" endpoint
-        sitting on the public internet.
+        this isn't just an open "touch the database" endpoint sitting on
+        the public internet.
 
-        Safe to leave in place (seed_demo.py itself is idempotent -- a
-        second run just prints "already exists" and exits), but once the
-        demo org is seeded, removing ADMIN_SEED_TOKEN from the environment
-        (or removing this route in a follow-up commit) closes it off.
+        Safe to leave in place (every step here is idempotent -- migrations
+        no-op once applied, the RLS SQL uses IF NOT EXISTS/OR REPLACE
+        throughout, and seed_demo.py just prints "already exists" and
+        exits on a second run), but once the demo org is seeded, removing
+        ADMIN_SEED_TOKEN from the environment (or this route in a
+        follow-up commit) closes it off.
         """
         expected = os.environ.get("ADMIN_SEED_TOKEN")
         if not expected or request.args.get("token") != expected:
             return "Not found", 404
-        result = subprocess.run(
-            [sys.executable, "scripts/seed_demo.py"] + (["--reset"] if request.args.get("reset") == "1" else []),
-            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            env={**os.environ, "PYTHONPATH": "."},
-            capture_output=True, text=True, timeout=180,
+
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        run_env = {**os.environ, "PYTHONPATH": "."}
+        log = []
+
+        migrate_result = subprocess.run(
+            [sys.executable, "-m", "flask", "db", "upgrade"],
+            cwd=repo_root, env=run_env, capture_output=True, text=True, timeout=120,
         )
-        output = f"exit code: {result.returncode}\n\n--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}"
-        return output, 200, {"Content-Type": "text/plain"}
+        log.append(f"--- flask db upgrade (exit {migrate_result.returncode}) ---\n"
+                    f"{migrate_result.stdout}\n{migrate_result.stderr}")
+        if migrate_result.returncode != 0:
+            return "\n\n".join(log), 200, {"Content-Type": "text/plain"}
+
+        try:
+            import psycopg2
+            with open(os.path.join(repo_root, "scripts", "setup_rls.sql")) as f:
+                rls_sql = f.read()
+            conn = psycopg2.connect(os.environ["DATABASE_URL"])
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                cur.execute(rls_sql)
+            conn.close()
+            log.append("--- setup_rls.sql: applied successfully ---")
+        except Exception as e:
+            log.append(f"--- setup_rls.sql: FAILED ---\n{type(e).__name__}: {e}")
+            return "\n\n".join(log), 200, {"Content-Type": "text/plain"}
+
+        seed_result = subprocess.run(
+            [sys.executable, "scripts/seed_demo.py"] + (["--reset"] if request.args.get("reset") == "1" else []),
+            cwd=repo_root, env=run_env, capture_output=True, text=True, timeout=180,
+        )
+        log.append(f"--- seed_demo.py (exit {seed_result.returncode}) ---\n"
+                    f"{seed_result.stdout}\n{seed_result.stderr}")
+        return "\n\n".join(log), 200, {"Content-Type": "text/plain"}
 
     @app.before_request
     def apply_tenant_context():
