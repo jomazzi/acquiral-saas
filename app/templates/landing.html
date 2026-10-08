@@ -48,9 +48,10 @@
           <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="Acquiral">
           <span style="font-size:1.2rem;">{{ app_name }}</span>
         </a>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+          <a href="{{ url_for('billing.pricing') }}" class="btn btn-link text-white text-decoration-none">Pricing</a>
           <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light">Log in</a>
-          <a href="{{ url_for('auth.signup') }}" class="btn btn-gold">Start free</a>
+          <a href="{{ url_for('auth.signup') }}" class="btn btn-gold">Start free trial</a>
         </div>
       </nav>
 
@@ -60,8 +61,8 @@
           <h1 class="mb-3">Fund accounting, fixed assets and payroll — built for how Nigerian NGOs and businesses actually work.</h1>
           <p class="lead mb-4">Track every donor-funded project separately, keep a proper fixed-asset register, and run payroll under the Nigeria Tax Act 2025 — all from one place, without wrestling generic accounting software into shape.</p>
           <div class="d-flex gap-3">
-            <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg">Start free</a>
-            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg">Log in to your workspace</a>
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg">Start free trial</a>
+            <a href="{{ url_for('billing.pricing') }}" class="btn btn-outline-light btn-lg">See pricing</a>
           </div>
         </div>
       </div>
@@ -122,8 +123,9 @@
   <div class="container pb-5">
     <div class="cta-band">
       <h3 class="mb-3" style="color:#fff;">Ready to see your books, clearly.</h3>
-      <p class="mb-4" style="color:rgba(255,255,255,0.8);">Log in to your organisation's workspace to get started.</p>
-      <a href="{{ url_for('auth.login') }}" class="btn btn-gold btn-lg">Log in</a>
+      <p class="mb-4" style="color:rgba(255,255,255,0.8);">Try everything free for 14 days — no card needed.</p>
+      <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg">Start free trial</a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg ms-2">Log in</a>
     </div>
   </div>
 

@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
@@ -7,6 +8,8 @@ from app.extensions import db
 from app.decorators import admin_required
 from app.models.tenant import Organization, User
 from app.models.accounting import seed_default_accounts
+from app.billing import plans
+from app.billing.access import utcnow, user_limit
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -42,7 +45,8 @@ def signup():
         base_slug = "".join(c.lower() if c.isalnum() else "-" for c in org_name).strip("-") or "org"
         slug = _unique_slug(base_slug)
 
-        org = Organization(name=org_name, slug=slug)
+        org = Organization(name=org_name, slug=slug, billing_status="trialing",
+                           trial_ends_at=utcnow() + timedelta(days=plans.TRIAL_DAYS))
         db.session.add(org)
         db.session.commit()  # need org.id before we can create the tenant-scoped user
 
@@ -131,8 +135,13 @@ def users_list():
         exists = User.query.filter_by(
             organization_id=current_user.organization_id, username=username
         ).first()
+        limit = user_limit(current_user.organization)
+        active_count = User.query.filter_by(organization_id=current_user.organization_id, active=True).count()
         if exists:
             flash("That username already exists.", "error")
+        elif limit is not None and active_count >= limit:
+            flash(f"Your plan allows up to {limit} active users. "
+                  "Upgrade your plan on the Billing page to add more.", "error")
         else:
             u = User(organization_id=current_user.organization_id, username=username,
                       full_name=full_name, role=role)
@@ -157,6 +166,10 @@ def user_toggle(user_id):
     u = User.query.filter_by(id=user_id, organization_id=current_user.organization_id).first_or_404()
     if u.id == current_user.id:
         flash("You cannot deactivate your own account.", "error")
+    elif not u.active and (user_limit(current_user.organization) is not None
+                           and User.query.filter_by(organization_id=current_user.organization_id,
+                                                    active=True).count() >= user_limit(current_user.organization)):
+        flash("Your plan's user limit is reached. Upgrade on the Billing page to activate more users.", "error")
     else:
         u.active = not u.active
         db.session.commit()
