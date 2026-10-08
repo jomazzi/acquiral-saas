@@ -35,6 +35,7 @@
     .plan-features i { color: var(--success); margin-top: .15rem; }
     .pricing-cards { margin-top: -5rem; }
     .saving-note { color: var(--success); font-size: .85rem; font-weight: 600; min-height: 1.3rem; }
+    #currency-toggle button, #interval-toggle button { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -57,9 +58,14 @@
       <div class="text-center">
         <h1 class="mb-3">Simple pricing. Every feature, every plan.</h1>
         <p class="lead mb-4">Start with a {{ trial_days }}-day free trial — no card needed. Plans differ only by how many people work in your books.</p>
-        <div class="interval-toggle" role="group" aria-label="Billing period">
-          <button type="button" data-interval="monthly" class="active">Monthly</button>
-          <button type="button" data-interval="annual">Annual &middot; 2 months free</button>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+          <div class="interval-toggle" role="group" aria-label="Currency" id="currency-toggle">
+            {% for cur in currencies %}<button type="button" data-currency="{{ cur }}" class="{{ 'active' if loop.first else '' }}">{{ cur }}</button>{% endfor %}
+          </div>
+          <div class="interval-toggle" role="group" aria-label="Billing period" id="interval-toggle">
+            <button type="button" data-interval="monthly" class="active">Monthly</button>
+            <button type="button" data-interval="annual">Annual</button>
+          </div>
         </div>
       </div>
     </div>
@@ -73,11 +79,14 @@
           <h4 class="mb-1">{{ c.name }}</h4>
           <p class="text-muted mb-3">{{ c.tagline }}</p>
           <div class="plan-price">
-            <span data-price-monthly>&#8358;{{ '{:,}'.format(c.monthly) }}</span>
-            <span data-price-annual style="display:none">&#8358;{{ '{:,}'.format(c.annual) }}</span>
-            <small data-per-monthly>/ month</small><small data-per-annual style="display:none">/ year</small>
+            {% for cur in currencies %}{% for i in ['monthly', 'annual'] %}
+            <span data-price data-cur="{{ cur }}" data-int="{{ i }}" style="display:none">{{ c.prices[cur][i] }}</span>
+            {% endfor %}{% endfor %}
+            <small data-per data-int="monthly">/ month</small><small data-per data-int="annual" style="display:none">/ year</small>
           </div>
-          <div class="saving-note"><span data-price-annual style="display:none">You save &#8358;{{ '{:,}'.format(c.annual_saving) }} a year</span></div>
+          <div class="saving-note">
+            {% for cur in currencies %}{% if c.saving[cur] %}<span data-saving data-cur="{{ cur }}" style="display:none">You save {{ c.saving[cur] }} a year</span>{% endif %}{% endfor %}
+          </div>
           <p class="mt-2 mb-3"><strong>Up to {{ c.max_users }} users</strong></p>
           {% if current_user.is_authenticated and current_user.is_admin %}
             <a href="{{ url_for('billing.billing_page') }}" class="btn btn-primary w-100">Choose {{ c.name }}</a>
@@ -92,7 +101,7 @@
       {% endfor %}
     </div>
     <p class="text-center text-muted mt-4 mb-0" style="font-size:.9rem;">
-      Prices in Nigerian naira. Pay securely by card or bank transfer through Paystack. Cancel any time — you keep access until the end of the period you've paid for.
+      Pay in naira or US dollars, securely by card through Paystack, with recurring billing. Cancel any time — you keep access until the end of the period you've paid for.
     </p>
   </div>
 
@@ -102,16 +111,17 @@
 
   <script>
     (function () {
-      var buttons = document.querySelectorAll('.interval-toggle button');
-      function show(interval) {
-        buttons.forEach(function (b) { b.classList.toggle('active', b.dataset.interval === interval); });
-        ['monthly', 'annual'].forEach(function (i) {
-          document.querySelectorAll('[data-price-' + i + '], [data-per-' + i + ']').forEach(function (el) {
-            el.style.display = (i === interval) ? '' : 'none';
-          });
-        });
+      var state = { cur: '{{ currencies[0] }}', int: 'monthly' };
+      function render() {
+        document.querySelectorAll('#currency-toggle button').forEach(function (b) { b.classList.toggle('active', b.dataset.currency === state.cur); });
+        document.querySelectorAll('#interval-toggle button').forEach(function (b) { b.classList.toggle('active', b.dataset.interval === state.int); });
+        document.querySelectorAll('[data-price]').forEach(function (el) { el.style.display = (el.dataset.cur === state.cur && el.dataset.int === state.int) ? '' : 'none'; });
+        document.querySelectorAll('[data-per]').forEach(function (el) { el.style.display = (el.dataset.int === state.int) ? '' : 'none'; });
+        document.querySelectorAll('[data-saving]').forEach(function (el) { el.style.display = (el.dataset.cur === state.cur && state.int === 'annual') ? '' : 'none'; });
       }
-      buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.interval); }); });
+      document.querySelectorAll('#currency-toggle button').forEach(function (b) { b.addEventListener('click', function () { state.cur = b.dataset.currency; render(); }); });
+      document.querySelectorAll('#interval-toggle button').forEach(function (b) { b.addEventListener('click', function () { state.int = b.dataset.interval; render(); }); });
+      render();
     })();
   </script>
 </body>

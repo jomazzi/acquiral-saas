@@ -20,7 +20,7 @@ def upgrade():
     op.create_table('subscription_payments',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('reference', sa.String(length=100), nullable=False),
-    sa.Column('amount_kobo', sa.BigInteger(), nullable=False),
+    sa.Column('amount_minor', sa.BigInteger(), nullable=False),
     sa.Column('currency', sa.String(length=3), nullable=False),
     sa.Column('plan_key', sa.String(length=30), nullable=True),
     sa.Column('plan_interval', sa.String(length=10), nullable=True),
@@ -45,6 +45,7 @@ def upgrade():
         batch_op.add_column(sa.Column('billing_email', sa.String(length=150), nullable=True))
         batch_op.add_column(sa.Column('plan_key', sa.String(length=30), nullable=True))
         batch_op.add_column(sa.Column('plan_interval', sa.String(length=10), nullable=True))
+        batch_op.add_column(sa.Column('plan_currency', sa.String(length=3), nullable=True))
         batch_op.add_column(sa.Column('trial_ends_at', sa.DateTime(), nullable=True))
         batch_op.add_column(sa.Column('current_period_end', sa.DateTime(), nullable=True))
         batch_op.add_column(sa.Column('paystack_customer_code', sa.String(length=60), nullable=True))
@@ -66,6 +67,7 @@ def downgrade():
         batch_op.drop_column('paystack_customer_code')
         batch_op.drop_column('current_period_end')
         batch_op.drop_column('trial_ends_at')
+        batch_op.drop_column('plan_currency')
         batch_op.drop_column('plan_interval')
         batch_op.drop_column('plan_key')
         batch_op.drop_column('billing_email')

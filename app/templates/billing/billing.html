@@ -24,7 +24,7 @@
           <span class="badge {{ 'bg-success' if state == 'active' else 'bg-danger' }}">{{ 'Active' if state == 'active' else 'Payment overdue' }}</span>
         </p>
         <p class="mb-1"><strong>{{ plans.PLANS[org.plan_key].name if org.plan_key else 'Subscription' }}</strong>
-          {% if org.plan_interval %}&middot; {{ org.plan_interval }}{% endif %}</p>
+          {% if org.plan_interval %}&middot; {{ org.plan_interval }}{% endif %}{% if org.plan_currency %} &middot; {{ org.plan_currency }}{% endif %}</p>
         {% if org.current_period_end %}
         <p class="text-muted mb-1">{{ 'Renews around' if state == 'active' else 'Was due' }} {{ org.current_period_end.strftime('%d %b %Y') }}.</p>
         {% endif %}
@@ -64,7 +64,7 @@
       {% elif state == 'comped' %}
         <p class="text-muted mb-0">Not needed for this workspace.</p>
       {% else %}
-      <form method="post" action="{{ url_for('billing.checkout') }}">
+      <form method="post" action="{{ url_for('billing.checkout') }}" id="checkout-form">
         <div class="row g-2 mb-3">
           {% for c in cards %}
           <div class="col-md-6">
@@ -73,17 +73,27 @@
             <label class="btn btn-outline-primary w-100 text-start p-3" for="plan-{{ c.key }}">
               <strong>{{ c.name }}</strong><br>
               <span class="small">Up to {{ c.max_users }} users</span><br>
-              <span class="small">&#8358;{{ '{:,}'.format(c.monthly) }}/mo &middot; &#8358;{{ '{:,}'.format(c.annual) }}/yr</span>
+              <span class="small">
+                {% for cur in currencies %}
+                <span data-price data-cur="{{ cur }}">{{ c.prices[cur].monthly }}/mo &middot; {{ c.prices[cur].annual }}/yr</span>
+                {% endfor %}
+              </span>
             </label>
           </div>
           {% endfor %}
         </div>
-        <div class="mb-3">
+        <div class="d-flex flex-wrap gap-3 mb-3">
           <div class="btn-group" role="group" aria-label="Billing period">
             <input type="radio" class="btn-check" name="interval" id="int-monthly" value="monthly" checked>
             <label class="btn btn-outline-primary btn-sm" for="int-monthly">Monthly</label>
             <input type="radio" class="btn-check" name="interval" id="int-annual" value="annual">
-            <label class="btn btn-outline-primary btn-sm" for="int-annual">Annual (2 months free)</label>
+            <label class="btn btn-outline-primary btn-sm" for="int-annual">Annual</label>
+          </div>
+          <div class="btn-group" role="group" aria-label="Currency">
+            {% for cur in currencies %}
+            <input type="radio" class="btn-check" name="currency" id="cur-{{ cur }}" value="{{ cur }}" {% if cur == default_currency %}checked{% endif %}>
+            <label class="btn btn-outline-primary btn-sm" for="cur-{{ cur }}">{{ cur }}</label>
+            {% endfor %}
           </div>
         </div>
         <div class="mb-3">
@@ -95,8 +105,19 @@
         <button class="btn btn-gold" {% if not enforced %}disabled{% endif %}>
           <i class="bi bi-lock"></i> Continue to secure payment
         </button>
-        <span class="text-muted small ms-2">Card or bank transfer, via Paystack</span>
+        <span class="text-muted small ms-2">Card payment via Paystack</span>
       </form>
+      <script>
+        (function () {
+          var form = document.getElementById('checkout-form');
+          function sync() {
+            var cur = form.querySelector('input[name=currency]:checked').value;
+            form.querySelectorAll('[data-price]').forEach(function (el) { el.style.display = el.dataset.cur === cur ? '' : 'none'; });
+          }
+          form.querySelectorAll('input[name=currency]').forEach(function (r) { r.addEventListener('change', sync); });
+          sync();
+        })();
+      </script>
       {% endif %}
     </div>
   </div>
@@ -112,7 +133,7 @@
       <tr>
         <td>{{ p.paid_at.strftime('%d %b %Y') }}</td>
         <td>{{ plans.PLANS[p.plan_key].name if p.plan_key in plans.PLANS else '—' }}{% if p.plan_interval %} &middot; {{ p.plan_interval }}{% endif %}</td>
-        <td class="text-end">&#8358;{{ '{:,.2f}'.format(p.amount_kobo / 100) }}</td>
+        <td class="text-end">{{ plans.format_money(p.amount_minor, p.currency, minor=True) }}</td>
         <td class="text-muted small">{{ p.reference }}</td>
       </tr>
       {% endfor %}

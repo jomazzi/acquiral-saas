@@ -137,8 +137,13 @@ pg_dump "$DATABASE_URL" > acquiral-backup-$(date +%F).sql
 ## Billing (Paystack subscriptions)
 
 Acquiral charges for itself through Paystack: a 14-day free trial on
-signup (no card), then a monthly or annual plan. Prices live in
-`app/billing/plans.py` (**placeholders - confirm before launch**).
+signup (no card), then a monthly or annual plan, payable in NGN or USD.
+Prices live in `app/billing/plans.py`:
+
+| Plan | Users | NGN monthly / annual | USD monthly / annual |
+|---|---|---|---|
+| Starter | 3 | 45,000 / 450,000 | 21 / 252 |
+| Organisation | 15 | 69,000 / 828,000 | 51 / 612 |
 
 **Until `PAYSTACK_SECRET_KEY` is set, billing does nothing**: no
 banners, no limits, no read-only lockout. Existing organisations are
@@ -153,9 +158,15 @@ Setup, in order:
    ```bash
    PAYSTACK_SECRET_KEY=sk_test_xxx PYTHONPATH=. python scripts/create_paystack_plans.py
    ```
-   It prints four `PAYSTACK_PLAN_*` lines.
+   It prints eight `PAYSTACK_PLAN_*` lines (plan x interval x currency,
+   e.g. `PAYSTACK_PLAN_STARTER_MONTHLY_USD`). **USD plans need USD
+   enabled on your Paystack account** (ask Paystack support if it
+   isn't); if it isn't, those lines print FAILED and the NGN plans are
+   still created.
 3. On the Render web service -> Environment, add `PAYSTACK_SECRET_KEY` and
-   the four `PAYSTACK_PLAN_*` values.
+   the `PAYSTACK_PLAN_*` values. A currency whose plan codes are missing
+   simply fails checkout with a friendly message, so you can launch NGN
+   first.
 4. In Paystack -> Settings -> API Keys & Webhooks, set the **Webhook URL** to
    `https://demo.admiralsentinel.com/billing/webhook/paystack` (use the
    real app domain once Acquiral has its own). Test and live modes each

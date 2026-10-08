@@ -35,6 +35,7 @@ class Organization(db.Model):
     billing_email = db.Column(db.String(150))
     plan_key = db.Column(db.String(30))          # 'starter' | 'organisation'
     plan_interval = db.Column(db.String(10))     # 'monthly' | 'annual'
+    plan_currency = db.Column(db.String(3))      # 'NGN' | 'USD'
     trial_ends_at = db.Column(db.DateTime)
     current_period_end = db.Column(db.DateTime)
     paystack_customer_code = db.Column(db.String(60), index=True)

@@ -50,12 +50,12 @@ def _request(method, path, payload=None, timeout=20):
     return body["data"]
 
 
-def initialize_transaction(email, amount_kobo, plan_code, reference, callback_url, metadata):
+def initialize_transaction(email, amount_minor, currency, plan_code, reference, callback_url, metadata):
     """Starts a hosted checkout. Passing `plan` makes Paystack create a
     recurring subscription from the successful first charge (and use the
     plan's amount, which is why plan amounts must match plans.py)."""
     return _request("POST", "/transaction/initialize", {
-        "email": email, "amount": amount_kobo, "currency": "NGN",
+        "email": email, "amount": amount_minor, "currency": currency,
         "plan": plan_code, "reference": reference,
         "callback_url": callback_url, "metadata": metadata,
     })
@@ -71,9 +71,9 @@ def disable_subscription(subscription_code, email_token):
                     {"code": subscription_code, "token": email_token})
 
 
-def create_plan(name, amount_kobo, interval):
+def create_plan(name, amount_minor, interval, currency):
     return _request("POST", "/plan", {
-        "name": name, "amount": amount_kobo, "interval": interval, "currency": "NGN",
+        "name": name, "amount": amount_minor, "interval": interval, "currency": currency,
     })
 
 

@@ -43,20 +43,25 @@ def enforce_billing():
 
 
 def _plan_cards():
+    """One dict per plan for the templates. `prices[currency][interval]`
+    and `saving[currency]` are pre-formatted strings (e.g. '\u20a645,000'),
+    so the templates never do money arithmetic."""
     cards = []
     for key, p in plans.PLANS.items():
-        cards.append({
-            "key": key, "name": p["name"], "tagline": p["tagline"], "max_users": p["max_users"],
-            "monthly": p["price_naira"]["monthly"], "annual": p["price_naira"]["annual"],
-            "annual_saving": p["price_naira"]["monthly"] * 12 - p["price_naira"]["annual"],
-        })
+        prices, saving = {}, {}
+        for cur in plans.CURRENCIES:
+            prices[cur] = {i: plans.format_money(plans.price(key, i, cur), cur) for i in plans.INTERVALS}
+            s = plans.annual_saving(key, cur)
+            saving[cur] = plans.format_money(s, cur) if s > 0 else None
+        cards.append({"key": key, "name": p["name"], "tagline": p["tagline"],
+                      "max_users": p["max_users"], "prices": prices, "saving": saving})
     return cards
 
 
 @billing_bp.route("/pricing")
 def pricing():
     return render_template("billing/pricing.html", cards=_plan_cards(), features=plans.FEATURES,
-                           trial_days=plans.TRIAL_DAYS)
+                           trial_days=plans.TRIAL_DAYS, currencies=plans.CURRENCIES)
 
 
 @billing_bp.route("/billing")
@@ -71,7 +76,8 @@ def billing_page():
         "billing/billing.html", org=org, state=state, payments=payments,
         cards=_plan_cards(), features=plans.FEATURES, enforced=billing_enforced(),
         trial_days_left=trial_days_left(org), active_users=active_users,
-        user_limit=user_limit(org), plans=plans,
+        user_limit=user_limit(org), plans=plans, currencies=plans.CURRENCIES,
+        default_currency=org.plan_currency or plans.DEFAULT_CURRENCY,
         can_cancel=bool(org.paystack_subscription_code and org.paystack_email_token
                         and state in ("active", "past_due")),
         # A live recurring subscription must be cancelled before starting
@@ -89,10 +95,11 @@ def checkout():
         abort(403)
     plan_key = request.form.get("plan", "")
     interval = request.form.get("interval", "")
+    currency = request.form.get("currency", plans.DEFAULT_CURRENCY)
     email = request.form.get("email", "").strip()
 
-    if plan_key not in plans.PLANS or interval not in plans.INTERVALS:
-        flash("Choose a plan and billing period.", "error")
+    if plan_key not in plans.PLANS or interval not in plans.INTERVALS or currency not in plans.CURRENCIES:
+        flash("Choose a plan, billing period and currency.", "error")
         return redirect(url_for("billing.billing_page"))
     if not EMAIL_RE.match(email):
         flash("Enter a valid billing email — receipts and renewal notices go there.", "error")
@@ -108,19 +115,20 @@ def checkout():
               f"{active_users} active. Deactivate some users or choose a larger plan.", "error")
         return redirect(url_for("billing.billing_page"))
 
-    plan_code = plans.paystack_plan_code(plan_key, interval)
+    plan_code = plans.paystack_plan_code(plan_key, interval, currency)
     if not paystack.is_configured() or not plan_code:
         log.error("Checkout attempted but Paystack/plan code not configured (%s)",
-                  plans.plan_code_env_var(plan_key, interval))
+                  plans.plan_code_env_var(plan_key, interval, currency))
         flash("Online payment isn't available yet. Please contact Admiral Sentinel to subscribe.", "error")
         return redirect(url_for("billing.billing_page"))
 
     reference = f"acq_{org.id.hex[:12]}_{uuid.uuid4().hex[:16]}"
     try:
         init = paystack.initialize_transaction(
-            email=email, amount_kobo=plans.price_kobo(plan_key, interval), plan_code=plan_code,
-            reference=reference, callback_url=url_for("billing.callback", _external=True),
-            metadata={"organization_id": str(org.id), "plan_key": plan_key, "interval": interval},
+            email=email, amount_minor=plans.price_minor(plan_key, interval, currency), currency=currency,
+            plan_code=plan_code, reference=reference, callback_url=url_for("billing.callback", _external=True),
+            metadata={"organization_id": str(org.id), "plan_key": plan_key, "interval": interval,
+                      "currency": currency},
         )
     except paystack.PaystackError as e:
         log.error("Paystack initialize failed for org %s: %s", org.id, e)

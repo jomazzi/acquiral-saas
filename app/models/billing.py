@@ -19,7 +19,7 @@ class SubscriptionPayment(TenantScopedMixin, db.Model):
     __tablename__ = "subscription_payments"
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     reference = db.Column(db.String(100), nullable=False, unique=True)
-    amount_kobo = db.Column(db.BigInteger, nullable=False)
+    amount_minor = db.Column(db.BigInteger, nullable=False)
     currency = db.Column(db.String(3), nullable=False, default="NGN")
     plan_key = db.Column(db.String(30))
     plan_interval = db.Column(db.String(10))

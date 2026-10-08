@@ -85,12 +85,13 @@ def resolve_org(data):
 
 
 def plan_from_charge(data):
-    """(plan_key, interval) for a charge -- from checkout metadata on a
-    first payment, or from the Paystack plan code on a renewal."""
+    """(plan_key, interval, currency) for a charge -- from checkout
+    metadata on a first payment, or from the Paystack plan code on a
+    renewal. Any element may be None if it can't be determined."""
     meta = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
-    key, interval = meta.get("plan_key"), meta.get("interval")
-    if key in plans.PLANS and interval in plans.INTERVALS:
-        return key, interval
+    key, interval, currency = meta.get("plan_key"), meta.get("interval"), meta.get("currency")
+    if key in plans.PLANS and interval in plans.INTERVALS and currency in plans.CURRENCIES:
+        return key, interval, currency
     plan = data.get("plan") if isinstance(data.get("plan"), dict) else {}
     return plans.lookup_by_plan_code(plan.get("plan_code"))
 
@@ -105,7 +106,7 @@ def apply_successful_charge(org, data):
         return False
 
     paid_at = parse_paystack_time(data.get("paid_at") or data.get("paidAt")) or utcnow()
-    plan_key, interval = plan_from_charge(data)
+    plan_key, interval, currency = plan_from_charge(data)
     customer = data.get("customer") if isinstance(data.get("customer"), dict) else {}
 
     # Tenant context for the RLS-secured payments table. The webhook has
@@ -117,12 +118,12 @@ def apply_successful_charge(org, data):
 
     db.session.add(SubscriptionPayment(
         organization_id=org.id, reference=reference,
-        amount_kobo=int(data.get("amount") or 0), currency=data.get("currency") or "NGN",
+        amount_minor=int(data.get("amount") or 0), currency=data.get("currency") or currency or "NGN",
         plan_key=plan_key, plan_interval=interval, paid_at=paid_at,
     ))
 
     if plan_key:
-        org.plan_key, org.plan_interval = plan_key, interval
+        org.plan_key, org.plan_interval, org.plan_currency = plan_key, interval, currency
     if customer.get("customer_code"):
         org.paystack_customer_code = customer["customer_code"]
     org.billing_status = "active"
