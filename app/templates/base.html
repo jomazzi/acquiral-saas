@@ -99,6 +99,11 @@
         {{ navlink('auth.users_list', 'bi-shield-lock', 'Users') }}
         {% if not is_demo_org %}{{ navlink('billing.billing_page', 'bi-credit-card', 'Billing') }}{% endif %}
         {% endif %}
+        <li class="nav-item">
+          <a class="side-link {{ 'active' if request.path == '/pricing' else '' }}" href="/pricing">
+            <i class="bi bi-tag"></i> <span>Pricing</span>
+          </a>
+        </li>
       </ul>
 
       {% if current_user.is_authenticated %}
