@@ -31,16 +31,16 @@ PLANS = {
     "starter": {
         "name": "Starter",
         "tagline": "For small NGOs and growing businesses",
-        "max_users": 3,
+        "max_users": 2,
         # Whole units of each currency (naira / dollars), per period.
         "price": {
-            "NGN": {"monthly": 45_000, "annual": 450_000},
-            "USD": {"monthly": 21, "annual": 252},
+            "NGN": {"monthly": 45_000, "annual": 540_000},
+            "USD": {"monthly": 39, "annual": 468},
         },
     },
     "organisation": {
         "name": "Organisation",
-        "tagline": "For larger teams with more people in the books",
+        "tagline": "For medium to larger teams with more people in the books",
         "max_users": 15,
         "price": {
             "NGN": {"monthly": 69_000, "annual": 828_000},
@@ -49,7 +49,8 @@ PLANS = {
     },
 }
 
-# Everything below is included in every plan; plans differ by seat count.
+# Full feature list. Organisation gets all of it; Starter gets everything
+# except multi-currency (the pricing page handles that difference).
 FEATURES = [
     "Fund & project accounting with donor reporting",
     "Double-entry journal, trial balance, income statement, balance sheet",
