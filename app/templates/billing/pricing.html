@@ -56,8 +56,8 @@
         </div>
       </nav>
       <div class="text-center">
-        <h1 class="mb-3">Simple pricing. Every feature, every plan.</h1>
-        <p class="lead mb-4">Start with a {{ trial_days }}-day free trial — no card needed. Plans differ only by how many people work in your books.</p>
+ <h1 class="mb-3">Simple pricing for every stage of your organisation.</h1>
+        <p class="lead mb-4">Start with a {{ trial_days }}-day free trial — no card needed. Plans differ by team size and multi-currency support.</p>
         <div class="d-flex flex-wrap justify-content-center gap-3">
           <div class="interval-toggle" role="group" aria-label="Currency" id="currency-toggle">
             {% for cur in currencies %}<button type="button" data-currency="{{ cur }}" class="{{ 'active' if loop.first else '' }}">{{ cur }}</button>{% endfor %}
@@ -94,8 +94,19 @@
             <a href="{{ url_for('auth.signup') }}" class="btn btn-primary w-100">Start {{ trial_days }}-day free trial</a>
           {% endif %}
           <ul class="plan-features">
-            {% for f in features %}<li><i class="bi bi-check-circle-fill"></i> <span>{{ f }}</span></li>{% endfor %}
+            {% if c.name == 'Organisation' %}
+            <li><i class="bi bi-check-circle-fill"></i> <span><strong>Full package</strong> &mdash; every feature included</span></li>
+            {% endif %}
+            {% for f in features %}
+              {% if not (c.name == 'Starter' and 'Multi-currency' in f) %}
+            <li><i class="bi bi-check-circle-fill"></i> <span>{{ f }}</span></li>
+              {% endif %}
+            {% endfor %}
+            {% if c.name == 'Starter' %}
+            <li><i class="bi bi-x-circle-fill" style="color:var(--muted)"></i> <span>No multi-currency</span></li>
+            {% endif %}
           </ul>
+          
         </div>
       </div>
       {% endfor %}
