@@ -24,6 +24,24 @@ class Organization(db.Model):
     # but can never mutate the shared demo data (no reset job needed).
     is_demo = db.Column(db.Boolean, default=False, nullable=False)
 
+    # ---- Billing (Paystack subscriptions; see app/billing/) ----
+    # Lives on Organization rather than a tenant-scoped table because the
+    # webhook has to resolve an org BEFORE any tenant context exists, and
+    # organizations is (like users) deliberately not row-secured.
+    # billing_status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'comped'
+    # ('comped' = never charged: the founding tenant, demo, or anyone
+    # granted free access. Existing orgs are migrated to this.)
+    billing_status = db.Column(db.String(20), nullable=False, default="trialing")
+    billing_email = db.Column(db.String(150))
+    plan_key = db.Column(db.String(30))          # 'starter' | 'organisation'
+    plan_interval = db.Column(db.String(10))     # 'monthly' | 'annual'
+    plan_currency = db.Column(db.String(3))      # 'NGN' | 'USD'
+    trial_ends_at = db.Column(db.DateTime)
+    current_period_end = db.Column(db.DateTime)
+    paystack_customer_code = db.Column(db.String(60), index=True)
+    paystack_subscription_code = db.Column(db.String(60), index=True)
+    paystack_email_token = db.Column(db.String(100))
+
 
 class User(UserMixin, db.Model):
     """Deliberately NOT row-secured (see scripts/setup_rls.sql for why:

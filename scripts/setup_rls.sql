@@ -48,7 +48,8 @@ BEGIN
         'journal_attachments',
         'vendors',
         'bills',
-        'bill_lines'
+        'bill_lines',
+        'subscription_payments'
     ]
     LOOP
         EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);

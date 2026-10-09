@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pricing — {{ app_name }}</title>
+  <meta name="description" content="Simple pricing for {{ app_name }}: fund accounting, fixed assets and Nigerian payroll. Start with a {{ trial_days }}-day free trial.">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .pricing-hero {
+      background: radial-gradient(circle at 20% 20%, var(--navy-700), var(--navy-900) 65%);
+      color: #fff; padding: 2rem 0 7rem;
+    }
+    .pricing-hero h1 { color: #fff; font-size: 2.3rem; }
+    .pricing-hero .lead { color: rgba(255,255,255,0.85); }
+    .interval-toggle { display: inline-flex; background: rgba(255,255,255,0.12); border-radius: 999px; padding: 4px; }
+    .interval-toggle button {
+      border: 0; background: transparent; color: rgba(255,255,255,0.8);
+      padding: .45rem 1.2rem; border-radius: 999px; font-weight: 600; font-size: .9rem;
+    }
+    .interval-toggle button.active { background: var(--gold-400); color: var(--navy-900); }
+    .plan-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 16px;
+      padding: 2rem; height: 100%; box-shadow: var(--shadow-md);
+    }
+    .plan-price { font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; color: var(--navy-900); }
+    .plan-price small { font-size: .95rem; font-weight: 500; color: var(--muted); }
+    .plan-features { list-style: none; padding: 0; margin: 1.25rem 0 0; }
+    .plan-features li { display: flex; gap: .6rem; padding: .35rem 0; font-size: .93rem; }
+    .plan-features i { color: var(--success); margin-top: .15rem; }
+    .pricing-cards { margin-top: -5rem; }
+    .saving-note { color: var(--success); font-size: .85rem; font-weight: 600; min-height: 1.3rem; }
+    #currency-toggle button, #interval-toggle button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="pricing-hero">
+    <div class="container">
+      <nav class="d-flex justify-content-between align-items-center mb-5 pt-3">
+        <a href="{{ url_for('landing') }}" class="navbar-brand d-flex align-items-center gap-2" style="color:#fff;">
+          <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="Acquiral">
+          <span style="font-size:1.2rem;">{{ app_name }}</span>
+        </a>
+        <div class="d-flex gap-2">
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('accounting.dashboard') }}" class="btn btn-outline-light">Back to {{ app_name }}</a>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light">Log in</a>
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-gold">Start free trial</a>
+          {% endif %}
+        </div>
+      </nav>
+      <div class="text-center">
+        <h1 class="mb-3">Simple pricing. Every feature, every plan.</h1>
+        <p class="lead mb-4">Start with a {{ trial_days }}-day free trial — no card needed. Plans differ only by how many people work in your books.</p>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+          <div class="interval-toggle" role="group" aria-label="Currency" id="currency-toggle">
+            {% for cur in currencies %}<button type="button" data-currency="{{ cur }}" class="{{ 'active' if loop.first else '' }}">{{ cur }}</button>{% endfor %}
+          </div>
+          <div class="interval-toggle" role="group" aria-label="Billing period" id="interval-toggle">
+            <button type="button" data-interval="monthly" class="active">Monthly</button>
+            <button type="button" data-interval="annual">Annual</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container pricing-cards pb-5">
+    <div class="row g-4 justify-content-center">
+      {% for c in cards %}
+      <div class="col-md-6 col-lg-5">
+        <div class="plan-card">
+          <h4 class="mb-1">{{ c.name }}</h4>
+          <p class="text-muted mb-3">{{ c.tagline }}</p>
+          <div class="plan-price">
+            {% for cur in currencies %}{% for i in ['monthly', 'annual'] %}
+            <span data-price data-cur="{{ cur }}" data-int="{{ i }}" style="display:none">{{ c.prices[cur][i] }}</span>
+            {% endfor %}{% endfor %}
+            <small data-per data-int="monthly">/ month</small><small data-per data-int="annual" style="display:none">/ year</small>
+          </div>
+          <div class="saving-note">
+            {% for cur in currencies %}{% if c.saving[cur] %}<span data-saving data-cur="{{ cur }}" style="display:none">You save {{ c.saving[cur] }} a year</span>{% endif %}{% endfor %}
+          </div>
+          <p class="mt-2 mb-3"><strong>Up to {{ c.max_users }} users</strong></p>
+          {% if current_user.is_authenticated and current_user.is_admin %}
+            <a href="{{ url_for('billing.billing_page') }}" class="btn btn-primary w-100">Choose {{ c.name }}</a>
+          {% else %}
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-primary w-100">Start {{ trial_days }}-day free trial</a>
+          {% endif %}
+          <ul class="plan-features">
+            {% for f in features %}<li><i class="bi bi-check-circle-fill"></i> <span>{{ f }}</span></li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="text-center text-muted mt-4 mb-0" style="font-size:.9rem;">
+      Pay in naira or US dollars, securely by card through Paystack, with recurring billing. Cancel any time — you keep access until the end of the period you've paid for.
+    </p>
+  </div>
+
+  <footer class="app-footer text-center">
+    {{ app_name }} — a product of <a href="{{ company_url }}" target="_blank" rel="noopener">{{ company_name }}</a>
+  </footer>
+
+  <script>
+    (function () {
+      var state = { cur: '{{ currencies[0] }}', int: 'monthly' };
+      function render() {
+        document.querySelectorAll('#currency-toggle button').forEach(function (b) { b.classList.toggle('active', b.dataset.currency === state.cur); });
+        document.querySelectorAll('#interval-toggle button').forEach(function (b) { b.classList.toggle('active', b.dataset.interval === state.int); });
+        document.querySelectorAll('[data-price]').forEach(function (el) { el.style.display = (el.dataset.cur === state.cur && el.dataset.int === state.int) ? '' : 'none'; });
+        document.querySelectorAll('[data-per]').forEach(function (el) { el.style.display = (el.dataset.int === state.int) ? '' : 'none'; });
+        document.querySelectorAll('[data-saving]').forEach(function (el) { el.style.display = (el.dataset.cur === state.cur && state.int === 'annual') ? '' : 'none'; });
+      }
+      document.querySelectorAll('#currency-toggle button').forEach(function (b) { b.addEventListener('click', function () { state.cur = b.dataset.currency; render(); }); });
+      document.querySelectorAll('#interval-toggle button').forEach(function (b) { b.addEventListener('click', function () { state.int = b.dataset.interval; render(); }); });
+      render();
+    })();
+  </script>
+</body>
+</html>

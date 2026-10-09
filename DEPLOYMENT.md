@@ -134,6 +134,59 @@ pg_dump "$DATABASE_URL" > acquiral-backup-$(date +%F).sql
 (from the Render dashboard's database page, under "Connect", using the
 **External** connection string so this works from your own machine).
 
+## Billing (Paystack subscriptions)
+
+Acquiral charges for itself through Paystack: a 14-day free trial on
+signup (no card), then a monthly or annual plan, payable in NGN or USD.
+Prices live in `app/billing/plans.py`:
+
+| Plan | Users | NGN monthly / annual | USD monthly / annual |
+|---|---|---|---|
+| Starter | 3 | 45,000 / 450,000 | 21 / 252 |
+| Organisation | 15 | 69,000 / 828,000 | 51 / 612 |
+
+**Until `PAYSTACK_SECRET_KEY` is set, billing does nothing**: no
+banners, no limits, no read-only lockout. Existing organisations are
+migrated to `comped` (free, never locked) and the shared demo is always
+exempt.
+
+Setup, in order:
+
+1. Create a Paystack account and, under Settings -> API Keys, copy the
+   **test** secret key first.
+2. Create the plans (once per key - test, then live):
+   ```bash
+   PAYSTACK_SECRET_KEY=sk_test_xxx PYTHONPATH=. python scripts/create_paystack_plans.py
+   ```
+   It prints eight `PAYSTACK_PLAN_*` lines (plan x interval x currency,
+   e.g. `PAYSTACK_PLAN_STARTER_MONTHLY_USD`). **USD plans need USD
+   enabled on your Paystack account** (ask Paystack support if it
+   isn't); if it isn't, those lines print FAILED and the NGN plans are
+   still created.
+3. On the Render web service -> Environment, add `PAYSTACK_SECRET_KEY` and
+   the `PAYSTACK_PLAN_*` values. A currency whose plan codes are missing
+   simply fails checkout with a friendly message, so you can launch NGN
+   first.
+4. In Paystack -> Settings -> API Keys & Webhooks, set the **Webhook URL** to
+   `https://demo.admiralsentinel.com/billing/webhook/paystack` (use the
+   real app domain once Acquiral has its own). Test and live modes each
+   have their own webhook URL field.
+5. Run the new migration on the deployed database (on the Free plan:
+   visit `/internal/seed-demo?token=...` once, which runs
+   `flask db upgrade` and re-applies RLS).
+6. Test with a Paystack test card, then repeat steps 1-4 with the **live**
+   key and switch the env vars over.
+
+After a lapse the workspace becomes **read-only** (people can still view
+and download everything) until a plan is chosen. Failed renewals get a
+5-day grace period. Webhooks are verified by HMAC signature and are
+idempotent; the signed webhook, not the browser redirect, is the source
+of truth.
+
+The webhook and checkout callback need public HTTPS, so use a tunnel
+(e.g. ngrok) to test real webhooks locally. `python scripts/billing_test.py`
+covers the whole flow with Paystack mocked.
+
 ## Custom domain
 
 Not set up yet (per the agreed roadmap — this phase just gets a working

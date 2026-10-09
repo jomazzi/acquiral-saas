@@ -262,6 +262,13 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .brand-wordmark, .sidebar-brand, .mobile-
   background: var(--navy-800);
   border-color: var(--navy-800);
 }
+.btn-check:checked + .btn-outline-primary,
+.btn-check:active + .btn-outline-primary {
+  background: var(--navy-800);
+  border-color: var(--navy-800);
+  color: #fff;
+}
+.btn-check:focus-visible + .btn-outline-primary { box-shadow: 0 0 0 .2rem rgba(212, 160, 23, .45); }
 .btn-gold {
   background: var(--gold-400);
   border-color: var(--gold-400);

@@ -74,6 +74,7 @@ def create_app():
     from app.blueprints.invoicing.routes import invoicing_bp
     from app.blueprints.banking.routes import banking_bp
     from app.blueprints.purchasing.routes import purchasing_bp
+    from app.blueprints.billing.routes import billing_bp, enforce_billing
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(accounting_bp)
@@ -82,6 +83,7 @@ def create_app():
     app.register_blueprint(invoicing_bp)
     app.register_blueprint(banking_bp)
     app.register_blueprint(purchasing_bp)
+    app.register_blueprint(billing_bp)
 
     APP_NAME = "Acquiral"
     APP_TAGLINE = "Fund accounting, fixed assets and Nigerian payroll — in one place."
@@ -99,6 +101,16 @@ def create_app():
         # flag rather than templates guessing from the org name/slug.
         is_demo_org = bool(current_user.is_authenticated and current_user.organization.is_demo)
         return dict(is_demo_org=is_demo_org)
+
+    @app.context_processor
+    def inject_billing_state():
+        # Drives the trial/expired banner in base.html. Silent (None)
+        # unless Paystack is configured -- see billing.access.billing_enforced.
+        from app.billing.access import access_state, billing_enforced, trial_days_left
+        if not (current_user.is_authenticated and billing_enforced()):
+            return dict(billing_state=None, billing_trial_days_left=0)
+        org = current_user.organization
+        return dict(billing_state=access_state(org), billing_trial_days_left=trial_days_left(org))
 
     @app.route("/")
     def landing():
@@ -210,5 +222,10 @@ def create_app():
                 flash("This is the shared demo — it's read-only, so that change wasn't saved. "
                       "Sign up to try this for real.", "error")
                 return redirect(url_for("accounting.dashboard"))
+
+            # Lapsed trial/subscription -> read-only (never locked out).
+            billing_redirect = enforce_billing()
+            if billing_redirect is not None:
+                return billing_redirect
 
     return app

@@ -97,6 +97,7 @@
 
         {% if current_user.is_authenticated and current_user.is_admin %}
         {{ navlink('auth.users_list', 'bi-shield-lock', 'Users') }}
+        {% if not is_demo_org %}{{ navlink('billing.billing_page', 'bi-credit-card', 'Billing') }}{% endif %}
         {% endif %}
       </ul>
 
@@ -119,6 +120,22 @@
     <div class="demo-banner text-center">
       <i class="bi bi-info-circle"></i> You're exploring the shared Acquiral demo — it's read-only, so nothing you change here is saved.
       <a href="{{ url_for('auth.signup') }}" class="alert-link">Sign up for your own organization &rarr;</a>
+    </div>
+    {% endif %}
+    {% if billing_state == 'trialing' %}
+    <div class="demo-banner text-center">
+      <i class="bi bi-hourglass-split"></i> Free trial: {{ billing_trial_days_left }} day{{ '' if billing_trial_days_left == 1 else 's' }} left.
+      {% if current_user.is_admin %}<a href="{{ url_for('billing.billing_page') }}" class="alert-link">Choose a plan &rarr;</a>{% endif %}
+    </div>
+    {% elif billing_state == 'past_due' %}
+    <div class="demo-banner text-center">
+      <i class="bi bi-exclamation-triangle"></i> We couldn't collect your last subscription payment.
+      {% if current_user.is_admin %}<a href="{{ url_for('billing.billing_page') }}" class="alert-link">Fix billing &rarr;</a>{% endif %}
+    </div>
+    {% elif billing_state == 'expired' %}
+    <div class="demo-banner text-center">
+      <i class="bi bi-lock"></i> Your trial or subscription has ended, so Acquiral is read-only.
+      {% if current_user.is_admin %}<a href="{{ url_for('billing.billing_page') }}" class="alert-link">Choose a plan &rarr;</a>{% else %}Ask your admin to choose a plan.{% endif %}
     </div>
     {% endif %}
     <div class="container-fluid py-4">
