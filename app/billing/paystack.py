@@ -12,6 +12,10 @@ import urllib.request
 
 API_BASE = "https://api.paystack.co"
 
+# Paystack sits behind Cloudflare, which rejects the default
+# "Python-urllib/x.y" identifier with a 403 (error 1010). Always send our own.
+USER_AGENT = "AcquiralBilling/1.0"
+
 
 class PaystackError(Exception):
     pass
@@ -34,16 +38,25 @@ def _request(method, path, payload=None, timeout=20, key=None):
     data = json.dumps(payload).encode() if payload is not None else None
     req = urllib.request.Request(
         API_BASE + path, data=data, method=method,
-        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "User-Agent": USER_AGENT,
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             body = json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
+        raw = ""
         try:
-            msg = json.loads(e.read().decode()).get("message", "")
+            raw = e.read().decode(errors="replace")
         except Exception:
-            msg = ""
+            pass
+        try:
+            msg = json.loads(raw).get("message", "")
+        except Exception:
+            msg = raw.strip()[:200]
         raise PaystackError(f"Paystack returned HTTP {e.code}: {msg}".strip())
     except (urllib.error.URLError, TimeoutError, ValueError) as e:
         raise PaystackError(f"Could not reach Paystack: {e}")
