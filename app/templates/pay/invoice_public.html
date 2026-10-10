@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Invoice {{ invoice.invoice_number }} — {{ org.name }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>body{background:var(--bg,#f5f7fa)} .pay-wrap{max-width:640px;margin:2rem auto;padding:0 1rem}
+  .total{font-size:2rem;font-weight:700;color:var(--navy-900,#0b1f3a)}</style>
+</head>
+<body>
+<div class="pay-wrap">
+  <div class="card card-metric p-4 mb-3">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <div class="text-muted small">Invoice from</div>
+        <h4 class="mb-0">{{ org.name }}</h4>
+      </div>
+      <div class="text-end">
+        <div class="fw-bold">{{ invoice.invoice_number }}</div>
+        <div class="small text-muted">Issued {{ invoice.issue_date.strftime('%d %b %Y') }}<br>
+          {% if invoice.due_date %}Due {{ invoice.due_date.strftime('%d %b %Y') }}{% else %}Due on receipt{% endif %}</div>
+      </div>
+    </div>
+    <hr>
+    <div class="small text-muted">Billed to</div>
+    <div class="mb-3">{{ invoice.customer.name }}</div>
+    <table class="table table-sm mb-2">
+      <tbody>
+        {% for l in invoice.lines %}
+        <tr><td>{{ l.description }}<div class="small text-muted">{{ '{:g}'.format(l.quantity) }} × ₦{{ '{:,.2f}'.format(l.unit_price) }}</div></td>
+            <td class="text-end">₦{{ '{:,.2f}'.format(l.amount) }}</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot class="small">
+        <tr><td class="text-end text-muted">Subtotal</td><td class="text-end">₦{{ '{:,.2f}'.format(invoice.subtotal) }}</td></tr>
+        {% if invoice.vat_rate %}<tr><td class="text-end text-muted">VAT ({{ '{:g}'.format(invoice.vat_rate) }}%)</td><td class="text-end">₦{{ '{:,.2f}'.format(invoice.vat_amount) }}</td></tr>{% endif %}
+      </tfoot>
+    </table>
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="text-muted">Total</span><span class="total">₦{{ '{:,.2f}'.format(invoice.total) }}</span>
+    </div>
+    {% if invoice.notes %}<p class="small text-muted mt-3 mb-0">{{ invoice.notes }}</p>{% endif %}
+  </div>
+
+  {% if result == 'paid' %}<div class="alert alert-success">Payment received — thank you!</div>
+  {% elif result == 'review' %}<div class="alert alert-warning">We received your payment and {{ org.name }} will confirm it shortly.</div>
+  {% elif result == 'failed' %}<div class="alert alert-danger">The payment wasn't completed, so you haven't been charged. You can try again.</div>
+  {% elif result == 'pending' %}<div class="alert alert-warning">We couldn't confirm your payment yet. If you were charged, this page will show it as paid shortly.</div>
+  {% elif result == 'error' %}<div class="alert alert-danger">We couldn't start the payment. Please try again.</div>
+  {% elif result == 'bademail' %}<div class="alert alert-danger">Enter a valid email address for your receipt.</div>
+  {% elif result == 'noname' %}<div class="alert alert-danger">Please enter your name.</div>
+  {% elif result == 'claimed' %}<div class="alert alert-success">Thanks — we've told {{ org.name }}. They'll mark this invoice paid once the transfer arrives.</div>{% endif %}
+
+  {% if invoice.status == 'paid' %}
+    <div class="card card-metric p-4 text-center"><i class="bi bi-check-circle-fill text-success fs-1"></i>
+      <h5 class="mt-2 mb-0">This invoice has been paid</h5>
+      {% if invoice.paid_date %}<div class="text-muted small">{{ invoice.paid_date.strftime('%d %b %Y') }}</div>{% endif %}</div>
+  {% elif invoice.status == 'void' %}
+    <div class="alert alert-secondary">This invoice has been cancelled.</div>
+  {% else %}
+    {% if card_enabled %}
+    <div class="card card-metric p-4 mb-3">
+      <h6><i class="bi bi-credit-card"></i> Pay by card or bank</h6>
+      <form method="post" action="{{ url_for('pay.public_card', token=token) }}">
+        <label class="form-label small" for="em">Email for your receipt</label>
+        <input type="email" id="em" name="email" class="form-control mb-2" required>
+        <button class="btn btn-gold w-100">Pay ₦{{ '{:,.2f}'.format(invoice.total) }}</button>
+        <div class="small text-muted mt-2">Secure checkout by Paystack. Your payment goes directly to {{ org.name }}.</div>
+      </form>
+    </div>
+    {% endif %}
+    {% if show_bank %}
+    <div class="card card-metric p-4 mb-3">
+      <h6><i class="bi bi-bank"></i> Pay by bank transfer</h6>
+      <dl class="row mb-2 small">
+        <dt class="col-5">Account name</dt><dd class="col-7">{{ settings.bank_account.name }}</dd>
+        {% if settings.bank_account.account_number %}<dt class="col-5">Account number</dt><dd class="col-7">{{ settings.bank_account.account_number }}</dd>{% endif %}
+        {% if settings.bank_account.bank_branch %}<dt class="col-5">Bank</dt><dd class="col-7">{{ settings.bank_account.bank_branch }}</dd>{% endif %}
+        <dt class="col-5">Reference</dt><dd class="col-7">{{ invoice.invoice_number }}</dd>
+      </dl>
+      {% if settings.bank_instructions %}<p class="small text-muted">{{ settings.bank_instructions }}</p>{% endif %}
+      {% if not claimed %}
+      <hr>
+      <form method="post" action="{{ url_for('pay.public_claim', token=token) }}">
+        <div class="small mb-2">Already sent the transfer? Let them know:</div>
+        <input name="name" class="form-control form-control-sm mb-2" placeholder="Your name" required maxlength="150">
+        <input name="note" class="form-control form-control-sm mb-2" placeholder="Optional note (e.g. bank, time sent)" maxlength="500">
+        <button class="btn btn-outline-primary btn-sm">I've paid</button>
+      </form>
+      {% else %}<div class="small text-success"><i class="bi bi-check2"></i> {{ org.name }} has been told you've paid.</div>{% endif %}
+    </div>
+    {% endif %}
+    {% if not card_enabled and not show_bank %}
+      <div class="alert alert-info">Please contact {{ org.name }} to arrange payment.</div>
+    {% endif %}
+  {% endif %}
+  <p class="text-center text-muted small">Invoiced with {{ app_name }}</p>
+</div>
+</body>
+</html>
