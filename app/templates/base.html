@@ -97,7 +97,7 @@
 
         {% if current_user.is_authenticated and current_user.is_admin %}
         {{ navlink('auth.users_list', 'bi-shield-lock', 'Users') }}
-        {% if not is_demo_org %}{{ navlink('billing.billing_page', 'bi-credit-card', 'Billing') }}{% endif %}
+        {% if not is_demo_org %}{{ navlink('pay.settings_page', 'bi-wallet2', 'Get paid') }}{{ navlink('billing.billing_page', 'bi-credit-card', 'Billing') }}{% endif %}
         {% endif %}
         <li class="nav-item">
           <a class="side-link {{ 'active' if request.path == '/pricing' else '' }}" href="/pricing">

@@ -11,7 +11,7 @@ from app.pdf.common import (
 )
 
 
-def generate_invoice_pdf(invoice, app_name="Acquiral", company_name="Admiral Sentinel"):
+def generate_invoice_pdf(invoice, app_name="Acquiral", company_name="Admiral Sentinel", pay_url=None):
     """Returns a BytesIO of a single-page invoice PDF for the given
     Invoice ORM object (with its Customer and InvoiceLine relationships
     already loaded/loadable)."""
@@ -111,6 +111,11 @@ def generate_invoice_pdf(invoice, app_name="Acquiral", company_name="Admiral Sen
         story.append(Spacer(1, 18))
         story.append(Paragraph("NOTES", STYLE_LABEL))
         story.append(Paragraph(invoice.notes.replace("\n", "<br/>"), STYLE_BODY))
+
+    if pay_url and invoice.status == "sent":
+        story.append(Spacer(1, 18))
+        story.append(Paragraph("PAY ONLINE", STYLE_LABEL))
+        story.append(Paragraph(f'<link href="{pay_url}" color="#1F4E8C">{pay_url}</link>', STYLE_BODY))
 
     doc.build(story, onFirstPage=footer(app_name, company_name), onLaterPages=footer(app_name, company_name))
     buf.seek(0)

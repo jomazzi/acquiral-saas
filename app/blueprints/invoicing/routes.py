@@ -127,14 +127,25 @@ def invoice_new():
 def invoice_detail(invoice_id):
     invoice = Invoice.query.filter_by(id=invoice_id).first_or_404()
     bank_accounts = Account.query.filter_by(is_cash_or_bank=True, active=True).order_by(Account.code).all()
-    return render_template("invoicing/invoice_detail.html", invoice=invoice, bank_accounts=bank_accounts)
+    from app.models.payments import InvoicePayment
+    from app.payments import service as pay_service
+    pay_url, payments = None, []
+    if invoice.status in ("sent", "paid"):
+        pay_url = url_for("pay.public_invoice", token=pay_service.ensure_share_link(invoice).token, _external=True)
+        payments = InvoicePayment.query.filter_by(invoice_id=invoice.id).order_by(InvoicePayment.created_at).all()
+    return render_template("invoicing/invoice_detail.html", invoice=invoice, bank_accounts=bank_accounts,
+                           pay_url=pay_url, payments=payments)
 
 
 @invoicing_bp.route("/invoices/<uuid:invoice_id>/pdf")
 @login_required
 def invoice_pdf(invoice_id):
     invoice = Invoice.query.filter_by(id=invoice_id).first_or_404()
-    pdf_buf = generate_invoice_pdf(invoice)
+    from app.payments import service as pay_service
+    pay_url = None
+    if invoice.status == "sent":
+        pay_url = url_for("pay.public_invoice", token=pay_service.ensure_share_link(invoice).token, _external=True)
+    pdf_buf = generate_invoice_pdf(invoice, pay_url=pay_url)
     return send_file(pdf_buf, mimetype="application/pdf", as_attachment=True,
                       download_name=f"{invoice.invoice_number}.pdf")
 

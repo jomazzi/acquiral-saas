@@ -99,6 +99,49 @@
       {% endif %}
     </div>
 
+    {% if pay_url %}
+    <div class="card card-metric p-3 mb-3">
+      <h6>Online payment</h6>
+      {% if invoice.status == 'sent' %}
+      <p class="small text-muted mb-2">Send this link to your customer. They see the invoice, your bank details and, if you've connected Paystack, a Pay by card button. No account needed.</p>
+      <div class="input-group input-group-sm mb-2">
+        <input type="text" class="form-control" id="pay-url" value="{{ pay_url }}" readonly>
+        <button class="btn btn-outline-primary" type="button"
+                onclick="navigator.clipboard.writeText(document.getElementById('pay-url').value); this.textContent='Copied'">Copy</button>
+      </div>
+      {% if current_user.is_admin %}<a class="small" href="{{ url_for('pay.settings_page') }}">Payment settings →</a>{% endif %}
+      {% endif %}
+      {% for p in payments %}
+        {% if p.status == 'claimed' %}
+        <div class="border rounded p-2 mt-2 small">
+          <strong>{{ p.payer_name }}</strong> says they've paid by transfer.
+          {% if p.note %}<div class="text-muted">&ldquo;{{ p.note }}&rdquo;</div>{% endif %}
+          {% if current_user.is_admin %}
+          <form method="post" action="{{ url_for('pay.claim_action', invoice_id=invoice.id, payment_id=p.id, action='confirm') }}" class="mt-2">
+            <select name="bank_account_id" class="form-select form-select-sm mb-1" required>
+              <option value="">Received into…</option>
+              {% for a in bank_accounts if a.currency == 'NGN' %}<option value="{{ a.id }}">{{ a.code }} {{ a.name }}</option>{% endfor %}
+            </select>
+            <button class="btn btn-primary btn-sm">Confirm received</button>
+          </form>
+          <form method="post" action="{{ url_for('pay.claim_action', invoice_id=invoice.id, payment_id=p.id, action='dismiss') }}" class="mt-1">
+            <button class="btn btn-outline-secondary btn-sm">Dismiss</button>
+          </form>
+          {% endif %}
+        </div>
+        {% elif p.status in ('duplicate', 'mismatch') %}
+        <div class="alert alert-warning small mt-2 mb-0">
+          A card payment of ₦{{ '{:,.2f}'.format(p.amount_minor / 100) }} ({{ p.reference }}) was
+          {{ 'received after this invoice was already paid' if p.status == 'duplicate' else 'received but did not match the invoice, so it was not recorded' }}.
+          Check it in your Paystack dashboard and refund or record it manually.
+        </div>
+        {% elif p.status == 'paid' %}
+        <div class="small text-muted mt-2"><i class="bi bi-credit-card"></i> Paid by card ({{ p.reference }})</div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
     {% if invoice.sent_journal_entry_id or invoice.payment_journal_entry_id %}
     <div class="card card-metric p-3">
       <h6>Journal Postings</h6>

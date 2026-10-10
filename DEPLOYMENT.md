@@ -187,6 +187,17 @@ The webhook and checkout callback need public HTTPS, so use a tunnel
 (e.g. ngrok) to test real webhooks locally. `python scripts/billing_test.py`
 covers the whole flow with Paystack mocked.
 
+## Pay Now (invoice payment links)
+
+Every sent invoice has a public link (`/i/<token>`) shown on the invoice page and printed on its PDF. The customer needs no account anywhere.
+
+- **Bank transfer** works with no setup beyond choosing a Naira bank account in *Get paid* (sidebar). The customer can press "I've paid"; the claim appears on the invoice and nothing is posted until an admin confirms it.
+- **Pay by card** appears once an admin pastes their organisation's *own* Paystack secret key into *Get paid*. Money goes straight to that Paystack account (Acquiral never holds it). The key is stored encrypted and never shown again. The admin also sets the webhook URL shown on that page (`/pay/webhook/<org id>`) in their Paystack dashboard; the return page settles payments even without the webhook, the webhook covers customers who close the tab.
+- Optional env var `FIELD_ENCRYPTION_KEY` (generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`). If unset the encryption key is derived from `SECRET_KEY`; rotating `SECRET_KEY` would then require orgs to re-enter their Paystack key.
+- **Migration:** adds `payment_settings`, `invoice_payments`, `invoice_share_links`. Run `/internal/seed-demo?token=...` right after deploying (it applies migrations and RLS).
+- Payments that arrive after an invoice is already paid, or with the wrong amount, are recorded but not posted; the invoice page flags them for refund/manual handling.
+- v1 is Naira-only.
+
 ## Custom domain
 
 Not set up yet (per the agreed roadmap — this phase just gets a working

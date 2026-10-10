@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Get paid{% endblock %}
+{% block content %}
+<h3 class="mb-3">Get paid on invoices</h3>
+<p class="text-muted">Every sent invoice gets a public payment link. Customers need no account with Acquiral or Paystack.</p>
+<form method="post" class="card card-metric p-4" style="max-width:720px">
+  <h6>Bank transfer</h6>
+  <label class="form-label small" for="ba">Your Naira bank account</label>
+  <select name="bank_account_id" id="ba" class="form-select mb-2">
+    <option value="">— none —</option>
+    {% for b in banks %}<option value="{{ b.id }}" {% if settings and settings.bank_account_id == b.id %}selected{% endif %}>{{ b.code }} {{ b.name }}{% if b.account_number %} · {{ b.account_number }}{% endif %}</option>{% endfor %}
+  </select>
+  <div class="form-text mb-2">Shown on the invoice page and used when card payments or confirmed transfers are posted. Add the account number and bank in your Chart of Accounts.</div>
+  <div class="form-check mb-2">
+    <input class="form-check-input" type="checkbox" name="show_bank_details" id="sb" {% if not settings or settings.show_bank_details %}checked{% endif %}>
+    <label class="form-check-label" for="sb">Show these bank details on the invoice page</label>
+  </div>
+  <label class="form-label small" for="bi">Extra instructions (optional)</label>
+  <textarea name="bank_instructions" id="bi" rows="2" class="form-control mb-3" maxlength="1000">{{ settings.bank_instructions if settings and settings.bank_instructions else '' }}</textarea>
+
+  <hr>
+  <h6>Card payments (your own Paystack account)</h6>
+  {% if settings and settings.has_paystack_key %}
+    <p class="mb-1"><span class="badge {{ 'bg-success' if key_ok else 'bg-danger' }}">{{ 'Connected' if key_ok else 'Needs re-entry' }}</span>
+      <span class="text-muted small">{{ settings.paystack_key_hint }}</span></p>
+    {% if not key_ok %}<div class="alert alert-warning small">The stored key can't be read any more. Enter it again below.</div>{% endif %}
+  {% endif %}
+  <label class="form-label small" for="pk">Paystack secret key</label>
+  <input type="password" name="paystack_key" id="pk" class="form-control mb-1" autocomplete="off" placeholder="sk_live_…  (leave blank to keep current)">
+  <div class="form-text mb-2">Paystack dashboard → Settings → API Keys. Stored encrypted and never shown again. Money goes straight to your Paystack account.</div>
+  <div class="small mb-3">In Paystack → Settings → API Keys &amp; Webhooks, set the webhook URL to:
+    <code class="d-block user-select-all">{{ webhook_url }}</code></div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" name="action" value="save">Save</button>
+    {% if settings and settings.has_paystack_key %}
+    <button class="btn btn-outline-danger" name="action" value="remove_key" formnovalidate onclick="return confirm('Remove your Paystack key? Card payments will stop.');">Remove key</button>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

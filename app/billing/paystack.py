@@ -25,8 +25,10 @@ def is_configured():
     return bool(secret_key())
 
 
-def _request(method, path, payload=None, timeout=20):
-    key = secret_key()
+def _request(method, path, payload=None, timeout=20, key=None):
+    """`key` overrides the platform key -- used when acting on behalf of a
+    tenant with THEIR Paystack account (invoice payments)."""
+    key = key or secret_key()
     if not key:
         raise PaystackError("Paystack is not configured (PAYSTACK_SECRET_KEY is unset).")
     data = json.dumps(payload).encode() if payload is not None else None
@@ -50,20 +52,27 @@ def _request(method, path, payload=None, timeout=20):
     return body["data"]
 
 
-def initialize_transaction(email, amount_minor, currency, plan_code, reference, callback_url, metadata):
+def initialize_transaction(email, amount_minor, currency, plan_code, reference, callback_url, metadata, key=None):
     """Starts a hosted checkout. Passing `plan` makes Paystack create a
     recurring subscription from the successful first charge (and use the
     plan's amount, which is why plan amounts must match plans.py)."""
-    return _request("POST", "/transaction/initialize", {
+    payload = {
         "email": email, "amount": amount_minor, "currency": currency,
-        "plan": plan_code, "reference": reference,
-        "callback_url": callback_url, "metadata": metadata,
-    })
+        "reference": reference, "callback_url": callback_url, "metadata": metadata,
+    }
+    if plan_code:               # one-off invoice payments have no plan
+        payload["plan"] = plan_code
+    return _request("POST", "/transaction/initialize", payload, key=key)
 
 
-def verify_transaction(reference):
+def verify_transaction(reference, key=None):
     from urllib.parse import quote
-    return _request("GET", f"/transaction/verify/{quote(reference, safe='')}")
+    return _request("GET", f"/transaction/verify/{quote(reference, safe='')}", key=key)
+
+
+def check_key(key):
+    """Cheap authenticated call that proves a secret key is valid."""
+    return _request("GET", "/transaction?perPage=1", key=key)
 
 
 def disable_subscription(subscription_code, email_token):
@@ -77,12 +86,12 @@ def create_plan(name, amount_minor, interval, currency):
     })
 
 
-def valid_webhook_signature(raw_body, signature_header):
+def valid_webhook_signature(raw_body, signature_header, key=None):
     """Paystack signs the raw request body with HMAC-SHA512 using the
     secret key and sends the hex digest in X-Paystack-Signature. Must be
     computed over the exact bytes received (not re-serialised JSON), and
     compared in constant time."""
-    key = secret_key()
+    key = key or secret_key()
     if not key or not signature_header:
         return False
     expected = hmac.new(key.encode(), raw_body, hashlib.sha512).hexdigest()

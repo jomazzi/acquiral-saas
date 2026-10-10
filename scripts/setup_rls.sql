@@ -49,7 +49,9 @@ BEGIN
         'vendors',
         'bills',
         'bill_lines',
-        'subscription_payments'
+        'subscription_payments',
+        'payment_settings',
+        'invoice_payments'
     ]
     LOOP
         EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
@@ -71,3 +73,9 @@ END $$;
 -- a no-op if RLS was never enabled, but documents the decision in the
 -- same file as everything else, and is safe to re-run.
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+
+-- NOTE: invoice_share_links is intentionally NOT row-secured. The public
+-- invoice page ("Pay Now") has no login, so it must look up which tenant
+-- a token belongs to BEFORE it can set tenant context -- the same reason
+-- `users` and `organizations` are exempt. It maps a 256-bit random token
+-- to two random UUIDs and nothing else; all invoice data is read under RLS.
