@@ -31,21 +31,37 @@ PLANS = {
     "starter": {
         "name": "Starter",
         "tagline": "For small NGOs and growing businesses",
-        "max_users": 2,
-        # Whole units of each currency (naira / dollars), per period.
+        "max_users": 1,
         "price": {
-            "NGN": {"monthly": 45_000, "annual": 540_000},
-            "USD": {"monthly": 39, "annual": 468},
+            "NGN": {"monthly": 55_000, "annual": 561_000},
+            "USD": {"monthly": 46, "annual": 469},
         },
+        "features": {"payroll": False, "multi_currency": False},
+        "feature_list": [
+            "Fund & project accounting with donor reporting",
+            "Double-entry journal, trial balance, income statement, balance sheet",
+            "Fixed-asset register with automatic depreciation",
+            "Invoicing, vendor bills and bank reconciliation",
+            "Books in naira (NGN)",
+        ],
     },
     "organisation": {
         "name": "Organisation",
         "tagline": "For medium to larger teams with more people in the books",
-        "max_users": 15,
+        "max_users": 10,
         "price": {
-            "NGN": {"monthly": 69_000, "annual": 828_000},
-            "USD": {"monthly": 51, "annual": 612},
+            "NGN": {"monthly": 79_000, "annual": 805_800},
+            "USD": {"monthly": 57, "annual": 581},
         },
+        "features": {"payroll": True, "multi_currency": True},
+        "feature_list": [
+            "Fund & project accounting with donor reporting",
+            "Double-entry journal, trial balance, income statement, balance sheet",
+            "Fixed-asset register with automatic depreciation",
+            "Nigerian payroll under the Nigeria Tax Act 2025",
+            "Invoicing, vendor bills and bank reconciliation",
+            "Multi-currency (NGN, USD, EUR, GBP)",
+        ],
     },
 }
 

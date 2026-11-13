@@ -72,7 +72,7 @@
                    {% if loop.first %}checked{% endif %} required>
             <label class="btn btn-outline-primary w-100 text-start p-3" for="plan-{{ c.key }}">
               <strong>{{ c.name }}</strong><br>
-              <span class="small">Up to {{ c.max_users }} users</span><br>
+              <span class="small">{% if c.max_users == 1 %}1 user{% else %}Up to {{ c.max_users }} users{% endif %}</span><br>
               <span class="small">
                 {% for cur in currencies %}
                 <span data-price data-cur="{{ cur }}">{{ c.prices[cur].monthly }}/mo &middot; {{ c.prices[cur].annual }}/yr</span>

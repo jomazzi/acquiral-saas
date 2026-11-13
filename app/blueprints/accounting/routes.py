@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 from datetime import date, datetime
+from app.billing.access import org_has_feature
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app
 from flask_login import login_required, current_user
@@ -220,6 +221,9 @@ def account_new():
         type_ = request.form["type"]
         contra = bool(request.form.get("contra"))
         currency = request.form.get("currency") or "NGN"
+        if currency != "NGN" and not org_has_feature(current_user.organization_id, "multi_currency"):
+        flash("Foreign-currency accounts are included in the Organisation plan.", "error")
+        return render_template("accounting/account_form.html", types=ACCOUNT_TYPES, currencies=CURRENCIES) 
         is_cash_or_bank = bool(request.form.get("is_cash_or_bank"))
         account_number = request.form.get("account_number", "").strip() or None
         bank_branch = request.form.get("bank_branch", "").strip() or None
@@ -252,7 +256,11 @@ def account_edit(account_id):
         account.name = request.form["name"].strip()
         account.type = request.form["type"]
         account.contra = bool(request.form.get("contra"))
-        account.currency = request.form.get("currency") or "NGN"
+        new_currency = request.form.get("currency") or "NGN"
+        if new_currency not in ("NGN", account.currency) and not org_has_feature(current_user.organization_id, "multi_currency"):
+            flash("Foreign-currency accounts are included in the Organisation plan.", "error")
+            return render_template("accounting/account_form.html", types=ACCOUNT_TYPES, currencies=CURRENCIES, account=account)
+        account.currency = new_currency
         account.is_cash_or_bank = bool(request.form.get("is_cash_or_bank"))
         account.account_number = request.form.get("account_number", "").strip() or None
         account.bank_branch = request.form.get("bank_branch", "").strip() or None

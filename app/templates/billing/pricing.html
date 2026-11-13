@@ -56,8 +56,8 @@
         </div>
       </nav>
       <div class="text-center">
-        <h1 class="mb-3">Simple pricing. Every feature, every plan.</h1>
-        <p class="lead mb-4">Start with a {{ trial_days }}-day free trial — no card needed. Plans differ only by how many people work in your books.</p>
+        <h1 class="mb-3">Simple pricing that grows with your organisation.</h1>
+        <p class="lead mb-4">Start with a {{ trial_days }}-day free trial — no card needed. Choose the plan that fits your team and the features you need.</p>
         <div class="d-flex flex-wrap justify-content-center gap-3">
           <div class="interval-toggle" role="group" aria-label="Currency" id="currency-toggle">
             {% for cur in currencies %}<button type="button" data-currency="{{ cur }}" class="{{ 'active' if loop.first else '' }}">{{ cur }}</button>{% endfor %}
@@ -87,14 +87,14 @@
           <div class="saving-note">
             {% for cur in currencies %}{% if c.saving[cur] %}<span data-saving data-cur="{{ cur }}" style="display:none">You save {{ c.saving[cur] }} a year</span>{% endif %}{% endfor %}
           </div>
-          <p class="mt-2 mb-3"><strong>Up to {{ c.max_users }} users</strong></p>
+          <p class="mt-2 mb-3"><strong>{% if c.max_users == 1 %}1 user{% else %}Up to {{ c.max_users }} users{% endif %}</strong></p>
           {% if current_user.is_authenticated and current_user.is_admin %}
             <a href="{{ url_for('billing.billing_page') }}" class="btn btn-primary w-100">Choose {{ c.name }}</a>
           {% else %}
             <a href="{{ url_for('auth.signup') }}" class="btn btn-primary w-100">Start {{ trial_days }}-day free trial</a>
           {% endif %}
           <ul class="plan-features">
-            {% for f in features %}<li><i class="bi bi-check-circle-fill"></i> <span>{{ f }}</span></li>{% endfor %}
+            {% for f in c.feature_list %}<li><i class="bi bi-check-circle-fill"></i> <span>{{ f }}</span></li>{% endfor %}
           </ul>
         </div>
       </div>

@@ -246,3 +246,19 @@ def payroll_post(run_id):
 def report_payroll_summary():
     runs = PayrollRun.query.filter_by(status="posted").order_by(PayrollRun.period_year, PayrollRun.period_month).all()
     return render_template("payroll/report_payroll_summary.html", runs=runs)
+@payroll_bp.before_request
+def _require_payroll_plan():
+    from flask import flash, redirect, request, url_for
+    from app.billing.access import plan_has_feature
+    from app.models.tenant import Organization
+    if not current_user.is_authenticated:
+        return None  # login_required handles this
+    org = Organization.query.get(current_user.organization_id)
+    if org is None or plan_has_feature(org, "payroll"):
+        return None
+    creating = (request.endpoint or "").endswith((".employee_new", ".payroll_new"))
+    if request.method not in ("GET", "HEAD") or creating:
+        flash("Payroll is included in the Organisation plan. Upgrade to add "
+              "employees or run payroll.", "error")
+        return redirect(url_for("billing.billing_page"))
+    return None

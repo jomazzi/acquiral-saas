@@ -73,3 +73,20 @@ def trial_days_left(org, now=None):
     if not org.trial_ends_at:
         return 0
     return max(0, (org.trial_ends_at - now).days + (1 if org.trial_ends_at > now else 0))
+def plan_has_feature(org, feature):
+    """Whether this org's plan includes a feature ('payroll',
+    'multi_currency'). Trials and comped orgs get everything, matching
+    how trials get the largest plan's user allowance. A deploy without
+    Paystack configured behaves as before (everything allowed)."""
+    from app.billing import plans
+    if not billing_enforced():
+        return True
+    if access_state(org) in ("comped", "trialing"):
+        return True
+    plan = plans.PLANS.get(org.plan_key)
+    return bool(plan and plan["features"].get(feature))
+def org_has_feature(organization_id, feature):
+    """Convenience wrapper for views: look the org up by id."""
+    from app.models.tenant import Organization
+    org = Organization.query.get(organization_id)
+    return org is None or plan_has_feature(org, feature)
