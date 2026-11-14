@@ -119,6 +119,67 @@ def signup():
 
     return render_template("auth/signup.html")
 
+@auth_bp.route("/verify-email-pending")
+@login_required
+def verify_pending():
+    if current_user.email_verified:
+        return redirect(url_for("accounting.dashboard"))
+    return render_template("auth/verify_pending.html", email=current_user.email)
+
+
+@auth_bp.route("/verify-email/<token>")
+def verify_email(token):
+    try:
+        data = _serializer().loads(token, max_age=VERIFY_MAX_AGE)
+        uid, email = uuid.UUID(data["uid"]), data["email"]
+    except (BadSignature, KeyError, ValueError, TypeError):
+        flash("That confirmation link is invalid or has expired. Log in to request a new one.", "error")
+        return redirect(url_for("auth.verify_pending" if current_user.is_authenticated else "auth.login"))
+    user = User.query.filter_by(id=uid).first()
+    if user is None or (user.email or "").lower() != email.lower():
+        flash("That confirmation link is no longer valid.", "error")
+        return redirect(url_for("auth.verify_pending" if current_user.is_authenticated else "auth.login"))
+    if not user.email_verified:
+        user.email_verified = True
+        db.session.commit()
+    flash("Email confirmed. Welcome to Acquiral!", "success")
+    if current_user.is_authenticated and current_user.id == user.id:
+        return redirect(url_for("accounting.dashboard"))
+    return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/resend-verification", methods=["POST"])
+@login_required
+def resend_verification():
+    if current_user.email_verified:
+        return redirect(url_for("accounting.dashboard"))
+    last = current_user.verification_sent_at
+    if last and utcnow() - last < RESEND_COOLDOWN:
+        flash("Please wait a minute before requesting another email.", "error")
+    elif _send_verification(current_user):
+        flash(f"Confirmation email sent to {current_user.email}.", "success")
+    else:
+        flash("We couldn't send the email right now. Please try again shortly.", "error")
+    return redirect(url_for("auth.verify_pending"))
+
+
+@auth_bp.route("/change-email", methods=["POST"])
+@login_required
+def change_email():
+    email = request.form.get("email", "").strip().lower()
+    if not EMAIL_RE.match(email):
+        flash("Enter a valid email address.", "error")
+        return redirect(url_for("auth.verify_pending"))
+    current_user.email = email
+    current_user.email_verified = False
+    current_user.verification_sent_at = None
+    db.session.commit()
+    if _send_verification(current_user):
+        flash(f"Confirmation email sent to {email}.", "success")
+    else:
+        flash("We couldn't send the email right now. Use Resend in a moment.", "error")
+    return redirect(url_for("auth.verify_pending"))
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
