@@ -163,7 +163,7 @@ check(refresh(orgA.id).billing_email == "fin@a.org", "billing email saved")
 
 print("\n--- Callback (customer returns from Paystack) ---")
 ref = init["reference"]
-next_verify[ref] = {"status": "success", "reference": ref, "amount": 4_500_000, "currency": "NGN",
+next_verify[ref] = {"status": "success", "reference": ref, "amount": 5_500_000, "currency": "NGN",
                     "paid_at": utcnow().isoformat() + "Z",
                     "customer": {"customer_code": CUS_A, "email": "fin@a.org"},
                     "metadata": {"organization_id": str(orgA.id), "plan_key": "starter", "interval": "monthly", "currency": "NGN"}}
@@ -214,7 +214,7 @@ o = refresh(orgA.id)
 check(r.status_code == 200 and o.paystack_subscription_code == SUB_A and o.paystack_email_token == TOK_A, "subscription.create stores code and token")
 
 renew_ref = f"renewal-1-{RUN}"
-renew = {"status": "success", "reference": renew_ref, "amount": 4_500_000, "currency": "NGN",
+renew = {"status": "success", "reference": renew_ref, "amount": 5_500_000, "currency": "NGN",
          "paid_at": (utcnow() + timedelta(days=30)).isoformat() + "Z",
          "customer": {"customer_code": CUS_A, "email": "fin@a.org"},
          "plan": {"plan_code": "PLN_starter_monthly_NGN"}, "metadata": {}}
