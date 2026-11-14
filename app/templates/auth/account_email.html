@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your email — {{ app_name }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body style="background: var(--navy-900); min-height:100vh;" class="d-flex align-items-center py-5">
+  <div class="container"><div class="row justify-content-center"><div class="col-md-5">
+    <div class="card p-4 shadow-lg border-0" style="border-radius: 14px;">
+      <h5 class="mb-3">Your email address</h5>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, msg in messages %}<div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ msg }}</div>{% endfor %}
+      {% endwith %}
+      <p class="text-muted small">Used to confirm your account and reset your password. We'll email a confirmation link to the new address.</p>
+      <form method="post" action="{{ url_for('auth.change_email') }}">
+        <input type="email" name="email" class="form-control mb-3" required value="{{ email }}">
+        <button class="btn btn-primary w-100">Save and send confirmation</button>
+      </form>
+      <div class="text-center mt-3"><a href="{{ url_for('accounting.dashboard') }}" class="small">Back to dashboard</a></div>
+    </div>
+  </div></div></div>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 from datetime import timedelta
 import re
 
@@ -300,3 +301,78 @@ def user_reset_password(user_id):
         db.session.commit()
         flash(f"Password reset for {u.username}.", "success")
     return redirect(url_for("auth.users_list"))
+
+RESET_MAX_AGE = 3600  # one hour
+
+
+def _reset_serializer():
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="password-reset")
+
+
+def _fingerprint(user):
+    # Changes whenever the password changes, so a reset link works only once.
+    return hashlib.sha256(user.password_hash.encode()).hexdigest()[:16]
+
+
+def _user_from_reset_token(token):
+    try:
+        data = _reset_serializer().loads(token, max_age=RESET_MAX_AGE)
+        user = User.query.filter_by(id=uuid.UUID(data["uid"])).first()
+    except (BadSignature, KeyError, ValueError, TypeError):
+        return None
+    if user is None or not user.active or not user.email_verified:
+        return None
+    return user if data.get("fp") == _fingerprint(user) else None
+
+
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for("accounting.dashboard"))
+    if request.method == "POST":
+        if not mailer.mail_enabled():
+            flash("Email isn't available right now. Ask an administrator of your workspace to reset your password.", "error")
+            return render_template("auth/forgot_password.html")
+        email = request.form.get("email", "").strip().lower()
+        if EMAIL_RE.match(email):
+            users = (User.query.filter(db.func.lower(User.email) == email,
+                                       User.email_verified.is_(True), User.active.is_(True)).all())
+            if users:
+                parts = []
+                for u in users:
+                    link = url_for("auth.reset_password", token=_reset_serializer().dumps(
+                        {"uid": str(u.id), "fp": _fingerprint(u)}), _external=True)
+                    parts.append(f"Workspace: {u.organization.name}\nUsername: {u.username}\nReset link: {link}\n")
+                text = ("Someone asked to reset an Acquiral password for this email address.\n\n"
+                        + "\n".join(parts)
+                        + "\nThe links work for one hour. If you didn't ask for this, ignore this email; "
+                          "your password stays the same.\n\nAcquiral")
+                mailer.send_email(email, "Reset your Acquiral password", text)
+        # Same answer whether or not the address exists, so this page can't be used to find accounts.
+        flash("If that address belongs to an account, we've sent a reset link. It works for one hour.", "success")
+        return redirect(url_for("auth.login"))
+    return render_template("auth/forgot_password.html")
+
+
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    user = _user_from_reset_token(token)
+    if user is None:
+        flash("That reset link is invalid or has expired. Request a new one.", "error")
+        return redirect(url_for("auth.forgot_password"))
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        if len(password) < 6:
+            flash("Password must be at least 6 characters.", "error")
+        else:
+            user.set_password(password)
+            db.session.commit()
+            flash("Password updated. You can log in now.", "success")
+            return redirect(url_for("auth.login"))
+    return render_template("auth/reset_password.html", token=token, username=user.username)
+
+
+@auth_bp.route("/account/email")
+@login_required
+def account_email():
+    return render_template("auth/account_email.html", email=current_user.email or "")
