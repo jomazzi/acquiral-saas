@@ -58,7 +58,11 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default="user")  # 'admin' or 'user'
     active = db.Column(db.Boolean, default=True)
-
+    email = db.Column(db.String(150), index=True)
+    # True by default so existing users and staff created by an admin are never
+    # blocked; signup() sets it False when email verification is on.
+    email_verified = db.Column(db.Boolean, nullable=False, default=True, server_default=db.text("true"))
+    verification_sent_at = db.Column(db.DateTime)
     organization = db.relationship("Organization")
 
     # Username unique WITHIN an org only — two tenants can both have "user1".
