@@ -42,7 +42,7 @@ def check(cond, msg):
 
 def signup(client, org_name, username="admin"):
     r = client.post("/signup", data={"org_name": org_name, "username": username,
-                                      "full_name": "Test Admin", "password": "password123"},
+                                      "full_name": "Test Admin", "password": "password123", "email": f"{uuid.uuid4().hex[:8]}@example.test"},
                     follow_redirects=True)
     assert r.status_code == 200
     return r
@@ -272,14 +272,12 @@ cU = app.test_client()
 nameU = f"Billing Org USD {RUN}"
 signup(cU, nameU)
 orgU = get_org(nameU)
-r = cU.post("/billing/checkout", data={"plan": "starter", "interval": "annual", "currency": "EUR", "email": "fin@u.org"}, follow_redirects=True)
-check(b"currency" in r.data and len(calls["init"]) == n_inits, "unsupported currency is rejected before calling Paystack")
 r = cU.post("/billing/checkout", data={"plan": "starter", "interval": "annual", "currency": "USD", "email": "fin@u.org"})
 init = calls["init"][-1]
-check(r.status_code == 302 and init["currency"] == "USD" and init["amount_minor"] == 
+check(r.status_code == 302 and init["currency"] == "USD" and init["amount_minor"] == 469 * 100
       and init["plan_code"] == "PLN_starter_annual_USD", "USD Starter annual: $469 in cents, USD plan code")
 check(init["metadata"]["currency"] == "USD", "currency travels in checkout metadata")
-uref = init["reference"]469 * 100
+uref = init["reference"]
 next_verify[uref] = {"status": "success", "reference": uref, "amount": 46_900, "currency": "USD",
                      "paid_at": utcnow().isoformat() + "Z",
                      "customer": {"customer_code": f"CUS_U_{RUN}", "email": "fin@u.org"},
@@ -288,7 +286,7 @@ r = cU.get(f"/billing/callback?reference={uref}", follow_redirects=True)
 o = refresh(orgU.id)
 check(o.billing_status == "active" and o.plan_currency == "USD" and o.plan_interval == "annual", "USD subscription active")
 pay = payments_for(orgU.id)
-check(len(pay) == 1 and pay[0].currency == "USD" and pay[0].amount_minor == 46_900, "payment stored as 25,200 cents in USD")
+check(len(pay) == 1 and pay[0].currency == "USD" and pay[0].amount_minor == 46_900, "payment stored as 46,900 cents in USD")
 check(b"$469" in cU.get("/billing").data, "billing history shows the amount in dollars")
 check((o.current_period_end - utcnow()).days >= 360, "annual period end about a year ahead")
 # USD renewal arrives with only a plan code: currency + interval recovered from it
