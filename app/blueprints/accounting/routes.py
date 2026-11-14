@@ -222,8 +222,8 @@ def account_new():
         contra = bool(request.form.get("contra"))
         currency = request.form.get("currency") or "NGN"
         if currency != "NGN" and not org_has_feature(current_user.organization_id, "multi_currency"):
-        flash("Foreign-currency accounts are included in the Organisation plan.", "error")
-        return render_template("accounting/account_form.html", types=ACCOUNT_TYPES, currencies=CURRENCIES) 
+            flash("Foreign-currency accounts are included in the Organisation plan.", "error")
+            return render_template("accounting/account_form.html", types=ACCOUNT_TYPES, currencies=CURRENCIES) 
         is_cash_or_bank = bool(request.form.get("is_cash_or_bank"))
         account_number = request.form.get("account_number", "").strip() or None
         bank_branch = request.form.get("bank_branch", "").strip() or None
