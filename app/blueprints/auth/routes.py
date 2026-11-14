@@ -1,6 +1,12 @@
 import uuid
 from datetime import timedelta
+import re
 
+from flask import current_app
+from itsdangerous import BadSignature, URLSafeTimedSerializer
+from markupsafe import escape
+
+from app import mailer
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 
@@ -13,7 +19,44 @@ from app.billing.access import utcnow, user_limit
 
 auth_bp = Blueprint("auth", __name__)
 
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+VERIFY_MAX_AGE = 24 * 3600
+RESEND_COOLDOWN = timedelta(seconds=60)
 
+VERIFY_EXEMPT = {"auth.verify_pending", "auth.verify_email", "auth.resend_verification",
+                 "auth.change_email", "auth.logout", "static", "landing", "billing.pricing"}
+
+
+def _serializer():
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="email-verify")
+
+
+def _send_verification(user):
+    """The token carries the email address, so changing the address
+    invalidates any link already sent."""
+    token = _serializer().dumps({"uid": str(user.id), "email": user.email})
+    link = url_for("auth.verify_email", token=token, _external=True)
+    name = user.full_name or user.username
+    text = (f"Hello {name},\n\nConfirm your email address to open your Acquiral workspace:\n\n{link}\n\n"
+            "The link works for 24 hours. If you didn't sign up, you can ignore this email.\n\nAcquiral")
+    html = (f"<p>Hello {escape(name)},</p><p>Confirm your email address to open your Acquiral workspace:</p>"
+            f'<p><a href="{link}">Confirm my email</a></p>'
+            "<p>The link works for 24 hours. If you didn't sign up, you can ignore this email.</p><p>Acquiral</p>")
+    ok = mailer.send_email(user.email, "Confirm your email for Acquiral", text, html)
+    if ok:
+        user.verification_sent_at = utcnow()
+        db.session.commit()
+    return ok
+
+
+@auth_bp.before_app_request
+def require_verified_email():
+    """Unverified users can only see the verification pages."""
+    if not current_user.is_authenticated or current_user.email_verified:
+        return None
+    if (request.endpoint or "") in VERIFY_EXEMPT:
+        return None
+    return redirect(url_for("auth.verify_pending"))
 def _unique_slug(base):
     slug = base
     n = 1
@@ -36,10 +79,14 @@ def signup():
         org_name = request.form["org_name"].strip()
         username = request.form["username"].strip()
         full_name = request.form["full_name"].strip()
+        email = request.form.get("email", "").strip().lower()
         password = request.form["password"]
 
         if not org_name or not username or len(password) < 6:
             flash("Organization name, username and a password of at least 6 characters are required.", "error")
+            return render_template("auth/signup.html")
+        if not EMAIL_RE.match(email):
+            flash("Enter a valid email address.", "error")
             return render_template("auth/signup.html")
 
         base_slug = "".join(c.lower() if c.isalnum() else "-" for c in org_name).strip("-") or "org"
@@ -50,25 +97,27 @@ def signup():
         db.session.add(org)
         db.session.commit()  # need org.id before we can create the tenant-scoped user
 
-        user = User(organization_id=org.id, username=username, full_name=full_name, role="admin")
+        user = User(organization_id=org.id, username=username, full_name=full_name, role="admin",
+                    email=email, email_verified=not mailer.mail_enabled())
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
 
-        # Any query from here on that touches a tenant-scoped table needs
-        # RLS context explicitly applied — the before_request hook won't
-        # fire again mid-request, and the earlier commits ended whatever
-        # transaction any previously-set context lived in.
         from app import set_tenant
         set_tenant(org.id)
         seed_default_accounts(org.id)
 
         login_user(user)
+        if not user.email_verified:
+            if _send_verification(user):
+                flash(f"We sent a confirmation link to {email}.", "success")
+            else:
+                flash("We couldn't send the confirmation email. Use Resend below.", "error")
+            return redirect(url_for("auth.verify_pending"))
         flash(f"Welcome to Acquiral, {org_name}!", "success")
         return redirect(url_for("accounting.dashboard"))
 
     return render_template("auth/signup.html")
-
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():

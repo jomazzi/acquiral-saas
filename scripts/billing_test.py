@@ -20,6 +20,8 @@ from types import SimpleNamespace
 
 os.environ.pop("PAYSTACK_SECRET_KEY", None)
 
+os.environ.pop("MAIL_SERVER", None)   # test signups must not send real email
+
 from app import create_app, set_tenant
 from app.extensions import db
 from app.models.tenant import Organization, User
@@ -274,10 +276,10 @@ r = cU.post("/billing/checkout", data={"plan": "starter", "interval": "annual", 
 check(b"currency" in r.data and len(calls["init"]) == n_inits, "unsupported currency is rejected before calling Paystack")
 r = cU.post("/billing/checkout", data={"plan": "starter", "interval": "annual", "currency": "USD", "email": "fin@u.org"})
 init = calls["init"][-1]
-check(r.status_code == 302 and init["currency"] == "USD" and init["amount_minor"] == 469 * 100
+check(r.status_code == 302 and init["currency"] == "USD" and init["amount_minor"] == 
       and init["plan_code"] == "PLN_starter_annual_USD", "USD Starter annual: $469 in cents, USD plan code")
 check(init["metadata"]["currency"] == "USD", "currency travels in checkout metadata")
-uref = init["reference"]
+uref = init["reference"]469 * 100
 next_verify[uref] = {"status": "success", "reference": uref, "amount": 46_900, "currency": "USD",
                      "paid_at": utcnow().isoformat() + "Z",
                      "customer": {"customer_code": f"CUS_U_{RUN}", "email": "fin@u.org"},

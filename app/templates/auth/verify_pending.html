@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirm your email — {{ app_name }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body style="background: var(--navy-900); min-height:100vh;" class="d-flex align-items-center py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-5">
+        <div class="card p-4 shadow-lg border-0" style="border-radius: 14px;">
+          <h5 class="mb-3">Check your email</h5>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, msg in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ msg }}</div>
+            {% endfor %}
+          {% endwith %}
+          <p>We sent a confirmation link to <strong>{{ email }}</strong>. Click it to open your workspace. The link works for 24 hours.</p>
+          <p class="text-muted small">Nothing there? Check your spam folder.</p>
+          <form method="post" action="{{ url_for('auth.resend_verification') }}" class="mb-3">
+            <button class="btn btn-primary w-100">Resend email</button>
+          </form>
+          <form method="post" action="{{ url_for('auth.change_email') }}" class="mb-3">
+            <label class="form-label">Wrong address?</label>
+            <input type="email" name="email" class="form-control mb-2" required>
+            <button class="btn btn-outline-secondary w-100">Change email and resend</button>
+          </form>
+          <a href="{{ url_for('auth.logout') }}" class="text-center small">Log out</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
