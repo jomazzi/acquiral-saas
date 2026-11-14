@@ -135,10 +135,12 @@ signup(c, nameA)
 orgA = get_org(nameA)
 r = app.test_client().get("/pricing")
 check(b"Starter" in r.data and b"Organisation" in r.data, "pricing page shows both plans")
-for needle in (b"45,000", b"450,000", b"69,000", b"828,000", b"$21", b"$252", b"$51", b"$612"):
+for needle in (b"55,000", b"561,000", b"79,000", b"805,800", b"$46", b"$469", b"$57", b"$581"):
     check(needle in r.data, f"pricing page shows {needle.decode()}")
-check(b"You save \xe2\x82\xa690,000 a year" in r.data, "annual saving is computed (Starter NGN saves 2 months)")
-check(r.data.count(b"You save") == 1, "no savings claimed where annual == 12 x monthly (Organisation NGN, all USD)")
+check(b"You save \xe2\x82\xa699,000 a year" in r.data, "Starter NGN annual saves 15%")
+check(b"You save \xe2\x82\xa6142,200 a year" in r.data, "Organisation NGN annual saves 15%")
+check(b"You save $83 a year" in r.data and b"You save $103 a year" in r.data, "USD annual savings shown (whole dollars)")
+check(r.data.count(b"You save") == 4, "each plan shows an annual saving in each currency")
 r = c.get("/billing")
 check(r.status_code == 200 and b"Free trial" in r.data, "billing page shows the trial to an admin")
 r = c.get("/")
@@ -153,8 +155,8 @@ check(not calls["init"], "unknown plan is rejected")
 r = c.post("/billing/checkout", data={"plan": "starter", "interval": "monthly", "email": "fin@a.org"})
 check(r.status_code == 302 and r.headers["Location"].startswith("https://checkout.paystack.test/"), "checkout redirects to Paystack")
 init = calls["init"][-1]
-check(init["amount_minor"] == 45_000 * 100 and init["currency"] == "NGN" and init["plan_code"] == "PLN_starter_monthly_NGN",
-      "charged the Starter monthly plan: 45,000 naira in kobo, NGN plan")
+check(init["amount_minor"] == 55_000 * 100 and init["currency"] == "NGN" and init["plan_code"] == "PLN_starter_monthly_NGN",
+      "charged the Starter monthly plan: 55,000 naira in kobo, NGN plan")
 check(init["metadata"]["organization_id"] == str(orgA.id), "checkout metadata carries the organisation id")
 check(init["callback_url"].endswith("/billing/callback"), "callback URL points back at us")
 check(refresh(orgA.id).billing_email == "fin@a.org", "billing email saved")
@@ -175,7 +177,13 @@ check(len(payments_for(orgA.id)) == 1, "one payment recorded")
 c.get(f"/billing/callback?reference={ref}", follow_redirects=True)
 check(len(payments_for(orgA.id)) == 1, "replaying the callback does not double-record")
 r = c.get("/billing")
-check(b"Active" in r.data and b"45,000" in r.data, "billing page shows active plan and the payment")
+check(b"Active" in r.data and b"55,000" in r.data, "billing page shows active plan and the payment")
+print("\n--- Plan feature gating (Starter) ---")
+r = c.get("/payroll/new")
+check(r.status_code == 302 and "/billing" in r.headers["Location"], "Starter can't start a payroll run")
+check(c.get("/employees").status_code == 200, "Starter can still view the employees list")
+r = c.post("/accounts/new", data={"code": "1999", "name": "Gate USD", "type": "asset", "currency": "USD"}, follow_redirects=True)
+check(b"included in the Organisation plan" in r.data, "Starter can't create a USD account")
 
 print("\n--- Tenant isolation on callback ---")
 cB = app.test_client()
@@ -231,12 +239,9 @@ print("\n--- Plan change guard ---")
 r = c.post("/billing/checkout", data={"plan": "organisation", "interval": "annual", "email": "fin@a.org"}, follow_redirects=True)
 check(b"already have a live subscription" in r.data, "can't start a second subscription while one is live (no double billing)")
 
-print("\n--- User limits (Starter = 3 users) ---")
-for i in range(2):
-    r = c.post("/users", data={"username": f"staff{i}", "full_name": "S", "role": "user", "password": "password123"}, follow_redirects=True)
-    check(b"created" in r.data, f"added user {i + 2} of 3")
+print("\n--- User limits (Starter = 1 user) ---")
 r = c.post("/users", data={"username": "staff-over", "full_name": "S", "role": "user", "password": "password123"}, follow_redirects=True)
-check(b"allows up to 3 active users" in r.data, "4th user blocked on Starter")
+check(b"allows up to 1 active user" in r.data, "2nd user blocked on Starter (1-user limit)")
 
 print("\n--- Cancel ---")
 r = c.post("/billing/cancel", follow_redirects=True)
@@ -257,7 +262,7 @@ check(r.status_code == 200 and b"read-only" in r.data, "reads still work, with a
 check(c.get("/billing").status_code == 200, "billing page still reachable to re-subscribe")
 r = c.post("/billing/checkout", data={"plan": "organisation", "interval": "annual", "email": "fin@a.org"})
 check(r.status_code == 302 and "checkout.paystack.test" in r.headers["Location"], "an expired org can start a new checkout")
-check(calls["init"][-1]["amount_minor"] == 828_000 * 100, "Organisation annual charged at the right amount (828,000 naira)")
+check(calls["init"][-1]["amount_minor"] == 805_800 * 100, "Organisation annual charged at the right amount (805,800 naira)")
 
 print("\n--- USD checkout ---")
 n_inits = len(calls["init"])
@@ -269,11 +274,11 @@ r = cU.post("/billing/checkout", data={"plan": "starter", "interval": "annual", 
 check(b"currency" in r.data and len(calls["init"]) == n_inits, "unsupported currency is rejected before calling Paystack")
 r = cU.post("/billing/checkout", data={"plan": "starter", "interval": "annual", "currency": "USD", "email": "fin@u.org"})
 init = calls["init"][-1]
-check(r.status_code == 302 and init["currency"] == "USD" and init["amount_minor"] == 252 * 100
-      and init["plan_code"] == "PLN_starter_annual_USD", "USD Starter annual: $252 in cents, USD plan code")
+check(r.status_code == 302 and init["currency"] == "USD" and init["amount_minor"] == 469 * 100
+      and init["plan_code"] == "PLN_starter_annual_USD", "USD Starter annual: $469 in cents, USD plan code")
 check(init["metadata"]["currency"] == "USD", "currency travels in checkout metadata")
 uref = init["reference"]
-next_verify[uref] = {"status": "success", "reference": uref, "amount": 25_200, "currency": "USD",
+next_verify[uref] = {"status": "success", "reference": uref, "amount": 46_900, "currency": "USD",
                      "paid_at": utcnow().isoformat() + "Z",
                      "customer": {"customer_code": f"CUS_U_{RUN}", "email": "fin@u.org"},
                      "metadata": init["metadata"]}
@@ -281,11 +286,11 @@ r = cU.get(f"/billing/callback?reference={uref}", follow_redirects=True)
 o = refresh(orgU.id)
 check(o.billing_status == "active" and o.plan_currency == "USD" and o.plan_interval == "annual", "USD subscription active")
 pay = payments_for(orgU.id)
-check(len(pay) == 1 and pay[0].currency == "USD" and pay[0].amount_minor == 25_200, "payment stored as 25,200 cents in USD")
-check(b"$252" in cU.get("/billing").data, "billing history shows the amount in dollars")
+check(len(pay) == 1 and pay[0].currency == "USD" and pay[0].amount_minor == 46_900, "payment stored as 25,200 cents in USD")
+check(b"$469" in cU.get("/billing").data, "billing history shows the amount in dollars")
 check((o.current_period_end - utcnow()).days >= 360, "annual period end about a year ahead")
 # USD renewal arrives with only a plan code: currency + interval recovered from it
-webhook(cU, "charge.success", {"status": "success", "reference": f"usd-renewal-{RUN}", "amount": 25_200, "currency": "USD",
+webhook(cU, "charge.success", {"status": "success", "reference": f"usd-renewal-{RUN}", "amount": 46_900, "currency": "USD",
                                "paid_at": (utcnow() + timedelta(days=365)).isoformat() + "Z",
                                "customer": {"customer_code": f"CUS_U_{RUN}"},
                                "plan": {"plan_code": "PLN_starter_annual_USD"}, "metadata": {}})
