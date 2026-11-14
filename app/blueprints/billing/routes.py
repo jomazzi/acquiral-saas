@@ -53,9 +53,9 @@ def _plan_cards():
             prices[cur] = {i: plans.format_money(plans.price(key, i, cur), cur) for i in plans.INTERVALS}
             s = plans.annual_saving(key, cur)
             saving[cur] = plans.format_money(s, cur) if s > 0 else None
-            cards.append({"key": key, "name": p["name"], "tagline": p["tagline"],
-                "feature_list": p["feature_list"],
-                "max_users": p["max_users"], "prices": prices, "saving": saving})
+        cards.append({"key": key, "name": p["name"], "tagline": p["tagline"],
+                      "feature_list": p["feature_list"],
+                      "max_users": p["max_users"], "prices": prices, "saving": saving})
     return cards
 
 
