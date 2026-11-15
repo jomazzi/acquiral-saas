@@ -77,6 +77,8 @@ def create_app():
     from app.blueprints.billing.routes import billing_bp, enforce_billing
     from app.blueprints.pay.routes import pay_bp
     from app.blueprints.legal.routes import legal_bp
+    from app.blueprints.ops.routes import ops_bp
+    from app.blueprints.ops.cli import ops_admin_create, ops_admin_reset
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(accounting_bp)
@@ -88,7 +90,10 @@ def create_app():
     app.register_blueprint(billing_bp)
     app.register_blueprint(pay_bp)
     app.register_blueprint(legal_bp)
-    
+    app.register_blueprint(ops_bp)
+    app.cli.add_command(ops_admin_create)
+    app.cli.add_command(ops_admin_reset)
+        
     APP_NAME = "Acquiral"
     APP_TAGLINE = "Fund accounting, fixed assets and Nigerian payroll — in one place."
     COMPANY_NAME = "Admiral Sentinel"
