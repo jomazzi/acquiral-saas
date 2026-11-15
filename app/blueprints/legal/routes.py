@@ -12,12 +12,12 @@ TERMS_VERSION = "2026-11-14"
 LEGAL = {
     "company": "Admiral Sentinel",
     "reg_no": "9510445",
-    "address": "356 Chapman Road STE, Newark, Delaware",
+    "address": "5 Ebenezer Close, Sewage Road, Egbeda Lagos, Nigeria",
     "support_email": "support@admiralsentinel.com",
     "privacy_email": "mail@admiralsentinel.com",
     "hosting_location": "United Kingdom",
     "mail_host": "Admiral Sentinel",
-    "court": "High courts, Nigeria",
+    "court": "Lagos High court, Nigeria",
     "version": TERMS_VERSION,
 }
 
