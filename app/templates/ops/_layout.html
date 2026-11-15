@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>{% block title %}{% endblock %} — Acquiral Ops</title>
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+</head>
+<body class="bg-light">
+{% if g.ops %}
+<nav class="navbar navbar-dark bg-dark px-3 flex-wrap">
+  <span class="navbar-brand">Acquiral Ops</span>
+  <div class="d-flex flex-wrap gap-3 align-items-center small">
+    <a class="text-white" href="{{ url_for('ops.dashboard') }}">Dashboard</a>
+    <a class="text-white" href="{{ url_for('ops.subscribers') }}">Subscribers</a>
+    <a class="text-white" href="{{ url_for('ops.payments') }}">Payments</a>
+    <a class="text-white" href="{{ url_for('ops.audit') }}">Audit log</a>
+    <form method="post" action="{{ url_for('ops.logout') }}" class="m-0">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn btn-sm btn-outline-light">Log out ({{ g.ops.username }})</button>
+    </form>
+  </div>
+</nav>
+{% endif %}
+<div class="container py-4">{% block body %}{% endblock %}</div>
+</body>
+</html>

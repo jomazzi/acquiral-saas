@@ -1,0 +1,42 @@
+{% extends "ops/_layout.html" %}
+{% from "ops/_macros.html" import badge %}
+{% block title %}Dashboard{% endblock %}
+{% block body %}
+<h1 class="h4 mb-3">Dashboard</h1>
+<div class="row g-3 mb-2">
+  {% for label, value in [("Organisations", t.orgs), ("Trialing", t.trialing), ("Active", t.active), ("Past due", t.past_due), ("Canceled", t.canceled), ("Comped", t.comped), ("Users", users_n)] %}
+  <div class="col-6 col-md-3 col-lg"><div class="card p-3 text-center"><div class="text-muted small">{{ label }}</div><div class="h3 mb-0">{{ value }}</div></div></div>
+  {% endfor %}
+</div>
+<p class="text-muted small">Organisation counts exclude the public demo.</p>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6"><div class="card p-3"><h2 class="h6">Subscription revenue this month</h2>
+    {% for r in month %}<div>{{ r.total|opsmoney(r.currency) }} <span class="text-muted small">({{ r.n }} payments)</span></div>{% else %}<div class="text-muted">No payments yet.</div>{% endfor %}</div></div>
+  <div class="col-md-6"><div class="card p-3"><h2 class="h6">All time</h2>
+    {% for r in alltime %}<div>{{ r.total|opsmoney(r.currency) }} <span class="text-muted small">({{ r.n }} payments)</span></div>{% else %}<div class="text-muted">No payments yet.</div>{% endfor %}</div></div>
+</div>
+
+<h2 class="h6">Trials ending in the next 7 days</h2>
+<table class="table table-sm bg-white mb-4"><tbody>
+  {% for o in ending %}<tr><td><a href="{{ url_for('ops.subscriber', org_id=o.id) }}">{{ o.name }}</a></td><td>{{ o.trial_ends_at|opsdt }}</td></tr>{% else %}<tr><td class="text-muted">None.</td></tr>{% endfor %}
+</tbody></table>
+
+<h2 class="h6">Needs attention (past due, lapsed or expired trial)</h2>
+<table class="table table-sm bg-white mb-4"><tbody>
+  {% for o in attention %}<tr><td><a href="{{ url_for('ops.subscriber', org_id=o.id) }}">{{ o.name }}</a></td><td>{{ badge(o.billing_status) }}</td><td>{{ (o.current_period_end or o.trial_ends_at)|opsdt }}</td></tr>{% else %}<tr><td class="text-muted">Nothing needs attention.</td></tr>{% endfor %}
+</tbody></table>
+
+<h2 class="h6">Latest payments</h2>
+<table class="table table-sm bg-white mb-4"><tbody>
+  {% for p in recent %}<tr><td>{{ p.paid_at|opsdt }}</td><td><a href="{{ url_for('ops.subscriber', org_id=p.org_id) }}">{{ p.name }}</a></td><td>{{ p.plan_key }} {{ p.plan_interval }}</td><td class="text-end">{{ p.amount_minor|opsmoney(p.currency) }}</td></tr>{% else %}<tr><td class="text-muted">No payments yet.</td></tr>{% endfor %}
+</tbody></table>
+
+<h2 class="h6">System</h2>
+<table class="table table-sm bg-white"><tbody>
+  <tr><td>Database migration</td><td><code>{{ system.head }}</code></td></tr>
+  <tr><td>Paystack</td><td>{{ system.paystack }}</td></tr>
+  <tr><td>Email sending</td><td>{{ system.mail }}</td></tr>
+  <tr><td>Server time (UTC)</td><td>{{ system.now|opsdt }}</td></tr>
+</tbody></table>
+{% endblock %}

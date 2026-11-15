@@ -1,0 +1,14 @@
+{% extends "ops/_layout.html" %}
+{% block title %}Sign in{% endblock %}
+{% block body %}
+<div class="row justify-content-center"><div class="col-md-4"><div class="card p-4 shadow-sm">
+  <h1 class="h5 mb-3">Acquiral Ops</h1>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input class="form-control mb-2" name="username" placeholder="Username" autocomplete="username" required autofocus>
+    <input class="form-control mb-3" type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+    <button class="btn btn-dark w-100">Continue</button>
+  </form>
+</div></div></div>
+{% endblock %}

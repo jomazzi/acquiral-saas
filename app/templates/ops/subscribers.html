@@ -1,0 +1,25 @@
+{% extends "ops/_layout.html" %}
+{% from "ops/_macros.html" import badge %}
+{% block title %}Subscribers{% endblock %}
+{% block body %}
+<h1 class="h4 mb-3">Subscribers</h1>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-5"><input class="form-control" name="q" value="{{ q }}" placeholder="Search name, slug or billing email"></div>
+  <div class="col-md-3"><select class="form-select" name="status"><option value="">All statuses</option>{% for s in statuses %}<option value="{{ s }}" {{ 'selected' if s == status }}>{{ s }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><button class="btn btn-dark w-100">Filter</button></div>
+</form>
+<div class="table-responsive"><table class="table table-sm table-hover bg-white">
+  <thead><tr><th>Organisation</th><th>State</th><th>Plan</th><th>Users</th><th>Trial ends</th><th>Period ends</th><th>Created</th></tr></thead>
+  <tbody>
+  {% for o in orgs %}<tr>
+    <td><a href="{{ url_for('ops.subscriber', org_id=o.id) }}">{{ o.name }}</a>{% if o.is_demo %} <span class="badge bg-secondary">demo</span>{% endif %}</td>
+    <td>{{ badge(o.state) }}</td>
+    <td>{{ o.plan_key or '—' }} {{ o.plan_interval or '' }} {{ o.plan_currency or '' }}</td>
+    <td>{{ o.users }}</td><td>{{ o.trial_ends_at|opsdt }}</td><td>{{ o.current_period_end|opsdt }}</td><td>{{ o.created_at|opsdt }}</td>
+  </tr>{% else %}<tr><td colspan="7" class="text-muted">No subscribers match.</td></tr>{% endfor %}
+  </tbody></table></div>
+<div class="d-flex gap-3">
+  {% if page > 1 %}<a href="{{ url_for('ops.subscribers', q=q, status=status, page=page-1) }}">&larr; Newer</a>{% endif %}
+  {% if more %}<a href="{{ url_for('ops.subscribers', q=q, status=status, page=page+1) }}">Older &rarr;</a>{% endif %}
+</div>
+{% endblock %}

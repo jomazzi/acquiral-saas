@@ -1,0 +1,13 @@
+{% extends "ops/_layout.html" %}
+{% block title %}Verify{% endblock %}
+{% block body %}
+<div class="row justify-content-center"><div class="col-md-4"><div class="card p-4 shadow-sm">
+  <h1 class="h5 mb-3">Authenticator code</h1>
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input class="form-control mb-3" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="6-digit code" required autofocus>
+    <button class="btn btn-dark w-100">Sign in</button>
+  </form>
+</div></div></div>
+{% endblock %}

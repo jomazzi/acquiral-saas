@@ -1,0 +1,19 @@
+{% extends "ops/_layout.html" %}
+{% block title %}Payments{% endblock %}
+{% block body %}
+<h1 class="h4 mb-3">Subscription payments</h1>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-3"><select class="form-select" name="currency"><option value="">All currencies</option>{% for c in currencies %}<option value="{{ c }}" {{ 'selected' if c == currency }}>{{ c }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><input class="form-control" name="month" value="{{ month }}" placeholder="Month, e.g. 2026-11"></div>
+  <div class="col-md-2"><button class="btn btn-dark w-100">Filter</button></div>
+</form>
+<div class="mb-3">{% for r in totals %}<span class="me-4"><strong>{{ r.total|opsmoney(r.currency) }}</strong> <span class="text-muted small">{{ r.n }} payments</span></span>{% else %}<span class="text-muted">No payments for this filter.</span>{% endfor %}</div>
+<table class="table table-sm bg-white">
+  <thead><tr><th>Date</th><th>Organisation</th><th>Plan</th><th>Reference</th><th class="text-end">Amount</th></tr></thead>
+  <tbody>{% for p in items %}<tr><td>{{ p.paid_at|opsdt }}</td><td><a href="{{ url_for('ops.subscriber', org_id=p.org_id) }}">{{ p.name }}</a></td><td>{{ p.plan_key }} {{ p.plan_interval }}</td><td><code>{{ p.reference }}</code></td><td class="text-end">{{ p.amount_minor|opsmoney(p.currency) }}</td></tr>{% endfor %}</tbody>
+</table>
+<div class="d-flex gap-3">
+  {% if page > 1 %}<a href="{{ url_for('ops.payments', currency=currency, month=month, page=page-1) }}">&larr; Newer</a>{% endif %}
+  {% if more %}<a href="{{ url_for('ops.payments', currency=currency, month=month, page=page+1) }}">Older &rarr;</a>{% endif %}
+</div>
+{% endblock %}

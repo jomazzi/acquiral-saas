@@ -1,0 +1,4 @@
+{% macro badge(s) %}
+{% set cls = {"active":"success","comped":"info","trialing":"primary","canceling":"warning","past_due":"warning","expired":"danger","canceled":"secondary"}.get(s, "secondary") %}
+<span class="badge bg-{{ cls }}">{{ s }}</span>
+{% endmacro %}

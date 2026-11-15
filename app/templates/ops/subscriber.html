@@ -1,0 +1,30 @@
+{% extends "ops/_layout.html" %}
+{% from "ops/_macros.html" import badge %}
+{% block title %}{{ o.name }}{% endblock %}
+{% block body %}
+<p><a href="{{ url_for('ops.subscribers') }}">&larr; Subscribers</a></p>
+<h1 class="h4 mb-3">{{ o.name }} {{ badge(o.state) }}{% if o.is_demo %} <span class="badge bg-secondary">demo</span>{% endif %}</h1>
+<table class="table table-sm bg-white mb-4"><tbody>
+  <tr><td>Slug</td><td>{{ o.slug }}</td></tr>
+  <tr><td>Created</td><td>{{ o.created_at|opsdt }}</td></tr>
+  <tr><td>Billing status</td><td>{{ o.billing_status }}</td></tr>
+  <tr><td>Billing email</td><td>{{ o.billing_email or '—' }}</td></tr>
+  <tr><td>Plan</td><td>{{ o.plan_key or '—' }} {{ o.plan_interval or '' }} {{ o.plan_currency or '' }}</td></tr>
+  <tr><td>Trial ends</td><td>{{ o.trial_ends_at|opsdt }}</td></tr>
+  <tr><td>Current period ends</td><td>{{ o.current_period_end|opsdt }}</td></tr>
+  <tr><td>Paystack customer / subscription</td><td><code>{{ o.paystack_customer_code or '—' }}</code> / <code>{{ o.paystack_subscription_code or '—' }}</code></td></tr>
+</tbody></table>
+
+<h2 class="h6">Users (account details only)</h2>
+<table class="table table-sm bg-white mb-4">
+  <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Active</th><th>Email</th><th>Verified</th><th>Terms</th></tr></thead>
+  <tbody>{% for u in users %}<tr><td>{{ u.username }}</td><td>{{ u.full_name or '' }}</td><td>{{ u.role }}</td><td>{{ 'yes' if u.active else 'no' }}</td><td>{{ u.email or '—' }}</td><td>{{ 'yes' if u.email_verified else 'no' }}</td><td>{{ u.terms_version or '—' }}</td></tr>{% endfor %}</tbody>
+</table>
+
+<h2 class="h6">Subscription payments</h2>
+<table class="table table-sm bg-white">
+  <thead><tr><th>Date</th><th>Plan</th><th>Reference</th><th class="text-end">Amount</th></tr></thead>
+  <tbody>{% for p in payments %}<tr><td>{{ p.paid_at|opsdt }}</td><td>{{ p.plan_key }} {{ p.plan_interval }}</td><td><code>{{ p.reference }}</code></td><td class="text-end">{{ p.amount_minor|opsmoney(p.currency) }}</td></tr>{% else %}<tr><td colspan="4" class="text-muted">No payments.</td></tr>{% endfor %}</tbody>
+</table>
+<p class="text-muted small">Accounting, payroll and bank records are not visible to this console.</p>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "ops/_layout.html" %}
+{% block title %}Audit log{% endblock %}
+{% block body %}
+<h1 class="h4 mb-3">Audit log <span class="text-muted small">(latest 200)</span></h1>
+<table class="table table-sm bg-white">
+  <thead><tr><th>When (UTC)</th><th>Admin</th><th>Action</th><th>Organisation</th><th>Detail</th><th>IP</th></tr></thead>
+  <tbody>{% for e in entries %}<tr><td>{{ e.created_at|opsdt }}</td><td>{{ e.admin_username or '—' }}</td><td>{{ e.action }}</td><td>{% if e.org_id %}<a href="{{ url_for('ops.subscriber', org_id=e.org_id) }}">{{ e.org_id[:8] }}</a>{% endif %}</td><td>{{ e.detail or '' }}</td><td>{{ e.ip or '' }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}
