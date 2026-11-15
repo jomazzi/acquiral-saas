@@ -17,7 +17,7 @@ LEGAL = {
     "privacy_email": "mail@admiralsentinel.com",
     "hosting_location": "United Kingdom",
     "mail_host": "Admiral Sentinel",
-    "court": "the courts of Rivers State, Nigeria",
+    "court": "High courts, Nigeria",
     "version": TERMS_VERSION,
 }
 
