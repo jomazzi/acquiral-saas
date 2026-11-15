@@ -21,7 +21,6 @@ LEGAL = {
     "version": TERMS_VERSION,
 }
 
-
 def _page(template):
     return render_template(template, L=LEGAL)
 
