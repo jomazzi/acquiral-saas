@@ -1,0 +1,51 @@
+{% extends "legal/_layout.html" %}
+{% block title %}Privacy{% endblock %}
+{% block heading %}Privacy Policy{% endblock %}
+{% block body %}
+<p><strong>{{ L.company }}</strong> ({{ L.reg_no }}), {{ L.address }}, is the data controller for account, billing and website data described here. For the financial and payroll records you enter into your workspace we act as your processor under the <a href="{{ url_for('legal.dpa') }}">Data Processing Addendum</a>. Contact: {{ L.privacy_email }}.</p>
+
+<h2>What we collect</h2>
+<ul>
+  <li><strong>Account data:</strong> organisation name, your name, username, email address, and your password (stored only as a salted hash).</li>
+  <li><strong>Billing data:</strong> billing email, plan, payment references and Paystack customer and subscription codes. Card details are entered with Paystack; we do not store card numbers.</li>
+  <li><strong>Technical data:</strong> IP address, browser details, request logs, error logs and security events.</li>
+  <li><strong>Support messages</strong> you send us, and the date and version of the terms you accepted.</li>
+</ul>
+
+<h2>Why we use it, and our lawful basis</h2>
+<table class="table table-sm">
+  <thead><tr><th>Purpose</th><th>Basis (Nigeria Data Protection Act 2023)</th></tr></thead>
+  <tbody>
+    <tr><td>Creating and running your account and the Service</td><td>Performance of a contract</td></tr>
+    <tr><td>Confirming your email and resetting passwords</td><td>Performance of a contract</td></tr>
+    <tr><td>Billing, tax and accounting records</td><td>Legal obligation</td></tr>
+    <tr><td>Securing the Service and preventing abuse</td><td>Legitimate interest</td></tr>
+    <tr><td>Answering your questions</td><td>Legitimate interest</td></tr>
+  </tbody>
+</table>
+<p>We send service emails only (confirmation, password reset, billing notices). We do not send marketing email without separate consent.</p>
+
+<h2>Who we share it with</h2>
+<p>We do not sell personal data. We share it only with service providers who help us run the Service: our hosting provider (servers in {{ L.hosting_location }}), Paystack (payments), {{ L.mail_host }} (email delivery), and professional advisers or authorities where the law requires. The full list is in the sub-processor table in the <a href="{{ url_for('legal.dpa') }}">DPA</a>.</p>
+
+<h2>International transfers</h2>
+<p>Your data may be stored or processed outside Nigeria, including in {{ L.hosting_location }}. We rely on contractual protections with our providers consistent with the Nigeria Data Protection Act 2023.</p>
+
+<h2>How long we keep it</h2>
+<p>Account data is kept while your subscription is active and for 30 days afterwards, then deleted, and it leaves our backups within a further 35 days. Billing and tax records are kept for the period the law requires. Security and error logs are kept for a limited time and then deleted.</p>
+
+<h2>Security</h2>
+<p>We use HTTPS, a firewall, database-level separation between customers' workspaces, salted password hashing, encryption of stored payment-provider keys, email verification of new accounts, rate limiting of sign-up and password-reset requests, role-based access, and regular backups. No system is completely secure; if a breach is likely to put your rights at risk we will notify you and the Nigeria Data Protection Commission within the time the law requires.</p>
+
+<h2>Cookies and fonts</h2>
+<p>One session cookie keeps you signed in; it is strictly necessary. We use no advertising or analytics cookies. Some pages load fonts from Google Fonts, which means your browser contacts Google's servers.</p>
+
+<h2>Your rights</h2>
+<p>You may ask to access, correct or delete your personal data, restrict or object to its use, receive a copy of it, or withdraw consent where we rely on it. Email {{ L.privacy_email }}; we respond within one month. You may also complain to the Nigeria Data Protection Commission.</p>
+
+<h2>Children</h2>
+<p>The Service is for organisations and is not intended for anyone under 18.</p>
+
+<h2>Changes</h2>
+<p>We post updates here with a new version date and tell you by email about material changes.</p>
+{% endblock %}

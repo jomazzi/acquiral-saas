@@ -63,6 +63,8 @@ class User(UserMixin, db.Model):
     # blocked; signup() sets it False when email verification is on.
     email_verified = db.Column(db.Boolean, nullable=False, default=True, server_default=db.text("true"))
     verification_sent_at = db.Column(db.DateTime)
+    terms_accepted_at = db.Column(db.DateTime)
+    terms_version = db.Column(db.String(20))
     organization = db.relationship("Organization")
 
     # Username unique WITHIN an org only — two tenants can both have "user1".

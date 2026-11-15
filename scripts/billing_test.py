@@ -42,7 +42,7 @@ def check(cond, msg):
 
 def signup(client, org_name, username="admin"):
     r = client.post("/signup", data={"org_name": org_name, "username": username,
-                                      "full_name": "Test Admin", "password": "password123", "email": f"{uuid.uuid4().hex[:8]}@example.test"},
+                                      "full_name": "Test Admin", "password": "password123", "email": f"{uuid.uuid4().hex[:8]}@example.test", "accept_terms": "on"},
                     follow_redirects=True)
     assert r.status_code == 200
     return r

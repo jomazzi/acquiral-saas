@@ -41,6 +41,7 @@
             <button class="btn btn-primary w-100">Log in</button>
           </form>
           <div class="text-center mt-2"><a href="{{ url_for('auth.forgot_password') }}" style="font-size:.85rem;">Forgot password?</a></div>
+          <div class="text-center mt-2 small">{% include 'legal/_links.html' %}</div>
         </div>
         <div class="text-center mt-3">
           <span style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">New organisation? <a href="{{ url_for('auth.signup') }}" style="color:#D4A017;">Start free</a></span>

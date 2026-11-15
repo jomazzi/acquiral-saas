@@ -1,0 +1,56 @@
+{% extends "legal/_layout.html" %}
+{% block title %}Data Processing Addendum{% endblock %}
+{% block heading %}Data Processing Addendum{% endblock %}
+{% block body %}
+<p>This addendum applies where {{ L.company }} processes personal data on your behalf through {{ app_name }}. Under the Nigeria Data Protection Act 2023, <strong>you are the data controller</strong> and <strong>{{ L.company }} is the data processor</strong> for the data in your workspace.</p>
+
+<h2>1. What we process</h2>
+<ul>
+  <li>Your users: names, usernames, email addresses.</li>
+  <li>Your employees (payroll): names, pay data, tax IDs, pension and housing fund numbers, bank details.</li>
+  <li>Your customers, vendors, donors and funders: names, contact details, invoices, bills and payments.</li>
+  <li>Your financial records: journals, bank statements and reconciliation data, attachments.</li>
+</ul>
+<p>Purpose: providing, supporting and securing the Service. Duration: while your subscription is active, plus the 30-day export period and the deletion periods in our Terms.</p>
+
+<h2>2. Our obligations</h2>
+<ul>
+  <li>We process personal data only on your documented instructions (these terms and your use of the Service), unless the law requires otherwise.</li>
+  <li>Personnel with access are bound by confidentiality.</li>
+  <li>We apply the security measures in section 4.</li>
+  <li>We help you respond to data subject requests and meet your own obligations, at reasonable cost.</li>
+  <li>We notify you without undue delay, and within 48 hours of discovery, of a personal data breach affecting your data, so you can meet the 72-hour duty to notify the Nigeria Data Protection Commission.</li>
+  <li>We delete or return your data at the end of the services, as set out in our Terms.</li>
+  <li>We provide information reasonably needed to show compliance and allow one audit or security questionnaire per year on reasonable notice.</li>
+</ul>
+
+<h2>3. Sub-processors</h2>
+<p>You authorise the following sub-processors. We give at least 30 days' notice of changes, and you may object on reasonable data protection grounds.</p>
+<table class="table table-sm">
+  <thead><tr><th>Sub-processor</th><th>Purpose</th><th>Location</th></tr></thead>
+  <tbody>
+    <tr><td>Hosting provider</td><td>Application, database and backups</td><td>{{ L.hosting_location }}</td></tr>
+    <tr><td>Paystack</td><td>Subscription card payments</td><td>As stated in Paystack's terms</td></tr>
+    <tr><td>{{ L.mail_host }}</td><td>Sending verification and password-reset emails</td><td>As stated by the provider</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Security measures</h2>
+<ul>
+  <li>HTTPS encryption in transit; a firewall limiting open ports.</li>
+  <li>Database-level row security, so one customer's records cannot be read by another customer's session.</li>
+  <li>Passwords stored as salted hashes; customers' own payment-provider keys stored encrypted.</li>
+  <li>Email verification for new accounts; role-based access; rate limiting of sign-up and password-reset requests.</li>
+  <li>Daily database backups with limited retention.</li>
+  <li>Production access limited to authorised staff.</li>
+</ul>
+
+<h2>5. International transfers</h2>
+<p>Data is hosted in {{ L.hosting_location }} and processed by the sub-processors above. We rely on contractual protections consistent with the Act's requirements for cross-border transfers. You confirm you have any consent or legal basis needed for the transfer of your data subjects' data.</p>
+
+<h2>6. Your responsibilities</h2>
+<p>You decide what personal data to enter, have a lawful basis for it, give employees, donors and others any notices required, and control who in your organisation has access.</p>
+
+<h2>7. Contact</h2>
+<p>{{ L.privacy_email }}.</p>
+{% endblock %}

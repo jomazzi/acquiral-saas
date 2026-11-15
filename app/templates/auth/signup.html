@@ -53,6 +53,14 @@
               <input type="password" name="password" class="form-control" required minlength="6">
               <div class="form-text">At least 6 characters. You'll be the admin for this organisation.</div>
             </div>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" name="accept_terms" id="accept_terms" required>
+              <label class="form-check-label small" for="accept_terms">
+                I agree to the <a href="{{ url_for('legal.terms') }}" target="_blank">Terms of Service</a>,
+                <a href="{{ url_for('legal.privacy') }}" target="_blank">Privacy Policy</a> and
+                <a href="{{ url_for('legal.dpa') }}" target="_blank">Data Processing Addendum</a>.
+              </label>
+            </div>
             <button class="btn btn-primary w-100">Start 14-day free trial</button>
             <div class="form-text text-center mt-2">No card needed. <a href="{{ url_for('billing.pricing') }}">See pricing</a></div>
           </form>

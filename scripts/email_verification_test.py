@@ -38,7 +38,7 @@ def user_by_email(email):
 
 
 def form(org, email):
-    return {"org_name": org, "username": "admin", "full_name": "T", "email": email, "password": "password123"}
+    return {"org_name": org, "username": "admin", "full_name": "T", "email": email, "password": "password123", "accept_terms": "on"}
 
 
 def token_from(msg):

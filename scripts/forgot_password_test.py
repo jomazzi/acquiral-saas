@@ -31,7 +31,7 @@ def get_user(email):
 email = f"fp-{RUN}@example.test"
 c = app.test_client()
 c.post("/signup", data={"org_name": f"FP Org {RUN}", "username": UNAME, "full_name": "T",
-                        "email": email, "password": "oldpassword"})
+                        "email": email, "password": "oldpassword", "accept_terms": "on"})
 vtok = re.search(r"/verify-email/([^\s\"<]+)", sent[-1]["text"]).group(1)
 c.get(f"/verify-email/{vtok}")
 check(get_user(email).email_verified is True, "account verified")

@@ -6,6 +6,7 @@ import re
 from flask import current_app
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 from markupsafe import escape
+from app.blueprints.legal.routes import TERMS_VERSION
 
 from app import mailer
 from flask import Blueprint, render_template, request, redirect, url_for, flash
@@ -25,7 +26,7 @@ VERIFY_MAX_AGE = 24 * 3600
 RESEND_COOLDOWN = timedelta(seconds=60)
 
 VERIFY_EXEMPT = {"auth.verify_pending", "auth.verify_email", "auth.resend_verification",
-                 "auth.change_email", "auth.logout", "static", "landing", "billing.pricing"}
+                 "auth.change_email", "auth.logout", "static", "landing", "billing.pricing", "legal.terms", "legal.privacy", "legal.dpa", "legal.sla"}
 
 
 def _serializer():
@@ -89,6 +90,9 @@ def signup():
         if not EMAIL_RE.match(email):
             flash("Enter a valid email address.", "error")
             return render_template("auth/signup.html")
+        if not request.form.get("accept_terms"):
+            flash("Please accept the Terms, Privacy Policy and Data Processing Addendum to continue.", "error")
+            return render_template("auth/signup.html")
 
         base_slug = "".join(c.lower() if c.isalnum() else "-" for c in org_name).strip("-") or "org"
         slug = _unique_slug(base_slug)
@@ -99,7 +103,7 @@ def signup():
         db.session.commit()  # need org.id before we can create the tenant-scoped user
 
         user = User(organization_id=org.id, username=username, full_name=full_name, role="admin",
-                    email=email, email_verified=not mailer.mail_enabled())
+                    email=email, email_verified=not mailer.mail_enabled(), terms_accepted_at=utcnow(), terms_version=TERMS_VERSION,)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()

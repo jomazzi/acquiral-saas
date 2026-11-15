@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %} — {{ app_name }}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>.legal{line-height:1.65}.legal h2{font-size:1.1rem;margin-top:1.8rem}.legal table{font-size:.9rem}</style>
+</head>
+<body style="background:#f6f7f9;">
+  <div class="container py-4" style="max-width:840px;">
+    <nav class="d-flex flex-wrap justify-content-between align-items-center mb-3 small">
+      <a href="{{ url_for('landing') }}">&larr; {{ app_name }}</a>
+      <span>{% include 'legal/_links.html' %}</span>
+    </nav>
+    <div class="card p-4 p-md-5 border-0 shadow-sm legal">
+      <h1 class="h3 mb-1">{% block heading %}{% endblock %}</h1>
+      <p class="text-muted small">Version {{ L.version }} &middot; {{ L.company }}</p>
+      {% block body %}{% endblock %}
+    </div>
+    <p class="text-center text-muted small mt-3">{{ app_name }} — a product of {{ L.company }}</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+{% extends "legal/_layout.html" %}
+{% block title %}Terms{% endblock %}
+{% block heading %}Terms of Service{% endblock %}
+{% block body %}
+<p>These terms govern your use of {{ app_name }} (the "Service"), provided by <strong>{{ L.company }}</strong> ({{ L.reg_no }}), {{ L.address }} ("we", "us"). By creating a workspace you agree to them, together with our <a href="{{ url_for('legal.privacy') }}">Privacy Policy</a>, <a href="{{ url_for('legal.dpa') }}">Data Processing Addendum</a> and <a href="{{ url_for('legal.sla') }}">Service Levels</a>.</p>
+
+<h2>1. The Service</h2>
+<p>{{ app_name }} is cloud software for accounting, fund and project reporting, invoicing, bank reconciliation and, on plans that include it, payroll calculation. Features differ by plan. Current plans and prices are on the <a href="{{ url_for('billing.pricing') }}">pricing page</a>.</p>
+
+<h2>2. Your account</h2>
+<p>You must be at least 18 and sign up for an organisation you are authorised to bind. Give accurate details, keep your login credentials confidential, and tell us promptly about any unauthorised use. You are responsible for all activity in your workspace, including by users you add.</p>
+
+<h2>3. Free trial</h2>
+<p>New workspaces get a 14-day free trial with no card. During the trial you have the user allowance and features of the Organisation plan. When it ends, the workspace becomes read-only (you can still view and download everything) until you choose a paid plan.</p>
+
+<h2>4. Fees and VAT</h2>
+<ul>
+  <li>Fees are charged per plan, monthly or annually, in naira or US dollars as you choose at checkout.</li>
+  <li>All fees are <strong>exclusive of VAT</strong> and other applicable taxes, which we add where the law requires.</li>
+  <li>Payment is by card through Paystack, our payment processor. We never see or store your full card number.</li>
+  <li>Subscriptions renew automatically until cancelled. We may change prices or plan features on at least 30 days' notice, effective from your next renewal.</li>
+</ul>
+
+<h2>5. Cancellation and failed payments</h2>
+<p>You can cancel at any time on the Billing page. Access continues until the end of the period you have paid for, and no further charges are made. If a renewal payment fails, you keep full access for 5 days after the paid period ends; after that the workspace becomes read-only until payment is made. We do not delete your data because a payment failed.</p>
+
+<h2>6. Refunds</h2>
+<p>Monthly fees are non-refundable once charged. If you cancel an annual plan within 14 days of your first annual payment, we refund the unused period pro rata, less payment processing fees we cannot recover. Nothing here limits any refund right you have by law.</p>
+
+<h2>7. Users and plan limits</h2>
+<p>Active users must not exceed your plan limit, and features such as payroll or foreign-currency accounts are available only on plans that include them. If you move to a plan without a feature, existing data stays visible but you cannot create new items in that feature.</p>
+
+<h2>8. Acceptable use</h2>
+<p>You must not break the law; attempt unauthorised access; introduce malware or interfere with the Service; scrape, copy or reverse engineer it except as the law permits; upload content you have no right to share; resell the Service without our written agreement; or use automated tools to overload it.</p>
+
+<h2>9. Your data</h2>
+<p>You own your data. You grant us the right to host and process it to provide the Service, as set out in the <a href="{{ url_for('legal.dpa') }}">Data Processing Addendum</a>. You can export your data while your subscription is active and for 30 days after it ends. We then delete it, and it leaves our backups within a further 35 days. You remain responsible for keeping copies of records the law requires you to retain.</p>
+
+<h2>10. Not professional advice</h2>
+<p>{{ app_name }} is software, not accounting, tax, legal or payroll advice. You are responsible for the accuracy of the data you enter, for reviewing all reports, payslips, tax and pension calculations before relying on or filing them, for meeting filing and payment deadlines, and for any donor or funder requirements. The payroll module is designed to support calculations under current Nigerian requirements, but rates and rules change, so confirm them with a qualified professional. Demonstration data is illustrative only.</p>
+
+<h2>11. Service levels and support</h2>
+<p>Our <a href="{{ url_for('legal.sla') }}">Service Levels</a> apply. Support is by email at {{ L.support_email }}.</p>
+
+<h2>12. Intellectual property and feedback</h2>
+<p>We own the Service, its software, design and the name {{ app_name }}. While your subscription is active you have a limited, non-exclusive, non-transferable right to use it. You may give us feedback and we may use it freely.</p>
+
+<h2>13. Confidentiality</h2>
+<p>Each party will keep the other's non-public information confidential, use it only for this agreement, and protect it with reasonable care, except where disclosure is required by law.</p>
+
+<h2>14. Warranties</h2>
+<p>To the fullest extent the law permits, the Service is provided "as is" and "as available". We do not warrant that it will be uninterrupted, error-free or free of harmful components.</p>
+
+<h2>15. Limitation of liability</h2>
+<p>To the fullest extent the law permits, our total liability in any 12 months is limited to the fees you paid in the 12 months before the event giving rise to the claim. We are not liable for indirect or consequential loss, including loss of profit, tax penalties, late-filing charges, interest, funder clawbacks, or payroll errors resulting from incorrect data or outputs you did not review. Nothing excludes liability that cannot be excluded by law, including for fraud.</p>
+
+<h2>16. Indemnity</h2>
+<p>You indemnify us against third-party claims arising from data you upload without the right to do so, your breach of these terms, or your unlawful use of the Service.</p>
+
+<h2>17. Suspension and termination</h2>
+<p>We may suspend access for serious breach or to protect the security of the Service, and either party may end the agreement on written notice. Clauses on data, liability, indemnity, confidentiality and governing law survive termination.</p>
+
+<h2>18. Changes to these terms</h2>
+<p>We may update these terms. Updates are posted here with a new version date. Where a change reduces your rights, we will email you at least 30 days ahead. Continued use after a change means you accept it.</p>
+
+<h2>19. Governing law</h2>
+<p>These terms are governed by the laws of the Federal Republic of Nigeria. The parties will first try to resolve any dispute by good-faith negotiation for 30 days; unresolved disputes go to {{ L.court }}.</p>
+
+<h2>20. Contact</h2>
+<p>{{ L.company }}, {{ L.address }}. Email: {{ L.support_email }}.</p>
+{% endblock %}
