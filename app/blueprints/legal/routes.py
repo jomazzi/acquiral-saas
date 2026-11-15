@@ -11,12 +11,12 @@ TERMS_VERSION = "2026-11-14"
 # scripts/legal_pages_test.py fail, so nothing goes live half-filled.
 LEGAL = {
     "company": "Admiral Sentinel",
-    "reg_no": "[CAC registration number, e.g. BN 1234567 or RC 1234567]",
-    "address": "[registered address]",
-    "support_email": "[support email]",
-    "privacy_email": "[privacy email]",
-    "hosting_location": "[server location, e.g. United Kingdom]",
-    "mail_host": "[mail hosting provider]",
+    "reg_no": "[9510445]",
+    "address": "[1 Odum Close, Off Eliopranwo Road, Port Harcourt, Nigeria]",
+    "support_email": "[support@admiralsentinel.com]",
+    "privacy_email": "[mail@admiralsentinel.com]",
+    "hosting_location": "[United Kingdom]",
+    "mail_host": "[mail.admiralsentinel.com]",
     "court": "the courts of Rivers State, Nigeria",
     "version": TERMS_VERSION,
 }
