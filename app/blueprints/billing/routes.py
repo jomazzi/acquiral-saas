@@ -9,7 +9,7 @@ from app.extensions import db
 from app.decorators import admin_required
 from app.models.tenant import User
 from app.models.billing import SubscriptionPayment
-from app.billing import plans, paystack, service
+from app.billing import plans, paystack, service, quotes
 from app.billing.access import access_state, billing_enforced, trial_days_left, user_limit
 
 log = logging.getLogger("acquiral.billing")
@@ -43,27 +43,55 @@ def enforce_billing():
 
 
 def _plan_cards():
-    """One dict per plan for the templates. `prices[currency][interval]`
-    and `saving[currency]` are pre-formatted strings (e.g. '\u20a645,000'),
-    so the templates never do money arithmetic."""
+    """One dict per plan for the templates, priced from the database.
+    `prices[cur][interval]` is the price after any campaign; `was` is the
+    list price when a campaign applies; `saving` is what annual saves
+    against 12 months. All pre-formatted, so templates do no money maths."""
     cards = []
     for key, p in plans.PLANS.items():
-        prices, saving = {}, {}
+        prices, was, saving = {}, {}, {}
         for cur in plans.CURRENCIES:
-            prices[cur] = {i: plans.format_money(plans.price(key, i, cur), cur) for i in plans.INTERVALS}
-            s = plans.annual_saving(key, cur)
-            saving[cur] = plans.format_money(s, cur) if s > 0 else None
+            prices[cur], was[cur], nets = {}, {}, {}
+            for i in plans.INTERVALS:
+                q = quotes.quote(key, i, cur)
+                if q is None:
+                    prices[cur][i], was[cur][i], nets[i] = "—", None, None
+                    continue
+                prices[cur][i] = plans.format_money(q["net_minor"], cur, minor=True)
+                was[cur][i] = plans.format_money(q["list_minor"], cur, minor=True) if q["discount_minor"] else None
+                nets[i] = q["net_minor"]
+            s = (nets["monthly"] * 12 - nets["annual"]) if nets.get("monthly") and nets.get("annual") else 0
+            saving[cur] = plans.format_money(s, cur, minor=True) if s > 0 else None
         cards.append({"key": key, "name": p["name"], "tagline": p["tagline"],
-                      "feature_list": p["feature_list"],
-                      "max_users": p["max_users"], "prices": prices, "saving": saving})
+                      "feature_list": p["feature_list"], "max_users": p["max_users"],
+                      "prices": prices, "was": was, "saving": saving})
     return cards
+
+
+def _quote_table():
+    """Every plan x period x currency quote, for the billing page summary."""
+    table = {}
+    for key in plans.PLANS:
+        for i in plans.INTERVALS:
+            for cur in plans.CURRENCIES:
+                q = quotes.quote(key, i, cur)
+                if q is None:
+                    continue
+                money = lambda v: plans.format_money(v, cur, minor=True)
+                table[f"{key}|{i}|{cur}"] = {
+                    "list": money(q["list_minor"]), "discount": money(q["discount_minor"]),
+                    "discount_pct": q["discount_bp"] / 100, "campaign": q["campaign_name"],
+                    "net": money(q["net_minor"]), "vat": money(q["vat_minor"]), "vat_pct": q["vat_bp"] / 100,
+                    "total": money(q["total_minor"]), "total_minor": q["total_minor"],
+                }
+    return table
 
 
 @billing_bp.route("/pricing")
 def pricing():
     return render_template("billing/pricing.html", cards=_plan_cards(), features=plans.FEATURES,
-                           trial_days=plans.TRIAL_DAYS, currencies=plans.CURRENCIES)
-
+                           trial_days=plans.TRIAL_DAYS, currencies=plans.CURRENCIES,
+                           campaign=quotes.banner())                       
 
 @billing_bp.route("/billing")
 @login_required
@@ -83,7 +111,8 @@ def billing_page():
                         and state in ("active", "past_due")),
         # A live recurring subscription must be cancelled before starting
         # another, or the customer would be billed for both.
-        has_live_subscription=state in ("active", "past_due"),
+        has_live_subscription=state in ("active", "past_due"),         
+        quote_table=_quote_table(), campaign=quotes.banner(),
     )
 
 
@@ -116,25 +145,37 @@ def checkout():
               f"{active_users} active. Deactivate some users or choose a larger plan.", "error")
         return redirect(url_for("billing.billing_page"))
 
-    plan_code = plans.paystack_plan_code(plan_key, interval, currency)
-    if not paystack.is_configured() or not plan_code:
-        log.error("Checkout attempted but Paystack/plan code not configured (%s)",
-                  plans.plan_code_env_var(plan_key, interval, currency))
-        flash("Online payment isn't available yet. Please contact Admiral Sentinel to subscribe.", "error")
+    q = quotes.quote(plan_key, interval, currency)
+    if q is None or not paystack.is_configured():
+        log.error("Checkout attempted but %s/%s/%s isn't for sale or Paystack isn't configured",
+                  plan_key, interval, currency)
+        flash("Online payment isn't available for that plan yet. Please contact Admiral Sentinel to subscribe.", "error")
+        return redirect(url_for("billing.billing_page"))
+    expected = request.form.get("expected_total", "").strip()
+    if expected and expected != str(q["total_minor"]):
+        flash("The price changed while you were on this page. Please review the new total and confirm again.", "error")
+        return redirect(url_for("billing.billing_page"))
+    try:
+        offer = quotes.get_or_create_offer(q)
+    except paystack.PaystackError as e:
+        log.error("Could not create the Paystack plan for org %s: %s", org.id, e)
+        flash("We couldn't prepare the payment just now. Please try again in a moment.", "error")
         return redirect(url_for("billing.billing_page"))
 
     reference = f"acq_{org.id.hex[:12]}_{uuid.uuid4().hex[:16]}"
     try:
         init = paystack.initialize_transaction(
-            email=email, amount_minor=plans.price_minor(plan_key, interval, currency), currency=currency,
-            plan_code=plan_code, reference=reference, callback_url=url_for("billing.callback", _external=True),
+            email=email, amount_minor=q["total_minor"], currency=currency,
+            plan_code=offer.paystack_plan_code, reference=reference,
+            callback_url=url_for("billing.callback", _external=True),
             metadata={"organization_id": str(org.id), "plan_key": plan_key, "interval": interval,
-                      "currency": currency},
+                      "currency": currency, "offer_id": str(offer.id)},
         )
     except paystack.PaystackError as e:
         log.error("Paystack initialize failed for org %s: %s", org.id, e)
         flash("We couldn't start the payment just now. Please try again in a moment.", "error")
         return redirect(url_for("billing.billing_page"))
+
 
     org.billing_email = email
     db.session.commit()

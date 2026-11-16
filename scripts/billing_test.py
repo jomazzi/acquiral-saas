@@ -30,6 +30,15 @@ from app.billing import paystack, plans
 from app.billing.access import access_state, utcnow
 
 app = create_app()
+import re
+
+
+def fake_create_plan(name, amount_minor, interval, currency):
+    m = re.search(r"Acquiral (\w+) \((\w+), (\w+)\)", name)
+    return {"plan_code": f"PLN_{m.group(1).lower()}_{m.group(2)}_{m.group(3)}"}
+
+
+paystack.create_plan = fake_create_plan
 SECRET = "sk_test_unit_test_key"
 RUN = uuid.uuid4().hex[:6]
 CUS_A, SUB_A, TOK_A = f"CUS_A_{RUN}", f"SUB_A_{RUN}", f"tok_A_{RUN}"  # unique per run: codes are looked up globally

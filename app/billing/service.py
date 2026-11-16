@@ -15,8 +15,10 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models.tenant import Organization
 from app.models.billing import SubscriptionPayment
-from app.billing import plans
+""" from app.billing import plans """
 from app.billing.access import utcnow
+from app.billing import plans, quotes
+from app.models.pricing import PriceOffer
 
 log = logging.getLogger("acquiral.billing")
 
@@ -93,7 +95,23 @@ def plan_from_charge(data):
     if key in plans.PLANS and interval in plans.INTERVALS and currency in plans.CURRENCIES:
         return key, interval, currency
     plan = data.get("plan") if isinstance(data.get("plan"), dict) else {}
-    return plans.lookup_by_plan_code(plan.get("plan_code"))
+    offer = quotes.offer_by_plan_code(plan.get("plan_code"))
+    if offer is not None:
+        return offer.plan_key, offer.interval, offer.currency
+    return plans.lookup_by_plan_code(plan.get("plan_code"))  # older plans from settings
+
+
+def offer_from_charge(data):
+    """The offer a charge was made under: from checkout metadata on a
+    first payment, from the plan code on a renewal."""
+    meta = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
+    oid = _as_uuid(meta.get("offer_id"))
+    if oid:
+        offer = db.session.get(PriceOffer, oid)
+        if offer is not None:
+            return offer
+    plan = data.get("plan") if isinstance(data.get("plan"), dict) else {}
+    return quotes.offer_by_plan_code(plan.get("plan_code"))
 
 
 def apply_successful_charge(org, data):
@@ -107,6 +125,10 @@ def apply_successful_charge(org, data):
 
     paid_at = parse_paystack_time(data.get("paid_at") or data.get("paidAt")) or utcnow()
     plan_key, interval, currency = plan_from_charge(data)
+    amount = int(data.get("amount") or 0)
+    offer = offer_from_charge(data)
+    if offer is not None and offer.total_minor != amount:
+        offer = None  # don't attach a breakdown that doesn't add up to what was charged
     customer = data.get("customer") if isinstance(data.get("customer"), dict) else {}
 
     # Tenant context for the RLS-secured payments table. The webhook has
@@ -118,8 +140,12 @@ def apply_successful_charge(org, data):
 
     db.session.add(SubscriptionPayment(
         organization_id=org.id, reference=reference,
-        amount_minor=int(data.get("amount") or 0), currency=data.get("currency") or currency or "NGN",
+        amount_minor=amount, currency=data.get("currency") or currency or "NGN",
         plan_key=plan_key, plan_interval=interval, paid_at=paid_at,
+        offer_id=offer.id if offer else None,
+        list_minor=offer.list_minor if offer else None,
+        discount_minor=offer.discount_minor if offer else None,
+        vat_minor=offer.vat_minor if offer else None,
     ))
 
     if plan_key:

@@ -24,4 +24,8 @@ class SubscriptionPayment(TenantScopedMixin, db.Model):
     plan_key = db.Column(db.String(30))
     plan_interval = db.Column(db.String(10))
     paid_at = db.Column(db.DateTime, nullable=False)
+    offer_id = db.Column(UUID(as_uuid=True))
+    list_minor = db.Column(db.BigInteger)
+    discount_minor = db.Column(db.BigInteger)
+    vat_minor = db.Column(db.BigInteger)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
