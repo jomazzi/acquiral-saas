@@ -1,0 +1,108 @@
+{% extends "ops/_layout.html" %}
+{% block title %}Pricing{% endblock %}
+{% block body %}
+<h1 class="h4 mb-1">Pricing</h1>
+<p class="text-muted small">Changes apply to <strong>new</strong> subscriptions; existing subscribers keep the price they signed up at. Every change needs a fresh authenticator code (if you just signed in, wait for the next code) and is written to the audit log. Times are West Africa Time.</p>
+
+<h2 class="h6 mt-4">Prices and standing discounts</h2>
+<p class="text-muted small">The list price is what a plan costs before any discount. The standing discount is shown to customers as a discount line (for example 15% off annual). Campaigns sit on top of it.</p>
+<div class="table-responsive"><table class="table table-sm bg-white align-middle">
+  <thead><tr><th>Plan</th><th>Period</th><th>Cur.</th><th class="text-end">List price</th><th class="text-end">Discount</th><th class="text-end">Customer pays now (ex-VAT)</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr>
+    <td>{{ r.plan_name }}</td><td>{{ r.interval }}</td><td>{{ r.currency }}</td>
+    <td class="text-end">{{ r.amount_minor|opsmoney(r.currency) }}</td>
+    <td class="text-end">{{ '%g'|format(r.discount_bp / 100) }}%</td>
+    <td class="text-end">{{ r.q.net_minor|opsmoney(r.currency) }}
+      {% if r.q.campaign_name %}<span class="badge bg-warning text-dark">{{ r.q.campaign_name }}</span>{% endif %}
+      <div class="small text-muted">{% if r.q.vat_bp %}with VAT {{ r.q.total_minor|opsmoney(r.currency) }}{% else %}VAT off{% endif %}</div></td>
+    <td><details><summary class="btn btn-sm btn-outline-secondary">Edit</summary>
+      <form method="post" action="{{ url_for('ops.pricing_price') }}" class="border rounded bg-light p-2 mt-2" style="min-width:250px" data-vat="{{ vat_pct.get(r.currency, 0) }}">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="plan_key" value="{{ r.plan_key }}"><input type="hidden" name="interval" value="{{ r.interval }}"><input type="hidden" name="currency" value="{{ r.currency }}">
+        <label class="form-label small mb-0">List price ({{ r.currency }})</label>
+        <input class="form-control form-control-sm mb-2" name="amount" value="{{ '%.2f'|format(r.amount_minor / 100) }}" required>
+        <label class="form-label small mb-0">Standing discount (%)</label>
+        <input class="form-control form-control-sm mb-2" name="discount" value="{{ '%g'|format(r.discount_bp / 100) }}" required>
+        <div class="small text-success mb-2" data-preview></div>
+        <input class="form-control form-control-sm mb-2" name="code" inputmode="numeric" maxlength="8" placeholder="Authenticator code" autocomplete="off" required>
+        <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="confirm_large" id="cl-{{ loop.index }}"><label class="form-check-label" for="cl-{{ loop.index }}">Confirm a large change (price moves over 30%, or discount above 50%)</label></div>
+        <button class="btn btn-sm btn-dark w-100">Save</button>
+      </form></details></td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+
+<h2 class="h6 mt-4">VAT</h2>
+<p class="text-muted small">Added at checkout on the billing page, on the price after discounts. Switch it on only after your accountant confirms registration and the rate.</p>
+<table class="table table-sm bg-white align-middle"><tbody>
+  {% for t in taxes %}
+  <tr><td>{{ t.currency }}</td><td>{{ '%g'|format(t.vat_bp / 100) }}%</td><td>{% if t.enabled %}<span class="badge bg-success">ON</span>{% else %}<span class="badge bg-secondary">off</span>{% endif %}</td>
+    <td><details><summary class="btn btn-sm btn-outline-secondary">Edit</summary>
+      <form method="post" action="{{ url_for('ops.pricing_vat') }}" class="border rounded bg-light p-2 mt-2" style="max-width:260px">
+        <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="currency" value="{{ t.currency }}">
+        <label class="form-label small mb-0">VAT rate (%)</label>
+        <input class="form-control form-control-sm mb-2" name="rate" value="{{ '%g'|format(t.vat_bp / 100) }}" required>
+        <div class="form-check small mb-2"><input class="form-check-input" type="checkbox" name="enabled" id="vat-{{ t.currency }}" {{ 'checked' if t.enabled }}><label class="form-check-label" for="vat-{{ t.currency }}">Charge VAT</label></div>
+        <input class="form-control form-control-sm mb-2" name="code" inputmode="numeric" maxlength="8" placeholder="Authenticator code" autocomplete="off" required>
+        <button class="btn btn-sm btn-dark w-100">Save</button>
+      </form></details></td></tr>
+  {% endfor %}
+</tbody></table>
+
+<h2 class="h6 mt-4">Campaigns (for example Black Friday)</h2>
+<div class="table-responsive"><table class="table table-sm bg-white align-middle">
+  <thead><tr><th>Name</th><th>Discount</th><th>Applies to</th><th>Window</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for c in camps %}
+  <tr><td>{{ c.name }}</td>
+    <td>{{ '%g'|format(c.discount_bp / 100) }}%{% if c.stacks %} <span class="badge bg-info text-dark">stacks</span>{% endif %}</td>
+    <td class="small">{{ c.plan_key or 'all plans' }} / {{ c.interval or 'all periods' }} / {{ c.currency or 'all currencies' }}</td>
+    <td class="small">{{ c.starts_at|opswat }} &rarr; {{ c.ends_at|opswat }}</td>
+    <td>{% set cls = {'running':'success','scheduled':'primary','ended':'secondary','off':'secondary'}[c.status] %}<span class="badge bg-{{ cls }}">{{ c.status }}</span></td>
+    <td><form method="post" action="{{ url_for('ops.campaign_toggle', cid=c.id) }}" class="d-flex gap-1">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input class="form-control form-control-sm" style="width:110px" name="code" inputmode="numeric" maxlength="8" placeholder="Code" autocomplete="off" required>
+      <button class="btn btn-sm btn-outline-dark">{{ 'Switch on' if not c.active else 'Switch off' }}</button></form></td></tr>
+  {% else %}<tr><td colspan="6" class="text-muted">No campaigns yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+
+<details class="mb-4"><summary class="btn btn-sm btn-dark">New campaign</summary>
+  <form method="post" action="{{ url_for('ops.campaign_create') }}" class="border rounded bg-white p-3 mt-2" style="max-width:640px">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="row g-2">
+      <div class="col-md-8"><label class="form-label small mb-0">Name (shown to customers)</label><input class="form-control form-control-sm" name="name" placeholder="Black Friday" required></div>
+      <div class="col-md-4"><label class="form-label small mb-0">Discount (%)</label><input class="form-control form-control-sm" name="percent" placeholder="20" required></div>
+      <div class="col-md-4"><label class="form-label small mb-0">Plan</label><select class="form-select form-select-sm" name="plan_key"><option value="">All plans</option>{% for k, p in plans.PLANS.items() %}<option value="{{ k }}">{{ p.name }}</option>{% endfor %}</select></div>
+      <div class="col-md-4"><label class="form-label small mb-0">Period</label><select class="form-select form-select-sm" name="interval"><option value="">All periods</option><option value="monthly">Monthly</option><option value="annual">Annual</option></select></div>
+      <div class="col-md-4"><label class="form-label small mb-0">Currency</label><select class="form-select form-select-sm" name="currency"><option value="">All currencies</option>{% for cur in plans.CURRENCIES %}<option value="{{ cur }}">{{ cur }}</option>{% endfor %}</select></div>
+      <div class="col-md-6"><label class="form-label small mb-0">Starts (WAT)</label><input class="form-control form-control-sm" type="datetime-local" name="starts" required></div>
+      <div class="col-md-6"><label class="form-label small mb-0">Ends (WAT)</label><input class="form-control form-control-sm" type="datetime-local" name="ends" required></div>
+    </div>
+    <div class="form-check small mt-2"><input class="form-check-input" type="checkbox" name="stacks" id="stacks"><label class="form-check-label" for="stacks">Add to the standing discount (otherwise the bigger of the two applies, for example 20% instead of 15%, not 35%)</label></div>
+    <div class="form-check small"><input class="form-check-input" type="checkbox" name="confirm_large" id="cl-camp"><label class="form-check-label" for="cl-camp">Confirm a discount above 50%</label></div>
+    <p class="small text-muted mt-2 mb-2">A campaign discount is locked in for subscribers who join during it, for as long as they stay subscribed.</p>
+    <input class="form-control form-control-sm mb-2" style="max-width:200px" name="code" inputmode="numeric" maxlength="8" placeholder="Authenticator code" autocomplete="off" required>
+    <button class="btn btn-sm btn-dark">Create campaign</button>
+  </form></details>
+
+<h2 class="h6">Recent pricing changes</h2>
+<table class="table table-sm bg-white"><tbody>
+  {% for h in history %}<tr><td class="small">{{ h.created_at|opsdt }}</td><td>{{ h.admin_username }}</td><td class="small">{{ h.action }}</td><td class="small">{{ h.detail }}</td></tr>{% else %}<tr><td class="text-muted">No changes yet.</td></tr>{% endfor %}
+</tbody></table>
+
+<script>
+document.querySelectorAll('form[data-vat]').forEach(function (f) {
+  var out = f.querySelector('[data-preview]');
+  function fmt(n) { return n.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+  function calc() {
+    var a = parseFloat((f.elements.amount.value || '').replace(/,/g, '')), d = parseFloat(f.elements.discount.value || '0'), v = parseFloat(f.dataset.vat || '0');
+    if (!(a > 0) || isNaN(d) || d < 0 || d > 90) { out.textContent = ''; return; }
+    var net = a * (1 - d / 100);
+    out.textContent = 'Customers pay ' + fmt(net) + (v ? ', ' + fmt(net * (1 + v / 100)) + ' with VAT' : ' (VAT off)');
+  }
+  f.addEventListener('input', calc); calc();
+});
+</script>
+{% endblock %}

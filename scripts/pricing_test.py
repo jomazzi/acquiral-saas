@@ -56,12 +56,49 @@ def vat(enabled, bp=750):
 def camp(name, bp, **kw):
     c = Campaign(name=name, discount_bp=bp, starts_at=kw.get("starts", NOW - timedelta(days=1)),
                  ends_at=kw.get("ends", NOW + timedelta(days=1)), active=kw.get("active", True),
-                 plan_key=kw.get("plan_key"), created_by="test")
+                 plan_key=kw.get("plan_key"), interval=kw.get("interval"), stacks=kw.get("stacks", False),
+                 created_by="test")
     db.session.add(c)
     db.session.commit()
     made_campaigns.append(c.id)
     return c
 
+def run_annual():
+    print("--- Standing annual discount ---")
+    q = quotes.quote("starter", "annual", "NGN", NOW)
+    check(q["list_minor"] == 66_000_000 and q["standing_bp"] == 1500 and q["standing_minor"] == 9_900_000
+          and q["net_minor"] == 56_100_000 and q["campaign_name"] is None,
+          "Starter annual is 12 x monthly (660,000) less 15% = 561,000")
+    q = quotes.quote("organisation", "annual", "NGN", NOW)
+    check(q["discount_minor"] == 14_220_000 and q["net_minor"] == 80_580_000, "Organisation annual nets to 805,800")
+    check(quotes.quote("starter", "annual", "USD", NOW)["net_minor"] == 46_920, "Starter annual in USD is $469.20")
+    check(quotes.quote("organisation", "annual", "USD", NOW)["net_minor"] == 58_140, "Organisation annual in USD is $581.40")
+    check(quotes.quote("starter", "monthly", "NGN", NOW)["discount_bp"] == 0, "monthly has no standing discount")
+
+    r = app.test_client().get("/pricing")
+    check(b"660,000" in r.data and b"-15%" in r.data, "pricing page shows the list price and the 15% label")
+
+    a = camp(f"AnnualBF {RUN}", 2000, interval="annual")
+    q = quotes.quote("starter", "annual", "NGN", NOW)
+    check(q["discount_bp"] == 2000 and q["standing_minor"] == 0 and q["campaign_minor"] == 13_200_000
+          and q["net_minor"] == 52_800_000, "a 20% campaign replaces the 15% (it doesn't stack by default)")
+    check(quotes.quote("starter", "monthly", "NGN", NOW)["discount_bp"] == 0, "an annual-only campaign leaves monthly alone")
+    a.active = False
+    db.session.commit()
+
+    b = camp(f"Small {RUN}", 1000, interval="annual")
+    q = quotes.quote("starter", "annual", "NGN", NOW)
+    check(q["discount_bp"] == 1500 and q["campaign_name"] is None, "a campaign smaller than the standing discount isn't applied")
+    b.active = False
+    db.session.commit()
+
+    camp(f"Stack {RUN}", 1000, interval="annual", stacks=True)
+    q = quotes.quote("starter", "annual", "NGN", NOW)
+    check(q["discount_bp"] == 2500 and q["standing_minor"] == 9_900_000 and q["campaign_minor"] == 6_600_000
+          and q["net_minor"] == 49_500_000, "a stacking campaign adds to the standing discount")
+    Campaign.query.filter(Campaign.id.in_(made_campaigns)).update({"active": False}, synchronize_session=False)
+    db.session.commit()
+    print()
 
 ORIG_PRICE = price_row().amount_minor
 _t = db.session.get(TaxSetting, "NGN")
@@ -174,7 +211,7 @@ def cleanup():
 
 
 try:
+    run_annual()
     run()
 finally:
     cleanup()
-print("\nAll pricing checks passed.")

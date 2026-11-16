@@ -1,9 +1,10 @@
-"""Prices are data, not code. List prices, VAT and campaigns live in the
-database (edited from the ops console) and every checkout is priced from
-them. Paystack plans have fixed amounts, so each distinct price a customer
-can be charged is an 'offer' with its own Paystack plan, created on first
-use and reused afterwards. A subscriber stays on the offer they signed up
-with, so later price, VAT or campaign changes never reprice them."""
+"""Prices are data, not code. List prices, standing discounts, VAT and
+campaigns live in the database (edited from the ops console) and every
+checkout is priced from them. Paystack plans have fixed amounts, so each
+distinct price a customer can be charged is an 'offer' with its own
+Paystack plan, created on first use and reused afterwards. A subscriber
+stays on the offer they signed up with, so later price, VAT or campaign
+changes never reprice them."""
 import logging
 
 from sqlalchemy.exc import IntegrityError
@@ -17,59 +18,109 @@ log = logging.getLogger("acquiral.billing")
 MAX_DISCOUNT_BP = 9000  # never more than 90% off, whatever is stored
 
 
+# ---- pure arithmetic (no database) ----------------------------------------
+
 def pct(amount, bp):
     """amount x bp/10000 in integer minor units, rounded half up."""
     return (amount * bp + 5000) // 10000
 
 
-def active_campaigns(now=None):
-    now = now or utcnow()
-    return Campaign.query.filter(Campaign.active.is_(True), Campaign.starts_at <= now,
-                                 Campaign.ends_at > now).all()
+def campaign_applies(c, plan_key, interval, currency, now):
+    return bool(c["active"] and c["starts_at"] <= now < c["ends_at"]
+                and c.get("plan_key") in (None, plan_key)
+                and c.get("interval") in (None, interval)
+                and c.get("currency") in (None, currency))
 
 
-def best_campaign(plan_key, interval, currency, now=None):
-    best = None
-    for c in active_campaigns(now):
-        if c.plan_key in (None, plan_key) and c.interval in (None, interval) and c.currency in (None, currency):
-            if best is None or c.discount_bp > best.discount_bp:
-                best = c
+def combined_bp(standing_bp, campaign):
+    """Total discount in basis points. A stacking campaign adds to the
+    standing discount; otherwise the bigger of the two applies."""
+    if campaign is None:
+        return min(standing_bp, MAX_DISCOUNT_BP)
+    if campaign.get("stacks"):
+        total = standing_bp + campaign["discount_bp"]
+    else:
+        total = max(standing_bp, campaign["discount_bp"])
+    return min(total, MAX_DISCOUNT_BP)
+
+
+def pick_campaign(campaigns, plan_key, interval, currency, standing_bp, now):
+    """The running campaign that gives the customer the biggest total
+    discount, if any beats the standing discount alone."""
+    best, best_bp = None, combined_bp(standing_bp, None)
+    for c in campaigns:
+        if not campaign_applies(c, plan_key, interval, currency, now):
+            continue
+        bp = combined_bp(standing_bp, c)
+        if bp > best_bp:
+            best, best_bp = c, bp
     return best
+
+
+def build_quote(plan_key, interval, currency, list_minor, standing_bp, campaign, vat_bp):
+    """All amounts are integer kobo/cents. The discount is worked out in
+    one step on the list price, then split into a standing line and a
+    campaign line that always add up exactly."""
+    total_bp = combined_bp(standing_bp, campaign)
+    discount = pct(list_minor, total_bp)
+    standing_minor = camp_minor = standing_shown = camp_shown = 0
+    if campaign is None:
+        standing_minor, standing_shown = discount, total_bp
+    elif campaign.get("stacks"):
+        standing_minor = min(pct(list_minor, standing_bp), discount)
+        standing_shown = standing_bp if standing_minor else 0
+        camp_minor = discount - standing_minor
+        camp_shown = total_bp - standing_bp
+    else:  # the campaign replaces the standing discount
+        camp_minor, camp_shown = discount, total_bp
+    net = list_minor - discount
+    vat = pct(net, vat_bp)
+    return {
+        "plan_key": plan_key, "interval": interval, "currency": currency,
+        "list_minor": list_minor,
+        "standing_bp": standing_shown, "standing_minor": standing_minor,
+        "campaign_bp": camp_shown if camp_minor else 0, "campaign_minor": camp_minor,
+        "campaign_name": campaign["name"] if camp_minor else None,
+        "campaign_ends_at": campaign["ends_at"] if camp_minor else None,
+        "discount_bp": total_bp, "discount_minor": discount, "net_minor": net,
+        "vat_bp": vat_bp, "vat_minor": vat, "total_minor": net + vat,
+    }
+
+
+# ---- database-backed ------------------------------------------------------
+
+def _campaign_dicts():
+    return [{"name": c.name, "discount_bp": int(c.discount_bp), "stacks": bool(c.stacks),
+             "plan_key": c.plan_key, "interval": c.interval, "currency": c.currency,
+             "starts_at": c.starts_at, "ends_at": c.ends_at, "active": bool(c.active)}
+            for c in Campaign.query.filter(Campaign.active.is_(True)).all()]
 
 
 def quote(plan_key, interval, currency, now=None):
     """What a customer would pay right now, or None if that plan, period
-    and currency isn't for sale. All amounts are integer kobo/cents."""
+    and currency isn't for sale."""
+    now = now or utcnow()
     item = PriceListItem.query.filter_by(plan_key=plan_key, interval=interval, currency=currency).first()
     if item is None or item.amount_minor <= 0:
         return None
-    camp = best_campaign(plan_key, interval, currency, now)
-    disc_bp = min(camp.discount_bp, MAX_DISCOUNT_BP) if camp else 0
-    list_minor = int(item.amount_minor)
-    discount = pct(list_minor, disc_bp)
-    net = list_minor - discount
+    standing_bp = int(item.discount_bp or 0)
+    camp = pick_campaign(_campaign_dicts(), plan_key, interval, currency, standing_bp, now)
     tax = db.session.get(TaxSetting, currency)
     vat_bp = int(tax.vat_bp) if tax and tax.enabled else 0
-    vat = pct(net, vat_bp)
-    return {
-        "plan_key": plan_key, "interval": interval, "currency": currency,
-        "list_minor": list_minor, "discount_bp": disc_bp, "discount_minor": discount,
-        "net_minor": net, "vat_bp": vat_bp, "vat_minor": vat, "total_minor": net + vat,
-        "campaign_name": camp.name if camp else None,
-        "campaign_ends_at": camp.ends_at if camp else None,
-    }
+    return build_quote(plan_key, interval, currency, int(item.amount_minor), standing_bp, camp, vat_bp)
 
 
 def banner(now=None):
-    """The best active campaign, for the pricing page headline."""
+    """The biggest running campaign, for the pricing page headline."""
+    now = now or utcnow()
     best = None
-    for c in active_campaigns(now):
-        if best is None or c.discount_bp > best.discount_bp:
+    for c in _campaign_dicts():
+        if c["starts_at"] <= now < c["ends_at"] and (best is None or c["discount_bp"] > best["discount_bp"]):
             best = c
     if best is None:
         return None
-    return {"name": best.name, "percent": f"{min(best.discount_bp, MAX_DISCOUNT_BP) / 100:g}",
-            "ends": best.ends_at.strftime("%d %b %Y")}
+    return {"name": best["name"], "percent": f"{min(best['discount_bp'], MAX_DISCOUNT_BP) / 100:g}",
+            "ends": best["ends_at"].strftime("%d %b %Y")}
 
 
 def get_or_create_offer(q):

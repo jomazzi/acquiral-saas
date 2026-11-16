@@ -44,27 +44,29 @@ def enforce_billing():
 
 def _plan_cards():
     """One dict per plan for the templates, priced from the database.
-    `prices[cur][interval]` is the price after any campaign; `was` is the
-    list price when a campaign applies; `saving` is what annual saves
-    against 12 months. All pre-formatted, so templates do no money maths."""
+    `prices` is what the customer pays (ex-VAT), `listed` the list price,
+    `was` the list price when a discount applies, `off` the discount percent.
+    All pre-formatted, so templates do no money maths."""
     cards = []
     for key, p in plans.PLANS.items():
-        prices, was, saving = {}, {}, {}
+        prices, listed, was, off, saving = {}, {}, {}, {}, {}
         for cur in plans.CURRENCIES:
-            prices[cur], was[cur], nets = {}, {}, {}
-            for i in plans.INTERVALS:
-                q = quotes.quote(key, i, cur)
+            prices[cur], listed[cur], was[cur], off[cur] = {}, {}, {}, {}
+            qs = {i: quotes.quote(key, i, cur) for i in plans.INTERVALS}
+            for i, q in qs.items():
                 if q is None:
-                    prices[cur][i], was[cur][i], nets[i] = "—", None, None
+                    prices[cur][i], listed[cur][i], was[cur][i], off[cur][i] = "—", "—", None, None
                     continue
                 prices[cur][i] = plans.format_money(q["net_minor"], cur, minor=True)
-                was[cur][i] = plans.format_money(q["list_minor"], cur, minor=True) if q["discount_minor"] else None
-                nets[i] = q["net_minor"]
-            s = (nets["monthly"] * 12 - nets["annual"]) if nets.get("monthly") and nets.get("annual") else 0
+                listed[cur][i] = plans.format_money(q["list_minor"], cur, minor=True)
+                was[cur][i] = listed[cur][i] if q["discount_minor"] else None
+                off[cur][i] = f"{q['discount_bp'] / 100:g}" if q["discount_minor"] else None
+            m, a = qs.get("monthly"), qs.get("annual")
+            s = (m["list_minor"] * 12 - a["net_minor"]) if m and a else 0
             saving[cur] = plans.format_money(s, cur, minor=True) if s > 0 else None
         cards.append({"key": key, "name": p["name"], "tagline": p["tagline"],
                       "feature_list": p["feature_list"], "max_users": p["max_users"],
-                      "prices": prices, "was": was, "saving": saving})
+                      "prices": prices, "listed": listed, "was": was, "off": off, "saving": saving})
     return cards
 
 
@@ -79,8 +81,10 @@ def _quote_table():
                     continue
                 money = lambda v: plans.format_money(v, cur, minor=True)
                 table[f"{key}|{i}|{cur}"] = {
-                    "list": money(q["list_minor"]), "discount": money(q["discount_minor"]),
-                    "discount_pct": q["discount_bp"] / 100, "campaign": q["campaign_name"],
+                    "list": money(q["list_minor"]),
+                    "standing": money(q["standing_minor"]), "standing_pct": q["standing_bp"] / 100,
+                    "campaign": q["campaign_name"], "campaign_amt": money(q["campaign_minor"]),
+                    "campaign_pct": q["campaign_bp"] / 100,
                     "net": money(q["net_minor"]), "vat": money(q["vat_minor"]), "vat_pct": q["vat_bp"] / 100,
                     "total": money(q["total_minor"]), "total_minor": q["total_minor"],
                 }

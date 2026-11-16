@@ -10,6 +10,7 @@ import uuid
 import psycopg2
 import psycopg2.errors
 from werkzeug.security import generate_password_hash
+from datetime import datetime, timedelta
 
 os.environ.pop("PAYSTACK_SECRET_KEY", None)
 os.environ.pop("MAIL_SERVER", None)
@@ -138,6 +139,84 @@ check(r.status_code == 200 and f"ref_{RUN}".encode() in r.data and b"55,000" in 
       "payments page shows the payment across tenants")
 r = get(c, "/ops/audit")
 check(r.status_code == 200 and b"view_subscriber" in r.data and b"login" in r.data, "audit log records activity")
+print("\n--- Pricing console ---")
+
+
+def db_val(sql, *args):
+    with dbc("DATABASE_URL") as conn, conn.cursor() as cur:
+        cur.execute(sql, args)
+        return cur.fetchone()[0]
+
+
+def fresh_code():
+    """A code that hasn't been used yet (resets the replay guard)."""
+    with dbc("DATABASE_URL") as conn, conn.cursor() as cur:
+        cur.execute("update ops_admins set last_totp_step = null, failed_attempts = 0, locked_until = null "
+                    "where username = %s", (NAME,))
+    return totp._code(secret, int(time.time() // 30))
+
+
+def wat(dt):
+    return (dt + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")
+
+
+PRICE_SQL = "select amount_minor from price_list where plan_key='starter' and interval='monthly' and currency='NGN'"
+r = get(c, "/ops/pricing")
+check(r.status_code == 200 and b"Prices and standing discounts" in r.data, "pricing page renders")
+tok = csrf_from(r)
+price = {"plan_key": "starter", "interval": "monthly", "currency": "NGN", "amount": "56000", "discount": "0"}
+
+post(c, "/ops/pricing/price", {**price, "code": "000000"}, tok)
+check(db_val(PRICE_SQL) == 5_500_000, "a wrong authenticator code changes nothing")
+post(c, "/ops/pricing/price", {**price, "code": fresh_code()}, tok)
+check(db_val(PRICE_SQL) == 5_600_000, "a valid code saves the price")
+check(db_val("select count(*) from ops_audit_log where action = 'pricing_price'") >= 1, "the change is in the audit log")
+post(c, "/ops/pricing/price", {**price, "amount": "90000", "code": fresh_code()}, tok)
+check(db_val(PRICE_SQL) == 5_600_000, "a change of more than 30% is refused without the confirmation box")
+post(c, "/ops/pricing/price", {**price, "amount": "90000", "confirm_large": "on", "code": fresh_code()}, tok)
+check(db_val(PRICE_SQL) == 9_000_000, "...and accepted with it")
+post(c, "/ops/pricing/price", {**price, "amount": "55000", "confirm_large": "on", "code": fresh_code()}, tok)
+check(db_val(PRICE_SQL) == 5_500_000, "the price is restored")
+post(c, "/ops/pricing/price", {**price, "amount": "abc", "code": fresh_code()}, tok)
+post(c, "/ops/pricing/price", {**price, "discount": "95", "confirm_large": "on", "code": fresh_code()}, tok)
+check(db_val(PRICE_SQL) == 5_500_000, "a non-numeric price and a 95% discount are refused")
+check(post(c, "/ops/pricing/price", {**price, "currency": "EUR", "code": fresh_code()}, tok).status_code == 400,
+      "an unknown currency is rejected")
+
+ANNUAL = {"plan_key": "starter", "interval": "annual", "currency": "NGN", "amount": "660000"}
+post(c, "/ops/pricing/price", {**ANNUAL, "discount": "20", "code": fresh_code()}, tok)
+check(db_val("select discount_bp from price_list where plan_key='starter' and interval='annual' and currency='NGN'") == 2000
+      and b"-20%" in app.test_client().get("/pricing").data, "a new standing discount reaches the customer pricing page")
+post(c, "/ops/pricing/price", {**ANNUAL, "discount": "15", "code": fresh_code()}, tok)
+check(db_val("select discount_bp from price_list where plan_key='starter' and interval='annual' and currency='NGN'") == 1500,
+      "the annual discount is restored to 15%")
+
+print("\n--- VAT and campaigns ---")
+VAT_SQL = "select vat_bp::text || ':' || enabled::text from tax_settings where currency='NGN'"
+post(c, "/ops/pricing/vat", {"currency": "NGN", "rate": "50", "enabled": "on", "code": fresh_code()}, tok)
+check(db_val(VAT_SQL) == "750:false", "a VAT rate above 30% is refused")
+post(c, "/ops/pricing/vat", {"currency": "NGN", "rate": "7.5", "enabled": "on", "code": fresh_code()}, tok)
+check(db_val(VAT_SQL) == "750:true", "VAT can be switched on")
+post(c, "/ops/pricing/vat", {"currency": "NGN", "rate": "7.5", "code": fresh_code()}, tok)
+check(db_val(VAT_SQL) == "750:false", "and off again")
+
+now = datetime.utcnow()
+NAME_C = f"BF {RUN}"
+form = {"name": NAME_C, "percent": "20", "plan_key": "", "interval": "annual", "currency": "",
+        "starts": wat(now - timedelta(hours=1)), "ends": wat(now + timedelta(days=2))}
+count_sql = "select count(*) from campaigns where name = %s"
+post(c, "/ops/pricing/campaigns", {**form, "ends": wat(now - timedelta(hours=2)), "code": fresh_code()}, tok)
+check(db_val(count_sql, NAME_C) == 0, "a campaign that ends before it starts is refused")
+post(c, "/ops/pricing/campaigns", {**form, "percent": "60", "code": fresh_code()}, tok)
+check(db_val(count_sql, NAME_C) == 0, "a discount above 50% needs the confirmation box")
+post(c, "/ops/pricing/campaigns", {**form, "code": fresh_code()}, tok)
+check(db_val(count_sql, NAME_C) == 1, "a valid campaign is created")
+check(NAME_C.encode() in app.test_client().get("/pricing").data, "the customer pricing page shows the campaign")
+cid = db_val("select id::text from campaigns where name = %s", NAME_C)
+post(c, f"/ops/pricing/campaigns/{cid}/toggle", {"code": fresh_code()}, tok)
+check(db_val("select active from campaigns where name = %s", NAME_C) is False
+      and NAME_C.encode() not in app.test_client().get("/pricing").data, "switching it off removes it from the pricing page")
+check(b"campaign_create" in get(c, "/ops/pricing").data, "campaign changes appear in the pricing history")
 tok = csrf_from(get(c, "/ops/"))
 check(post(c, "/ops/logout", {}, tok).status_code == 302, "logout works")
 check(get(c, "/ops/").status_code == 302, "logged out means no access")
@@ -163,6 +242,8 @@ for sql in ("select * from journal_entries", "select * from journal_lines", "sel
             "select * from customers", "select * from vendors", "select * from payment_settings",
             "select password_hash from users", "select * from users",
             "select paystack_email_token from organizations", "select * from organizations"):
+            "select * from price_offers", "delete from price_list", "delete from campaigns",
+            "update price_list set id = gen_random_uuid()",
     check(refused(sql), f"refused: {sql}")
 for sql in ("update organizations set name = 'x'", "delete from subscription_payments",
             "delete from organizations", "update users set active = false",

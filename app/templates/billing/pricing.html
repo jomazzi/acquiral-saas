@@ -81,7 +81,7 @@
           <p class="text-muted mb-3">{{ c.tagline }}</p>
           <div class="plan-price">
             {% for cur in currencies %}{% for i in ['monthly', 'annual'] %}
-            <span data-price data-cur="{{ cur }}" data-int="{{ i }}" style="display:none">{% if c.was[cur][i] %}<s class="text-muted" style="font-size:1rem">{{ c.was[cur][i] }}</s> {% endif %}{{ c.prices[cur][i] }}</span>
+            <span data-price data-cur="{{ cur }}" data-int="{{ i }}" style="display:none">{% if c.was[cur][i] %}<s class="text-muted" style="font-size:1rem">{{ c.was[cur][i] }}</s> {% endif %}{{ c.prices[cur][i] }}{% if c.off[cur][i] %} <span class="badge bg-success align-middle" style="font-size:.7rem">-{{ c.off[cur][i] }}%</span>{% endif %}</span>
             {% endfor %}{% endfor %}
             <small data-per data-int="monthly">/ month</small><small data-per data-int="annual" style="display:none">/ year</small>
           </div>
