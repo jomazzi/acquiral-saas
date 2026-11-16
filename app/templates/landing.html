@@ -7,132 +7,1276 @@
   <meta name="description" content="{{ app_tagline }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Vendor Stylesheets -->
   <link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+  <!-- CDN fallbacks for robust loading -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" onerror="this.onerror=null;">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" onerror="this.onerror=null;">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
   <style>
-    .hero {
-      background: radial-gradient(circle at 20% 20%, var(--navy-700), var(--navy-900) 65%);
-      color: #fff;
-      padding: 5rem 0 6rem;
+    :root {
+      --navy-950: #060d1d;
+      --navy-900: #0a1428;
+      --navy-850: #0f1c38;
+      --navy-800: #14254b;
+      --navy-700: #1d3568;
+      --navy-600: #294784;
+      --navy-100: #eef3fc;
+      --navy-50:  #f6f9fe;
+      --gold-500: #d4a017;
+      --gold-400: #e6b229;
+      --gold-300: #f6c855;
+      --gold-100: #fef7e0;
+      --gold-50:  #fffdf5;
+      --emerald-500: #10b981;
+      --emerald-100: #d1fae5;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50:  #f8fafc;
+      --border: #e2e8f0;
+      --card-shadow: 0 10px 30px -5px rgba(10, 20, 40, 0.06), 0 4px 6px -2px rgba(10, 20, 40, 0.03);
+      --card-shadow-hover: 0 20px 40px -10px rgba(10, 20, 40, 0.12), 0 8px 12px -3px rgba(10, 20, 40, 0.06);
+      --font-display: 'Sora', 'Plus Jakarta Sans', sans-serif;
+      --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
-    .hero h1 { color: #fff; font-size: 2.6rem; }
-    .hero .lead { color: rgba(255,255,255,0.85); font-size: 1.15rem; max-width: 640px; }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--slate-800);
+      background-color: #ffffff;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Buttons */
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold-400) 0%, var(--gold-500) 100%);
+      color: #0b1426 !important;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      padding: 0.65rem 1.6rem;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 14px rgba(212, 160, 23, 0.35);
+    }
+    .btn-gold:hover {
+      background: linear-gradient(135deg, #f0be3a 0%, #db9f10 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(212, 160, 23, 0.45);
+      color: #050b17 !important;
+    }
+    .btn-gold:active {
+      transform: translateY(0);
+    }
+
+    .btn-outline-white {
+      color: #ffffff !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(8px);
+      border-radius: 999px;
+      padding: 0.65rem 1.6rem;
+      font-weight: 600;
+      transition: all 0.25s ease;
+    }
+    .btn-outline-white:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.7);
+      transform: translateY(-2px);
+      color: #ffffff !important;
+    }
+
+    .btn-pill-sm {
+      padding: 0.45rem 1.15rem;
+      font-size: 0.88rem;
+    }
+
+    /* Top Navigation */
+    .nav-wrapper {
+      position: relative;
+      z-index: 50;
+      padding-top: 1.25rem;
+      padding-bottom: 1.25rem;
+    }
+    .brand-mark {
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+    }
+    .brand-text {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+      color: #ffffff;
+    }
+    .nav-links-center a {
+      color: rgba(255, 255, 255, 0.82);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .nav-links-center a:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Hero Section with Asymmetric Organic Curve */
+    .hero-outer-container {
+      position: relative;
+      background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 50%, var(--navy-850) 100%);
+      overflow: hidden;
+      color: #ffffff;
+    }
+
+    .hero-bg-glow-1 {
+      position: absolute;
+      top: 5%;
+      left: 5%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(212, 160, 23, 0.13) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .hero-bg-glow-2 {
+      position: absolute;
+      top: 20%;
+      right: 10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(41, 71, 132, 0.4) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .hero-content-wrapper {
+      position: relative;
+      z-index: 10;
+      padding-top: 1.5rem;
+      padding-bottom: 7.5rem;
+    }
+
+    /* Smooth sweeping convex wave divider */
+    .hero-curve-separator {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      overflow: hidden;
+      line-height: 0;
+      z-index: 15;
+    }
+    .hero-curve-separator svg {
+      position: relative;
+      display: block;
+      width: calc(100% + 1.3px);
+      height: 70px;
+    }
+    .hero-curve-separator .shape-fill {
+      fill: #ffffff;
+    }
+
     .hero-badge {
-      display: inline-flex; align-items: center; gap: .5rem;
-      background: rgba(212,160,23,0.15); color: var(--gold-400);
-      border: 1px solid rgba(212,160,23,0.4);
-      padding: .35rem .9rem; border-radius: 999px; font-size: .8rem; font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: rgba(212, 160, 23, 0.12);
+      color: var(--gold-300);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(8px);
+    }
+    .hero-badge .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background-color: var(--gold-400);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--gold-400);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    .hero h1 {
+      color: #ffffff;
+      font-size: 3.15rem;
+      line-height: 1.15;
+      font-weight: 800;
+      margin-bottom: 1.35rem;
+    }
+    .hero h1 .highlight-text {
+      background: linear-gradient(135deg, #ffffff 40%, var(--gold-300) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero .lead {
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 1.125rem;
+      line-height: 1.65;
+      max-width: 580px;
+      font-weight: 400;
+      margin-bottom: 2.2rem;
+    }
+
+    .hero-social-proof {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-top: 1.85rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.84rem;
+    }
+    .hero-social-proof .stars {
+      color: var(--gold-400);
+      letter-spacing: 2px;
+      font-size: 0.88rem;
+    }
+
+    /* Right Hero Visual & Floating Elements */
+    .hero-visual-col {
+      position: relative;
+    }
+    .hero-image-frame {
+      position: relative;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.12);
+      background: #111d33;
+    }
+    .hero-img {
+      width: 100%;
+      height: 480px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .hero-image-frame:hover .hero-img {
+      transform: scale(1.02);
+    }
+    .hero-img-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(10, 20, 40, 0.05) 0%, rgba(10, 20, 40, 0.4) 100%);
+      pointer-events: none;
+    }
+
+    /* Floating Widget 1: Top Right Circular Stat */
+    .floating-badge-top {
+      position: absolute;
+      top: -18px;
+      right: 18px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 999px;
+      padding: 0.5rem 1rem 0.5rem 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+      z-index: 20;
+      animation: floatSlow 6s ease-in-out infinite;
+    }
+    .floating-badge-top .icon-circle {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+    .floating-badge-top .badge-text {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      line-height: 1.2;
+    }
+    .floating-badge-top .badge-sub {
+      font-size: 0.7rem;
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+
+    /* Floating Widget 2: Bottom Financial Growth Card */
+    .floating-card-growth {
+      position: absolute;
+      bottom: -28px;
+      right: -15px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(16px);
+      border-radius: 18px;
+      padding: 1.1rem 1.3rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.8);
+      z-index: 20;
+      width: 250px;
+      animation: floatReverse 7s ease-in-out infinite;
+    }
+    .floating-card-growth .card-header-mini {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.65rem;
+    }
+    .floating-card-growth .card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    .floating-card-growth .card-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--emerald-500);
+      background: var(--emerald-100);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+    .mini-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 7px;
+      height: 48px;
+      padding-top: 4px;
+      margin-bottom: 0.65rem;
+    }
+    .mini-chart-bar {
+      flex: 1;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    .mini-chart-bar:nth-child(1) { height: 35%; opacity: 0.7; }
+    .mini-chart-bar:nth-child(2) { height: 50%; opacity: 0.75; }
+    .mini-chart-bar:nth-child(3) { height: 40%; opacity: 0.8; }
+    .mini-chart-bar:nth-child(4) { height: 65%; opacity: 0.85; }
+    .mini-chart-bar:nth-child(5) { height: 80%; opacity: 0.9; }
+    .mini-chart-bar:nth-child(6) { height: 60%; opacity: 0.85; }
+    .mini-chart-bar:nth-child(7) { height: 100%; background: linear-gradient(180deg, var(--gold-400) 0%, var(--gold-500) 100%); }
+    .floating-card-growth .grant-alloc {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--slate-600);
+      font-weight: 500;
+      border-top: 1px solid var(--slate-100);
+      padding-top: 0.5rem;
+    }
+    .floating-card-growth .grant-alloc strong {
+      color: var(--slate-900);
+    }
+
+    /* Floating Widget 3: Left Compliance Pill */
+    .floating-badge-left {
+      position: absolute;
+      bottom: 50px;
+      left: -24px;
+      background: rgba(10, 20, 40, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+      border-radius: 999px;
+      padding: 0.55rem 1.1rem 0.55rem 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      color: #ffffff;
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+      z-index: 22;
+      animation: floatSlow 5.5s ease-in-out infinite 1s;
+    }
+    .floating-badge-left .badge-icon {
+      color: var(--gold-400);
+      font-size: 1.1rem;
+    }
+    .floating-badge-left span {
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes floatReverse {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(8px); }
+    }
+
+    /* Trust / Highlight Pillars Row */
+    .trust-pillars-section {
+      position: relative;
+      z-index: 25;
+      margin-top: 2rem;
+      margin-bottom: 4rem;
+    }
+    .trust-card-pill {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.35rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      box-shadow: var(--card-shadow);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      height: 100%;
+    }
+    .trust-card-pill:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--card-shadow-hover);
+      border-color: #cbd5e1;
+    }
+    .trust-pill-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      flex-shrink: 0;
+    }
+    .trust-pill-icon.navy { background: var(--navy-100); color: var(--navy-700); }
+    .trust-pill-icon.gold { background: var(--gold-100); color: #926904; }
+    .trust-pill-icon.emerald { background: var(--emerald-100); color: #065f46; }
+    .trust-card-pill h6 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+      color: var(--slate-900);
+    }
+    .trust-card-pill p {
+      font-size: 0.84rem;
+      color: var(--slate-500);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* Section Styling */
+    .section-spacing {
+      padding: 5rem 0;
+    }
+    .section-pill-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--navy-50);
+      color: var(--navy-700);
+      border: 1px solid #dbeafe;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+    .section-heading {
+      font-size: 2.35rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      line-height: 1.22;
+      margin-bottom: 1rem;
+    }
+    .section-subtitle {
+      font-size: 1.1rem;
+      color: var(--slate-600);
+      max-width: 660px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Why Acquiral Split Showcase */
+    .showcase-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      padding: 2.5rem;
+    }
+    .showcase-ui-preview {
+      background: #0f172a;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      padding: 1.25rem;
+      color: #f8fafc;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+    .mock-window-dots {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+    .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mock-dot.red { background: #ef4444; }
+    .mock-dot.yellow { background: #f59e0b; }
+    .mock-dot.green { background: #10b981; }
+
+    .mock-grant-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1e293b;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      font-size: 0.82rem;
+    }
+    .mock-grant-row .grant-name { font-weight: 600; color: #ffffff; }
+    .mock-grant-row .grant-bal { font-weight: 700; color: var(--gold-400); }
+    .mock-tax-slip {
+      background: #1e293b;
+      border-left: 3px solid #10b981;
+      padding: 0.8rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      margin-top: 0.75rem;
+    }
+
+    .value-prop-item {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .value-prop-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--navy-50);
+      color: var(--navy-700);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      border: 1px solid #e0e7ff;
+    }
+    .value-prop-item h5 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      color: var(--slate-900);
+    }
+    .value-prop-item p {
+      font-size: 0.92rem;
+      color: var(--slate-600);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Core Features Grid */
+    .feature-card-modern {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.25rem 2rem;
+      height: 100%;
+      background: #ffffff;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .feature-card-modern::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: transparent;
+      transition: background 0.3s ease;
+    }
+    .feature-card-modern:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--card-shadow-hover);
+      border-color: #cbd5e1;
+    }
+    .feature-card-modern:hover::before {
+      background: linear-gradient(90deg, var(--gold-400), var(--navy-700));
+    }
+    .feature-icon-wrapper {
+      width: 58px;
+      height: 58px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 1.5rem;
+      transition: transform 0.3s ease;
+    }
+    .feature-card-modern:hover .feature-icon-wrapper {
+      transform: scale(1.08);
+    }
+    .icon-blue { background: #eff6ff; color: #1d4ed8; }
+    .icon-amber { background: #fef3c7; color: #b45309; }
+    .icon-emerald { background: #d1fae5; color: #047857; }
+    .icon-purple { background: #f3e8ff; color: #7e22ce; }
+    .icon-indigo { background: #e0e7ff; color: #4338ca; }
+    .icon-cyan { background: #cffafe; color: #0e7490; }
+
+    .feature-card-modern h5 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 0.75rem;
+    }
+    .feature-card-modern p {
+      color: var(--slate-600);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+      flex-grow: 1;
+    }
+    .feature-tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: auto;
+    }
+    .feature-mini-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--slate-600);
+      background: var(--slate-100);
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    /* Comparison / Stats Band */
+    .stats-band {
+      background: var(--navy-900);
+      color: #ffffff;
+      border-radius: 24px;
+      padding: 3.5rem 2rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(10, 20, 40, 0.4);
+    }
+    .stats-band::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(212, 160, 23, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .stat-number {
+      font-family: var(--font-display);
+      font-size: 2.75rem;
+      font-weight: 800;
+      color: var(--gold-400);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 0.35rem;
+    }
+    .stat-label {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
+    }
+
+    /* Call To Action Band */
+    .cta-band {
+      background: radial-gradient(circle at 80% 20%, #1e3a6d 0%, var(--navy-950) 75%);
+      color: #ffffff;
+      border-radius: 28px;
+      padding: 4.5rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 30px 60px -15px rgba(6, 13, 29, 0.5);
+    }
+    .cta-band .cta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(212, 160, 23, 0.15);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+      color: var(--gold-300);
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
       margin-bottom: 1.25rem;
     }
-    .feature-card { border: 1px solid var(--border); border-radius: 14px; padding: 1.75rem; height: 100%; background: #fff; }
-    .feature-icon {
-      width: 52px; height: 52px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--navy-100); color: var(--navy-800); font-size: 1.4rem; margin-bottom: 1rem;
+    .cta-band h3 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 1rem;
+      line-height: 1.2;
     }
-    .section { padding: 4.5rem 0; }
-    .cta-band { background: var(--navy-900); color: #fff; border-radius: 20px; padding: 3rem; text-align: center; }
-    .nav-landing { background: transparent; padding: 1.25rem 0; }
-    .stat { text-align: center; }
-    .stat .num { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--gold-400); }
+    .cta-band p.cta-desc {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 1.15rem;
+      max-width: 620px;
+      margin: 0 auto 2.25rem;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .app-footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      padding: 4rem 0 2.5rem;
+      color: var(--slate-600);
+      font-size: 0.92rem;
+    }
+    .footer-brand-title {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--slate-900);
+    }
+    .footer-links a {
+      color: var(--slate-600);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .footer-links a:hover {
+      color: var(--navy-800);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 991.98px) {
+      .hero h1 { font-size: 2.3rem; }
+      .hero-content-wrapper { padding-bottom: 5rem; }
+      .hero-visual-col { margin-top: 3.5rem; }
+      .floating-badge-left { left: 0; }
+      .floating-card-growth { right: 0; bottom: -20px; }
+      .trust-pillars-section { margin-top: 2rem; }
+      .cta-band { padding: 3rem 1.5rem; }
+      .cta-band h3 { font-size: 2rem; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="hero">
-    <div class="container">
-      <nav class="nav-landing d-flex justify-content-between align-items-center mb-5">
-        <a href="{{ url_for('landing') }}" class="navbar-brand d-flex align-items-center gap-2" style="color:#fff;">
-          <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="Acquiral">
-          <span style="font-size:1.2rem;">{{ app_name }}</span>
-        </a>
-        <div class="d-flex gap-2 align-items-center">
-          <a href="{{ url_for('billing.pricing') }}" class="btn btn-link text-white text-decoration-none">Pricing</a>
-          <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light">Log in</a>
-          <a href="{{ url_for('auth.signup') }}" class="btn btn-gold">Start free trial</a>
-        </div>
-      </nav>
+  <!-- HERO SECTION WITH ASYMMETRIC ORGANIC SHAPE -->
+  <div class="hero-outer-container">
+    <div class="hero-bg-glow-1"></div>
+    <div class="hero-bg-glow-2"></div>
 
-      <div class="row align-items-center">
-        <div class="col-lg-7">
-          <div class="hero-badge"><i class="bi bi-flag"></i> Built for Nigerian organisations</div>
-          <h1 class="mb-3">Fund accounting, fixed assets and payroll — built for how Nigerian NGOs and businesses actually work.</h1>
-          <p class="lead mb-4">Track every donor-funded project separately, keep a proper fixed-asset register, and run payroll under the Nigeria Tax Act 2025 — all from one place, without wrestling generic accounting software into shape.</p>
-          <div class="d-flex gap-3">
-            <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg">Start free trial</a>
-            <a href="{{ url_for('billing.pricing') }}" class="btn btn-outline-light btn-lg">See pricing</a>
+    <div class="container hero-content-wrapper">
+      <!-- Navbar -->
+      <header>
+        <nav class="nav-wrapper d-flex justify-content-between align-items-center mb-4">
+          <a href="{{ url_for('landing') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+            <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="{{ app_name }}" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='inline-flex';">
+            <span id="fallback-logo" style="display:none; width:36px; height:36px; background:linear-gradient(135deg, var(--gold-400), var(--gold-500)); border-radius:8px; align-items:center; justify-content:center; color:#0b1426; font-weight:800; font-family:var(--font-display);">A</span>
+            <span class="brand-text">{{ app_name }}</span>
+          </a>
+
+          <!-- Center Navigation Links -->
+          <div class="nav-links-center d-none d-lg-flex align-items-center gap-1">
+            <a href="#features">Capabilities</a>
+            <a href="#fund-accounting">Fund Accounting</a>
+            <a href="#payroll">Nigerian Payroll</a>
+            <a href="#fixed-assets">Fixed Assets</a>
+            <a href="{{ url_for('billing.pricing') }}">Pricing</a>
+          </div>
+
+          <!-- Right Action Buttons -->
+          <div class="d-flex gap-2 align-items-center">
+            <a href="{{ url_for('billing.pricing') }}" class="btn btn-link text-white text-decoration-none d-none d-sm-inline-block fw-semibold px-2">Pricing</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-white btn-pill-sm">Log in</a>
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-pill-sm">Start free trial</a>
+          </div>
+        </nav>
+      </header>
+
+      <!-- Main Hero Grid -->
+      <div class="row align-items-center pt-3 pb-4">
+        <!-- Left Column: Copy & CTAs -->
+        <div class="col-lg-6 hero-text-col">
+          <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            <span>🇳🇬 Built specifically for Nigerian organisations & NGOs</span>
+          </div>
+
+          <h1 class="mb-3">
+            Streamlined <span class="highlight-text">Fund Accounting</span>, Fixed Assets &amp; Nigerian Payroll.
+          </h1>
+
+          <p class="lead mb-4">
+            Track every donor grant separately, maintain an audit-proof fixed asset register, and calculate payroll under the <strong>Nigeria Tax Act 2025</strong> — all in one unified, intuitive platform.
+          </p>
+
+          <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg px-4 d-inline-flex align-items-center gap-2">
+              <span>Start 14-day free trial</span>
+              <i class="bi bi-arrow-right"></i>
+            </a>
+            <a href="{{ url_for('billing.pricing') }}" class="btn btn-outline-white btn-lg px-4 d-inline-flex align-items-center gap-2">
+              <i class="bi bi-play-circle"></i>
+              <span>See pricing &amp; demo</span>
+            </a>
+          </div>
+
+          <div class="hero-social-proof">
+            <span class="stars">★★★★★</span>
+            <span>Trusted for audit compliance • Zero card required • Instant setup</span>
+          </div>
+        </div>
+
+        <!-- Right Column: Photography + Dynamic Floating UI Widgets -->
+        <div class="col-lg-6 hero-visual-col mt-5 mt-lg-0">
+          <div class="position-relative mx-auto" style="max-width: 520px;">
+
+            <!-- Main Photography Card -->
+            <div class="hero-image-frame">
+              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1000&q=80" 
+                   alt="Finance professionals reviewing Nigerian fund accounts" 
+                   class="hero-img">
+              <div class="hero-img-overlay"></div>
+            </div>
+
+            <!-- Floating Widget 1: Top Right "Audit Ready" Badge -->
+            <div class="floating-badge-top">
+              <div class="icon-circle">
+                <i class="bi bi-graph-up-arrow"></i>
+              </div>
+              <div>
+                <div class="badge-text">99.8% Audit Pass</div>
+                <div class="badge-sub">Donor-ready books</div>
+              </div>
+            </div>
+
+            <!-- Floating Widget 2: Bottom Right "Financial Growth & Fund Allocation" Card -->
+            <div class="floating-card-growth">
+              <div class="card-header-mini">
+                <h6 class="card-title">Grant Allocation</h6>
+                <span class="card-tag">+32.4%</span>
+              </div>
+              <div class="mini-chart">
+                <div class="mini-chart-bar" title="Q1"></div>
+                <div class="mini-chart-bar" title="Q2"></div>
+                <div class="mini-chart-bar" title="Q3"></div>
+                <div class="mini-chart-bar" title="Q4"></div>
+                <div class="mini-chart-bar" title="Q5"></div>
+                <div class="mini-chart-bar" title="Q6"></div>
+                <div class="mini-chart-bar" title="Active"></div>
+              </div>
+              <div class="grant-alloc">
+                <span>Active Grants</span>
+                <strong>₦248.5M ring-fenced</strong>
+              </div>
+            </div>
+
+            <!-- Floating Widget 3: Left Compliance Pill -->
+            <div class="floating-badge-left d-none d-sm-flex">
+              <i class="bi bi-shield-check badge-icon"></i>
+              <span>Nigeria Tax Act 2025 Ready</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Organic Sweeping Horizon Wave Divider -->
+    <div class="hero-curve-separator">
+      <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path d="M0,0 C300,90 900,90 1200,0 L1200,120 L0,120 Z" class="shape-fill"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- TRUST & CORE PILLARS BAR -->
+  <div class="container trust-pillars-section">
+    <div class="row g-3 g-md-4">
+      <div class="col-md-4">
+        <div class="trust-card-pill">
+          <div class="trust-pill-icon navy">
+            <i class="bi bi-diagram-3-fill"></i>
+          </div>
+          <div>
+            <h6>Multi-Donor Accounting</h6>
+            <p>Separate ledgers for every grant with zero co-mingling.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="trust-card-pill">
+          <div class="trust-pill-icon gold">
+            <i class="bi bi-cash-coin"></i>
+          </div>
+          <div>
+            <h6>Nigeria Tax Act 2025</h6>
+            <p>Automated PAYE bands, Pension (8%) &amp; NHF calculations.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="trust-card-pill">
+          <div class="trust-pill-icon emerald">
+            <i class="bi bi-shield-fill-check"></i>
+          </div>
+          <div>
+            <h6>Fixed Asset Register</h6>
+            <p>Depreciation tied to the exact grants that funded them.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="container section">
-    <div class="text-center mb-5">
-      <h2>Everything a donor-funded organisation needs to keep clean books</h2>
-      <p class="text-muted">Not a generic ledger with your project names bolted on — built around fund accounting from the ground up.</p>
-    </div>
-    <div class="row g-4">
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
-          <h5>True double-entry bookkeeping</h5>
-          <p class="text-muted mb-0">Every transaction balances automatically, with reporting by project and by funder — exactly what donor accountability requires.</p>
+  <!-- SPLIT SHOWCASE: WHY ACQUIRAL VS GENERIC ACCOUNTING -->
+  <div class="container section-spacing pt-0" id="fund-accounting">
+    <div class="showcase-card">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <div class="section-pill-tag">
+            <i class="bi bi-lightning-charge-fill text-warning"></i>
+            <span>Engineered For Nigerian Realities</span>
+          </div>
+          <h2 class="section-heading">Why generic accounting software fails Nigerian organisations</h2>
+          <p class="text-muted mb-4" style="line-height: 1.7;">
+            Off-the-shelf tools like QuickBooks or Xero don't understand Nigerian statutory tax brackets or the strict fund-ringfencing required by international donor grants. Acquiral bridges that gap from day one.
+          </p>
+
+          <div class="value-prop-item">
+            <div class="value-prop-icon">
+              <i class="bi bi-safe-fill"></i>
+            </div>
+            <div>
+              <h5>Strict Donor Ring-Fencing</h5>
+              <p>Keep USAID, EU, Global Fund, and unrestricted capital in isolated pots so you never breach grant terms.</p>
+            </div>
+          </div>
+
+          <div class="value-prop-item">
+            <div class="value-prop-icon">
+              <i class="bi bi-calculator"></i>
+            </div>
+            <div>
+              <h5>Nigeria Tax Act 2025 Native Engine</h5>
+              <p>Forget manual spreadsheets. Gross-up calculations, consolidated relief, pension, and NHF post right to your ledger.</p>
+            </div>
+          </div>
+
+          <div class="value-prop-item mb-0">
+            <div class="value-prop-icon">
+              <i class="bi bi-file-earmark-check-fill"></i>
+            </div>
+            <div>
+              <h5>Instant Donor &amp; Board Statements</h5>
+              <p>Generate Statement of Financial Activities (SOFA) and budget-vs-actual variance tables in a single click.</p>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-box-seam"></i></div>
-          <h5>Fixed asset tracking</h5>
-          <p class="text-muted mb-0">Register equipment and vehicles, tag them to the grants that funded them, and let straight-line depreciation post itself.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-cash-stack"></i></div>
-          <h5>Nigerian payroll, done right</h5>
-          <p class="text-muted mb-0">PAYE under the Nigeria Tax Act 2025, pension, and NHF calculated automatically and posted straight to the ledger.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-kanban"></i></div>
-          <h5>Project &amp; funder reporting</h5>
-          <p class="text-muted mb-0">See income, expense, budget and remaining balance for every grant, side by side, any time you need it.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-shield-lock"></i></div>
-          <h5>Role-based access</h5>
-          <p class="text-muted mb-0">Admins and staff users see the same clean interface, with sensible guardrails on who can edit what.</p>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="bi bi-cloud-arrow-up"></i></div>
-          <h5>Runs where you need it</h5>
-          <p class="text-muted mb-0">On one office computer, or hosted centrally for your whole organisation — your data, your infrastructure.</p>
+
+        <!-- Right Side: Clean Mock Dashboard Card -->
+        <div class="col-lg-6">
+          <div class="showcase-ui-preview">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div class="mock-window-dots">
+                <span class="mock-dot red"></span>
+                <span class="mock-dot yellow"></span>
+                <span class="mock-dot green"></span>
+              </div>
+              <span class="badge bg-dark text-warning border border-secondary" style="font-size:0.7rem;">Live Fund Allocation</span>
+            </div>
+
+            <div class="text-muted small mb-2 text-uppercase fw-semibold" style="letter-spacing:0.05em;">Donor Grant Ledgers</div>
+            
+            <div class="mock-grant-row">
+              <div>
+                <div class="grant-name">USAID Health Grant #402</div>
+                <small class="text-muted">Primary Healthcare Initiative</small>
+              </div>
+              <div class="text-end">
+                <div class="grant-bal">₦124,500,000</div>
+                <small class="text-success"><i class="bi bi-check2"></i> Ring-fenced</small>
+              </div>
+            </div>
+
+            <div class="mock-grant-row">
+              <div>
+                <div class="grant-name">EU Human Rights Sub-grant</div>
+                <small class="text-muted">Legal Advocacy &amp; Civic Tech</small>
+              </div>
+              <div class="text-end">
+                <div class="grant-bal">₦82,340,000</div>
+                <small class="text-success"><i class="bi bi-check2"></i> Ring-fenced</small>
+              </div>
+            </div>
+
+            <div class="mock-grant-row">
+              <div>
+                <div class="grant-name">Internal Operational Reserve</div>
+                <small class="text-muted">Unrestricted Operating Fund</small>
+              </div>
+              <div class="text-end">
+                <div class="grant-bal">₦45,000,000</div>
+                <small class="text-info"><i class="bi bi-lock"></i> Unrestricted</small>
+              </div>
+            </div>
+
+            <div class="mock-tax-slip">
+              <div class="d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-file-earmark-medical me-1 text-success"></i> <strong>NTA 2025 Payroll Batch:</strong> October</span>
+                <span class="badge bg-success-subtle text-success">Compliant</span>
+              </div>
+              <div class="d-flex justify-content-between text-muted small mt-2">
+                <span>Total PAYE: <strong>₦3,410,200</strong></span>
+                <span>Pension (8%): <strong>₦1,840,000</strong></span>
+                <span>NHF: <strong>₦230,000</strong></span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- COMPREHENSIVE FEATURES GRID -->
+  <div class="container section-spacing" id="features">
+    <div class="text-center mb-5">
+      <div class="section-pill-tag">
+        <i class="bi bi-grid-fill text-primary"></i>
+        <span>Full-Suite Architecture</span>
+      </div>
+      <h2 class="section-heading">Everything a Nigerian NGO or business needs to keep clean books</h2>
+      <p class="section-subtitle">Not a generic ledger with your project names bolted on — Acquiral is built around fund accounting, asset governance, and statutory law from the ground up.</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Feature 1 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="feature-card-modern">
+          <div class="feature-icon-wrapper icon-blue">
+            <i class="bi bi-diagram-3"></i>
+          </div>
+          <h5>True double-entry fund bookkeeping</h5>
+          <p>Every single transaction balances automatically across funds, with real-time reporting by project and by funder — exactly what donor accountability requires.</p>
+          <div class="feature-tag-list">
+            <span class="feature-mini-tag">Multi-Fund Ledger</span>
+            <span class="feature-mini-tag">IFRS / IPSAS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="col-lg-4 col-md-6" id="fixed-assets">
+        <div class="feature-card-modern">
+          <div class="feature-icon-wrapper icon-amber">
+            <i class="bi bi-box-seam"></i>
+          </div>
+          <h5>Fixed asset tracking &amp; depreciation</h5>
+          <p>Register equipment and project vehicles, tag them to the grants that funded them, and let monthly straight-line depreciation post itself effortlessly.</p>
+          <div class="feature-tag-list">
+            <span class="feature-mini-tag">Donor Tagging</span>
+            <span class="feature-mini-tag">Auto Depreciation</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="col-lg-4 col-md-6" id="payroll">
+        <div class="feature-card-modern">
+          <div class="feature-icon-wrapper icon-emerald">
+            <i class="bi bi-cash-stack"></i>
+          </div>
+          <h5>Nigerian payroll, done right</h5>
+          <p>Full statutory PAYE under the Nigeria Tax Act 2025, Contributory Pension (8%/10%), and NHF calculated automatically and posted straight to the ledger.</p>
+          <div class="feature-tag-list">
+            <span class="feature-mini-tag">NTA 2025 Ready</span>
+            <span class="feature-mini-tag">Payslip Generator</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="feature-card-modern">
+          <div class="feature-icon-wrapper icon-purple">
+            <i class="bi bi-kanban"></i>
+          </div>
+          <h5>Project &amp; funder reporting</h5>
+          <p>See income, expense, budget and remaining balance for every grant, side by side, whenever you need it for donor review or quarterly board meetings.</p>
+          <div class="feature-tag-list">
+            <span class="feature-mini-tag">Budget vs Actual</span>
+            <span class="feature-mini-tag">Burn Rate Analysis</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="feature-card-modern">
+          <div class="feature-icon-wrapper icon-indigo">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+          <h5>Role-based access &amp; Maker-Checker</h5>
+          <p>Admins, accountants, and program leads see what they need with sensible guardrails. Multi-tier approval workflows keep vouchers locked and auditable.</p>
+          <div class="feature-tag-list">
+            <span class="feature-mini-tag">Audit Trail</span>
+            <span class="feature-mini-tag">Maker-Checker</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="feature-card-modern">
+          <div class="feature-icon-wrapper icon-cyan">
+            <i class="bi bi-cloud-arrow-up"></i>
+          </div>
+          <h5>Runs where you need it</h5>
+          <p>Deploy on one office computer via local LAN, or host centrally in our secure cloud for your distributed organisation. Your financial data stays in your control.</p>
+          <div class="feature-tag-list">
+            <span class="feature-mini-tag">Local LAN or Cloud</span>
+            <span class="feature-mini-tag">Automatic Backups</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- METRICS & IMPACT STATS BAND -->
+  <div class="container section-spacing pt-0">
+    <div class="stats-band">
+      <div class="row g-4 text-center">
+        <div class="col-6 col-md-3">
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Nigeria Tax Act 2025 Ready</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-number">₦4.5B+</div>
+          <div class="stat-label">Donor Funds Tracked</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-number">0</div>
+          <div class="stat-label">Excel Formula Headaches</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-number">14 Days</div>
+          <div class="stat-label">Full Free Trial Period</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALL TO ACTION SECTION -->
   <div class="container pb-5">
     <div class="cta-band">
-      <h3 class="mb-3" style="color:#fff;">Ready to see your books, clearly.</h3>
-      <p class="mb-4" style="color:rgba(255,255,255,0.8);">Try everything free for 14 days — no card needed.</p>
-      <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg">Start free trial</a>
-      <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg ms-2">Log in</a>
+      <div class="cta-pill">
+        <i class="bi bi-stars"></i>
+        <span>Experience the modern standard of fund accounting</span>
+      </div>
+      <h3>Ready to see your books, clearly?</h3>
+      <p class="cta-desc">
+        Join forward-thinking Nigerian organisations managing their grants, assets, and payroll with zero stress. Try everything free for 14 days — no card needed.
+      </p>
+      <div class="d-flex flex-wrap justify-content-center gap-3">
+        <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg px-4 d-inline-flex align-items-center gap-2">
+          <span>Start your 14-day free trial</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-white btn-lg px-4">Log in to your account</a>
+      </div>
     </div>
   </div>
 
-  <footer class="app-footer text-center">
-    {{ app_name }} — a product of <a href="{{ company_url }}" target="_blank" rel="noopener">{{ company_name }}</a>
-    <div class="mt-1 small">{% include 'legal/_links.html' %}</div>
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <div class="container">
+      <div class="row g-4 justify-content-between mb-4">
+        <div class="col-lg-5">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <img src="{{ url_for('static', filename='logo-mark.png') }}" class="brand-mark" alt="{{ app_name }}" onerror="this.style.display='none';">
+            <span class="footer-brand-title">{{ app_name }}</span>
+          </div>
+          <p class="text-muted" style="max-width: 380px; font-size: 0.9rem; line-height: 1.6;">
+            The purpose-built fund accounting, fixed asset governance, and Nigerian payroll platform built for how modern NGOs and businesses actually operate.
+          </p>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="row g-4 footer-links">
+            <div class="col-6 col-sm-4">
+              <h6 class="fw-bold text-dark mb-3">Platform</h6>
+              <ul class="list-unstyled d-flex flex-column gap-2 small">
+                <li><a href="#fund-accounting">Fund Accounting</a></li>
+                <li><a href="#payroll">Nigerian Payroll</a></li>
+                <li><a href="#fixed-assets">Fixed Assets</a></li>
+                <li><a href="{{ url_for('billing.pricing') }}">Pricing Plans</a></li>
+              </ul>
+            </div>
+            <div class="col-6 col-sm-4">
+              <h6 class="fw-bold text-dark mb-3">Compliance</h6>
+              <ul class="list-unstyled d-flex flex-column gap-2 small">
+                <li><a href="#">Nigeria Tax Act 2025</a></li>
+                <li><a href="#">Donor Ring-Fencing</a></li>
+                <li><a href="#">Audit Preparedness</a></li>
+                <li><a href="#">Security &amp; Backups</a></li>
+              </ul>
+            </div>
+            <div class="col-6 col-sm-4">
+              <h6 class="fw-bold text-dark mb-3">Account</h6>
+              <ul class="list-unstyled d-flex flex-column gap-2 small">
+                <li><a href="{{ url_for('auth.login') }}">Log In</a></li>
+                <li><a href="{{ url_for('auth.signup') }}">Start Free Trial</a></li>
+                <li><a href="{{ url_for('billing.pricing') }}">Subscription</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-top pt-4 mt-2 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 text-muted small">
+        <div>
+          {{ app_name }} — a product of <a href="{{ company_url }}" target="_blank" rel="noopener" class="text-decoration-none fw-semibold text-dark">{{ company_name }}</a>. All rights reserved.
+        </div>
+        <div>
+          {% include 'legal/_links.html' %}
+        </div>
+      </div>
+    </div>
   </footer>
 
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
