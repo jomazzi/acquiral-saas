@@ -15,6 +15,7 @@
     <a class="text-white" href="{{ url_for('ops.dashboard') }}">Dashboard</a>
     <a class="text-white" href="{{ url_for('ops.subscribers') }}">Subscribers</a>
     <a class="text-white" href="{{ url_for('ops.payments') }}">Payments</a>
+    <a class="text-white" href="{{ url_for('ops.pricing') }}">Pricing</a>
     <a class="text-white" href="{{ url_for('ops.audit') }}">Audit log</a>
     <form method="post" action="{{ url_for('ops.logout') }}" class="m-0">
       <input type="hidden" name="csrf" value="{{ csrf }}">
