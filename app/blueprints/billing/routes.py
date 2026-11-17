@@ -50,7 +50,7 @@ def _plan_cards():
     cards = []
     for key, p in plans.PLANS.items():
         prices, listed, was, off, saving = {}, {}, {}, {}, {}
-        for cur in plans.CURRENCIES:
+        for cur in quotes.sellable_currencies():
             prices[cur], listed[cur], was[cur], off[cur] = {}, {}, {}, {}
             qs = {i: quotes.quote(key, i, cur) for i in plans.INTERVALS}
             for i, q in qs.items():
@@ -94,7 +94,7 @@ def _quote_table():
 @billing_bp.route("/pricing")
 def pricing():
     return render_template("billing/pricing.html", cards=_plan_cards(), features=plans.FEATURES,
-                           trial_days=plans.TRIAL_DAYS, currencies=plans.CURRENCIES,
+                           trial_days=plans.TRIAL_DAYS, currencies=quotes.sellable_currencies(),
                            campaign=quotes.banner())                       
 
 @billing_bp.route("/billing")
@@ -105,17 +105,21 @@ def billing_page():
     state = access_state(org)
     payments = (SubscriptionPayment.query.order_by(SubscriptionPayment.paid_at.desc()).limit(24).all())
     active_users = User.query.filter_by(organization_id=org.id, active=True).count()
+    cur_list = quotes.sellable_currencies()
+    default_cur = org.plan_currency if org.plan_currency in cur_list else cur_list[0]
+    recurring_live = state in ("active", "past_due") and bool(org.paystack_subscription_code)
+    prepaid = state == "active" and not org.paystack_subscription_code
     return render_template(
         "billing/billing.html", org=org, state=state, payments=payments,
         cards=_plan_cards(), features=plans.FEATURES, enforced=billing_enforced(),
         trial_days_left=trial_days_left(org), active_users=active_users,
         user_limit=user_limit(org), plans=plans, currencies=plans.CURRENCIES,
-        default_currency=org.plan_currency or plans.DEFAULT_CURRENCY,
+        default_currency=default_cur,
         can_cancel=bool(org.paystack_subscription_code and org.paystack_email_token
                         and state in ("active", "past_due")),
         # A live recurring subscription must be cancelled before starting
         # another, or the customer would be billed for both.
-        has_live_subscription=state in ("active", "past_due"),         
+        has_live_subscription=recurring_live, prepaid=prepaid,
         quote_table=_quote_table(), campaign=quotes.banner(),
     )
 
@@ -134,6 +138,9 @@ def checkout():
 
     if plan_key not in plans.PLANS or interval not in plans.INTERVALS or currency not in plans.CURRENCIES:
         flash("Choose a plan, billing period and currency.", "error")
+        return redirect(url_for("billing.billing_page"))
+    if currency not in quotes.sellable_currencies():
+        flash(f"Payments in {currency} aren't available yet. Please choose another currency.", "error")
         return redirect(url_for("billing.billing_page"))
     if not EMAIL_RE.match(email):
         flash("Enter a valid billing email — receipts and renewal notices go there.", "error")

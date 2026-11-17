@@ -46,3 +46,4 @@ GRANT UPDATE (amount_minor, discount_bp, updated_at, updated_by) ON price_list T
 GRANT UPDATE (vat_bp, enabled, updated_at, updated_by) ON tax_settings TO acquiral_ops;
 GRANT INSERT ON campaigns TO acquiral_ops;
 GRANT UPDATE (active) ON campaigns TO acquiral_ops;
+GRANT UPDATE (sellable) ON tax_settings TO acquiral_ops;

@@ -391,7 +391,7 @@ def pricing():
     now = utcnow()
     prices = store.rows("select plan_key, interval, currency, amount_minor, discount_bp, updated_at, updated_by "
                         "from price_list order by plan_key, currency, interval")
-    taxes = store.rows("select currency, vat_bp, enabled, updated_at, updated_by from tax_settings order by currency")
+    taxes = store.rows("select currency, vat_bp, enabled, sellable, updated_at, updated_by from tax_settings order by currency")
     camps = store.rows("select id::text as id, name, discount_bp, stacks, plan_key, interval, currency, "
                        "starts_at, ends_at, active from campaigns order by ends_at desc limit 50")
     vat = {t["currency"]: (int(t["vat_bp"]) if t["enabled"] else 0) for t in taxes}
@@ -505,3 +505,21 @@ def campaign_toggle(cid):
     store.execute("update campaigns set active=%s where id=%s::uuid", (new, str(cid)))
     _audit("campaign_toggle", detail=f"{row['name']}: {'on' if new else 'off'}")
     return _back(f"Campaign '{row['name']}' is now {'on' if new else 'off'}.", "success")
+@ops_bp.route("/pricing/currency", methods=["POST"])
+@ops_required
+def pricing_currency():
+    currency = request.form.get("currency", "")
+    if currency not in plans.CURRENCIES:
+        abort(400)
+    sellable = bool(request.form.get("sellable"))
+    if store.one("select sellable from tax_settings where currency=%s", (currency,)) is None:
+        abort(404)
+    if not sellable and not store.one(
+            "select count(*) as n from tax_settings where sellable and currency <> %s", (currency,))["n"]:
+        return _back("At least one currency must stay available.")
+    if not _stepup():
+        return _back(BAD_CODE)
+    store.execute("update tax_settings set sellable=%s, updated_at=%s, updated_by=%s where currency=%s",
+                  (sellable, utcnow(), g.ops["username"], currency))
+    _audit("pricing_currency", detail=f"{currency}: {'on sale' if sellable else 'hidden'}")
+    return _back(f"{currency} is now {'on sale' if sellable else 'hidden from customers'}.", "success")

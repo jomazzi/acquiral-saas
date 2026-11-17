@@ -21,7 +21,7 @@
         <p class="text-muted mb-0">Pick a plan any time to carry on without interruption.</p>
       {% elif state in ('active', 'past_due') %}
         <p class="mb-1">
-          <span class="badge {{ 'bg-success' if state == 'active' else 'bg-danger' }}">{{ 'Active' if state == 'active' else 'Payment overdue' }}</span>
+          <span class="badge {{ 'bg-success' if state == 'active' else 'bg-danger' }}">{{ ('Active' if org.paystack_subscription_code else 'Paid') if state == 'active' else ('Payment overdue' if org.paystack_subscription_code else 'Period ended') }}</span>
         </p>
         <p class="mb-1"><strong>{{ plans.PLANS[org.plan_key].name if org.plan_key else 'Subscription' }}</strong>
           {% if org.plan_interval %}&middot; {{ org.plan_interval }}{% endif %}{% if org.plan_currency %} &middot; {{ org.plan_currency }}{% endif %}</p>

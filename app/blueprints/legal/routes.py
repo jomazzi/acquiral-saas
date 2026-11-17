@@ -5,7 +5,7 @@ from flask import Blueprint, render_template
 
 legal_bp = Blueprint("legal", __name__)
 
-TERMS_VERSION = "2026-11-14"
+TERMS_VERSION = "2026-11-17b"
 
 # FILL IN every value. Any text still in [square brackets] makes
 # scripts/legal_pages_test.py fail, so nothing goes live half-filled.
@@ -18,7 +18,7 @@ LEGAL = {
     "hosting_location": "United Kingdom",
     "mail_host": "Admiral Sentinel",
     "court": "Lagos High court, Nigeria",
-    "version": TERMS_VERSION,
+    "version": "2026-11-17b",
 }
 
 def _page(template):

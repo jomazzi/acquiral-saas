@@ -153,3 +153,9 @@ def offer_by_plan_code(plan_code):
     if not plan_code:
         return None
     return PriceOffer.query.filter_by(paystack_plan_code=plan_code).first()
+def sellable_currencies():
+    """Currencies customers can currently buy in (switched on in the ops
+    console). Never empty, so the pages always have a currency to show."""
+    on = {t.currency for t in TaxSetting.query.filter(TaxSetting.sellable.is_(True)).all()}
+    found = [c for c in plans.CURRENCIES if c in on]
+    return found or [plans.DEFAULT_CURRENCY]

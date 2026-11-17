@@ -29,7 +29,7 @@ class TaxSetting(db.Model):
     enabled = db.Column(db.Boolean, nullable=False, default=False)
     updated_at = db.Column(db.DateTime, server_default=NOW_UTC)
     updated_by = db.Column(db.String(80))
-
+    sellable = db.Column(db.Boolean, nullable=False, default=True)
 
 class Campaign(db.Model):
     """A percentage discount for a date range. discount_bp: 2000 = 20%.

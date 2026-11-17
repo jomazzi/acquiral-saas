@@ -33,7 +33,20 @@
   </tr>
   {% endfor %}
   </tbody></table></div>
-
+<h2 class="h6 mt-4">Currencies</h2>
+<p class="text-muted small">Customers only see currencies that are on sale. Put USD on sale once Paystack has enabled it for your live account.</p>
+<table class="table table-sm bg-white align-middle"><tbody>
+  {% for t in taxes %}
+  <tr><td>{{ t.currency }}</td>
+    <td>{% if t.sellable %}<span class="badge bg-success">on sale</span>{% else %}<span class="badge bg-secondary">hidden</span>{% endif %}</td>
+    <td><form method="post" action="{{ url_for('ops.pricing_currency') }}" class="d-flex gap-2 align-items-center">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="currency" value="{{ t.currency }}">
+      {% if not t.sellable %}<input type="hidden" name="sellable" value="on">{% endif %}
+      <input class="form-control form-control-sm" style="width:120px" name="code" inputmode="numeric" maxlength="8" placeholder="Code" autocomplete="off" required>
+      <button class="btn btn-sm btn-outline-dark">{{ 'Hide' if t.sellable else 'Put on sale' }}</button>
+    </form></td></tr>
+  {% endfor %}
+</tbody></table>
 <h2 class="h6 mt-4">VAT</h2>
 <p class="text-muted small">Added at checkout on the billing page, on the price after discounts. Switch it on only after your accountant confirms registration and the rate.</p>
 <table class="table table-sm bg-white align-middle"><tbody>

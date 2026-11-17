@@ -114,10 +114,82 @@ def offer_from_charge(data):
     return quotes.offer_by_plan_code(plan.get("plan_code"))
 
 
+def breakdown_for(offer, meta, amount):
+    """(offer_id, list, discount, vat) for a charge, or Nones when unknown.
+    A plan-based charge uses its offer; a one-time payment carries its
+    breakdown in the metadata we sent, and is trusted only if it adds up."""
+    if offer is not None:
+        return offer.id, offer.list_minor, offer.discount_minor, offer.vat_minor
+    try:
+        lst, disc, vat = int(meta["list_minor"]), int(meta["discount_minor"]), int(meta["vat_minor"])
+    except (KeyError, TypeError, ValueError):
+        return None, None, None, None
+    if lst - disc + vat != amount:
+        return None, None, None, None
+    return None, lst, disc, vat
+
+
 def apply_successful_charge(org, data):
     """Record a successful charge and (re)activate the subscription.
     Returns True if this charge was new, False if already processed."""
     from app import set_tenant
+
+    reference = data.get("reference")
+    if not reference or data.get("status") != "success":
+        return False
+
+    paid_at = parse_paystack_time(data.get("paid_at") or data.get("paidAt")) or utcnow()
+    plan_key, interval, currency = plan_from_charge(data)
+    customer = data.get("customer") if isinstance(data.get("customer"), dict) else {}
+    meta = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
+    is_once = meta.get("mode") == "once"
+    amount = int(data.get("amount") or 0)
+    offer = offer_from_charge(data)
+    if offer is not None and offer.total_minor != amount:
+        offer = None  # don't attach a breakdown that doesn't add up to what was charged
+    offer_id, list_minor, discount_minor, vat_minor = breakdown_for(offer, meta, amount)
+
+    # Tenant context for the RLS-secured payments table. The webhook has
+    # no logged-in user, so nothing else has set it.
+    set_tenant(org.id)
+    if SubscriptionPayment.query.filter_by(reference=reference).first():
+        db.session.rollback()
+        return False
+
+    db.session.add(SubscriptionPayment(
+        organization_id=org.id, reference=reference,
+        amount_minor=amount, currency=data.get("currency") or currency or "NGN",
+        plan_key=plan_key, plan_interval=interval, paid_at=paid_at,
+        offer_id=offer_id, list_minor=list_minor, discount_minor=discount_minor, vat_minor=vat_minor,
+    ))
+
+    # A one-time payment adds a period on top of whatever is already paid for.
+    base = paid_at
+    if (is_once and org.billing_status in ("active", "past_due", "canceled")
+            and org.current_period_end and org.current_period_end > paid_at):
+        base = org.current_period_end
+
+    if plan_key:
+        org.plan_key, org.plan_interval, org.plan_currency = plan_key, interval, currency
+    if customer.get("customer_code"):
+        org.paystack_customer_code = customer["customer_code"]
+    if is_once:  # no recurring subscription behind this payment
+        org.paystack_subscription_code = None
+        org.paystack_email_token = None
+    org.billing_status = "active"
+    new_end = base + timedelta(days=plans.PERIOD_DAYS.get(org.plan_interval or "monthly", 31))
+    # Never move the period backwards (a replayed older event).
+    if not org.current_period_end or new_end > org.current_period_end:
+        org.current_period_end = new_end
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Lost a race with the other path (webhook vs callback) -- the
+        # other one recorded it, which is all we wanted.
+        db.session.rollback()
+        return False
+    return True
 
     reference = data.get("reference")
     if not reference or data.get("status") != "success":

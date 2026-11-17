@@ -11,7 +11,7 @@ There is one Paystack plan per plan x interval x currency (8 in all).
 """
 import os
 
-TRIAL_DAYS = 14
+TRIAL_DAYS = 7
 
 INTERVALS = ("monthly", "annual")
 
