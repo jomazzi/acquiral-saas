@@ -28,4 +28,6 @@ class SubscriptionPayment(TenantScopedMixin, db.Model):
     list_minor = db.Column(db.BigInteger)
     discount_minor = db.Column(db.BigInteger)
     vat_minor = db.Column(db.BigInteger)
+    bonus_months = db.Column(db.Integer)
+    bonus_name = db.Column(db.String(120))
     created_at = db.Column(db.DateTime, server_default=db.func.now())

@@ -47,3 +47,5 @@ GRANT UPDATE (vat_bp, enabled, updated_at, updated_by) ON tax_settings TO acquir
 GRANT INSERT ON campaigns TO acquiral_ops;
 GRANT UPDATE (active) ON campaigns TO acquiral_ops;
 GRANT UPDATE (sellable) ON tax_settings TO acquiral_ops;
+GRANT SELECT, INSERT ON bonuses TO acquiral_ops;
+GRANT UPDATE (active) ON bonuses TO acquiral_ops;

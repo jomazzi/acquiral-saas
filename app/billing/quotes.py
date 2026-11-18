@@ -12,7 +12,10 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.billing import paystack, plans
 from app.billing.access import utcnow
-from app.models.pricing import Campaign, PriceListItem, PriceOffer, TaxSetting
+from app.models.pricing import Bonus, Campaign, PriceListItem, PriceOffer, TaxSetting
+
+from datetime import timedelta
+from app.models.billing import SubscriptionPayment
 
 log = logging.getLogger("acquiral.billing")
 MAX_DISCOUNT_BP = 9000  # never more than 90% off, whatever is stored
@@ -159,3 +162,61 @@ def sellable_currencies():
     on = {t.currency for t in TaxSetting.query.filter(TaxSetting.sellable.is_(True)).all()}
     found = [c for c in plans.CURRENCIES if c in on]
     return found or [plans.DEFAULT_CURRENCY]
+
+# ---- bonus months ------------------------------------------------------------
+
+MAX_BONUS_MONTHS = 12
+
+
+def _bonus_dicts():
+    return [{"name": b.name, "bonus_months": int(b.bonus_months), "plan_key": b.plan_key, "interval": b.interval,
+             "currency": b.currency, "starts_at": b.starts_at, "ends_at": b.ends_at, "active": bool(b.active)}
+            for b in Bonus.query.filter(Bonus.active.is_(True)).all()]
+
+
+def running_bonuses(now=None):
+    now = now or utcnow()
+    return [b for b in _bonus_dicts() if b["starts_at"] <= now < b["ends_at"]]
+
+
+def pick_bonus(bonuses, plan_key, interval, currency, now):
+    """The running bonus that gives the most free months for this purchase."""
+    best = None
+    for b in bonuses:
+        if campaign_applies(b, plan_key, interval, currency, now):
+            if best is None or b["bonus_months"] > best["bonus_months"]:
+                best = b
+    return best
+
+
+def bonus_eligible(org):
+    """New subscribers only: an organisation that has never paid. (Comped
+    and demo workspaces never qualify.)"""
+    from app import set_tenant
+    if org is None or org.is_demo or org.billing_status == "comped":
+        return False
+    set_tenant(org.id)  # payments are row-secured per organisation
+    return SubscriptionPayment.query.filter_by(organization_id=org.id).first() is None
+
+
+def bonus_for(org, plan_key, interval, currency, now=None):
+    now = now or utcnow()
+    if not bonus_eligible(org):
+        return None
+    return pick_bonus(running_bonuses(now), plan_key, interval, currency, now)
+
+
+def bonus_banner(now=None):
+    """The biggest running bonus, for the pricing and landing pages."""
+    now = now or utcnow()
+    best = None
+    for b in running_bonuses(now):
+        if best is None or b["bonus_months"] > best["bonus_months"]:
+            best = b
+    if best is None:
+        return None
+    n = best["bonus_months"]
+    headline = (f"Pay for 12 months, get {12 + n}" if best["interval"] == "annual"
+                else f"{n} bonus month{'s' if n != 1 else ''} free")
+    return {"name": best["name"], "months": n, "interval": best["interval"], "headline": headline,
+            "ends": (best["ends_at"] + timedelta(hours=1)).strftime("%d %b %Y")}  # shown in WAT

@@ -69,3 +69,19 @@ class PriceOffer(db.Model):
     created_at = db.Column(db.DateTime, server_default=NOW_UTC)
     __table_args__ = (db.UniqueConstraint("plan_key", "interval", "currency", "list_minor", "discount_bp",
                                           "vat_bp", name="uq_price_offer_terms"),)
+
+    class Bonus(db.Model):
+    """Free extra months for a new subscriber's first payment, for a date
+    range. plan_key / interval / currency left empty means 'all'."""
+    __tablename__ = "bonuses"
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = db.Column(db.String(120), nullable=False)
+    bonus_months = db.Column(db.Integer, nullable=False)
+    plan_key = db.Column(db.String(30))
+    interval = db.Column(db.String(10))
+    currency = db.Column(db.String(3))
+    starts_at = db.Column(db.DateTime, nullable=False)
+    ends_at = db.Column(db.DateTime, nullable=False)
+    active = db.Column(db.Boolean, nullable=False, default=True)
+    created_by = db.Column(db.String(80))
+    created_at = db.Column(db.DateTime, server_default=NOW_UTC)

@@ -65,18 +65,21 @@ def _request(method, path, payload=None, timeout=20, key=None):
     return body["data"]
 
 
-def initialize_transaction(email, amount_minor, currency, plan_code, reference, callback_url, metadata, key=None):
+def initialize_transaction(email, amount_minor, currency, plan_code, reference, callback_url, metadata,
+                           key=None, channels=None):
     """Starts a hosted checkout. Passing `plan` makes Paystack create a
     recurring subscription from the successful first charge (and use the
-    plan's amount, which is why plan amounts must match plans.py)."""
+    plan's amount). `channels` limits the payment methods offered, for
+    example ["card"] when a card has to be saved for later renewals."""
     payload = {
         "email": email, "amount": amount_minor, "currency": currency,
         "reference": reference, "callback_url": callback_url, "metadata": metadata,
     }
-    if plan_code:               # one-off invoice payments have no plan
+    if plan_code:               # one-off payments have no plan
         payload["plan"] = plan_code
+    if channels:
+        payload["channels"] = list(channels)
     return _request("POST", "/transaction/initialize", payload, key=key)
-
 
 def verify_transaction(reference, key=None):
     from urllib.parse import quote
@@ -91,6 +94,15 @@ def check_key(key):
 def disable_subscription(subscription_code, email_token):
     return _request("POST", "/subscription/disable",
                     {"code": subscription_code, "token": email_token})
+
+def create_subscription(customer, plan_code, authorization, start_date, key=None):
+    """Schedules a recurring subscription whose first debit is on
+    start_date (a naive UTC datetime), using a card already saved by an
+    earlier charge."""
+    return _request("POST", "/subscription", {
+        "customer": customer, "plan": plan_code, "authorization": authorization,
+        "start_date": start_date.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+    }, key=key)
 
 
 def create_plan(name, amount_minor, interval, currency):

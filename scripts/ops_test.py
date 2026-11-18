@@ -220,7 +220,24 @@ check(b"campaign_create" in get(c, "/ops/pricing").data, "campaign changes appea
 tok = csrf_from(get(c, "/ops/"))
 check(post(c, "/ops/logout", {}, tok).status_code == 302, "logout works")
 check(get(c, "/ops/").status_code == 302, "logged out means no access")
-
+BONUS = f"Bonus {RUN}"
+bform = {"name": BONUS, "months": "3", "plan_key": "", "interval": "annual", "currency": "",
+         "starts": wat(now - timedelta(hours=1)), "ends": wat(now + timedelta(days=2))}
+bcount = "select count(*) from bonuses where name = %s"
+post(c, "/ops/pricing/bonuses", {**bform, "ends": wat(now - timedelta(hours=2)), "code": fresh_code()}, tok)
+check(db_val(bcount, BONUS) == 0, "a bonus that ends before it starts is refused")
+post(c, "/ops/pricing/bonuses", {**bform, "months": "20", "code": fresh_code()}, tok)
+check(db_val(bcount, BONUS) == 0, "more than 12 free months is refused")
+post(c, "/ops/pricing/bonuses", {**bform, "months": "8", "code": fresh_code()}, tok)
+check(db_val(bcount, BONUS) == 0, "more than 6 needs the confirmation box")
+post(c, "/ops/pricing/bonuses", {**bform, "code": fresh_code()}, tok)
+check(db_val(bcount, BONUS) == 1, "a valid bonus is created")
+check(b"get 15" in app.test_client().get("/pricing").data, "the pricing page advertises it")
+bid = db_val("select id::text from bonuses where name = %s", BONUS)
+post(c, f"/ops/pricing/bonuses/{bid}/toggle", {"code": fresh_code()}, tok)
+check(db_val("select active from bonuses where name = %s", BONUS) is False
+      and b"get 15" not in app.test_client().get("/pricing").data, "switching it off removes it")
+check(b"bonus_create" in get(c, "/ops/pricing").data, "bonus changes appear in the pricing history")
 print("\n--- Privacy: what the console's database login can and cannot do ---")
 
 
@@ -246,7 +263,7 @@ for sql in ("select * from journal_entries", "select * from journal_lines", "sel
             "update price_list set id = gen_random_uuid()",
     check(refused(sql), f"refused: {sql}")
 for sql in ("update organizations set name = 'x'", "delete from subscription_payments",
-            "delete from organizations", "update users set active = false",
+            "delete from organizations", "update users set active = false", "delete from bonuses",
             "insert into subscription_payments (id, reference, amount_minor, currency, paid_at, organization_id) "
             f"values (gen_random_uuid(), 'x{RUN}', 1, 'NGN', now(), '{ORG_ID}')"):
     check(refused(sql), f"read-only: {sql[:48]}")

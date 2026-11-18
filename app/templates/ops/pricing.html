@@ -100,6 +100,40 @@
     <button class="btn btn-sm btn-dark">Create campaign</button>
   </form></details>
 
+<h2 class="h6 mt-4">Bonus months for new subscribers</h2>
+<p class="text-muted small">Free extra months added after a new subscriber's first payment (for example, pay for 12 months and get 15). Only organisations that have never paid qualify, and it can sit alongside discounts. It is advertised on the pricing page, and on the landing page if you've added the banner.</p>
+<div class="table-responsive"><table class="table table-sm bg-white align-middle">
+  <thead><tr><th>Name</th><th>Free months</th><th>Applies to</th><th>Window</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for b in bonuses %}
+  <tr><td>{{ b.name }}</td><td>+{{ b.bonus_months }}</td>
+    <td class="small">{{ b.plan_key or 'all plans' }} / {{ b.interval or 'all periods' }} / {{ b.currency or 'all currencies' }}</td>
+    <td class="small">{{ b.starts_at|opswat }} &rarr; {{ b.ends_at|opswat }}</td>
+    <td>{% set cls = {'running':'success','scheduled':'primary','ended':'secondary','off':'secondary'}[b.status] %}<span class="badge bg-{{ cls }}">{{ b.status }}</span></td>
+    <td><form method="post" action="{{ url_for('ops.bonus_toggle', bid=b.id) }}" class="d-flex gap-1">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input class="form-control form-control-sm" style="width:110px" name="code" inputmode="numeric" maxlength="8" placeholder="Code" autocomplete="off" required>
+      <button class="btn btn-sm btn-outline-dark">{{ 'Switch on' if not b.active else 'Switch off' }}</button></form></td></tr>
+  {% else %}<tr><td colspan="6" class="text-muted">No bonuses yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+
+<details class="mb-4"><summary class="btn btn-sm btn-dark">New bonus</summary>
+  <form method="post" action="{{ url_for('ops.bonus_create') }}" class="border rounded bg-white p-3 mt-2" style="max-width:640px">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="row g-2">
+      <div class="col-md-8"><label class="form-label small mb-0">Name (shown to customers)</label><input class="form-control form-control-sm" name="name" placeholder="November bonus" required></div>
+      <div class="col-md-4"><label class="form-label small mb-0">Free months</label><input class="form-control form-control-sm" name="months" placeholder="3" required></div>
+      <div class="col-md-4"><label class="form-label small mb-0">Plan</label><select class="form-select form-select-sm" name="plan_key"><option value="">All plans</option>{% for k, p in plans.PLANS.items() %}<option value="{{ k }}">{{ p.name }}</option>{% endfor %}</select></div>
+      <div class="col-md-4"><label class="form-label small mb-0">Period</label><select class="form-select form-select-sm" name="interval"><option value="annual" selected>Annual</option><option value="monthly">Monthly</option><option value="">All periods</option></select></div>
+      <div class="col-md-4"><label class="form-label small mb-0">Currency</label><select class="form-select form-select-sm" name="currency"><option value="">All currencies</option>{% for cur in plans.CURRENCIES %}<option value="{{ cur }}">{{ cur }}</option>{% endfor %}</select></div>
+      <div class="col-md-6"><label class="form-label small mb-0">Starts (WAT)</label><input class="form-control form-control-sm" type="datetime-local" name="starts" required></div>
+      <div class="col-md-6"><label class="form-label small mb-0">Ends (WAT)</label><input class="form-control form-control-sm" type="datetime-local" name="ends" required></div>
+    </div>
+    <div class="form-check small mt-2"><input class="form-check-input" type="checkbox" name="confirm_large" id="cl-bonus"><label class="form-check-label" for="cl-bonus">Confirm more than 6 free months</label></div>
+    <p class="small text-muted mt-2 mb-2">The bonus is added to the end of the first paid period. Someone who joins during the window keeps it, even after the window ends.</p>
+    <input class="form-control form-control-sm mb-2" style="max-width:200px" name="code" inputmode="numeric" maxlength="8" placeholder="Authenticator code" autocomplete="off" required>
+    <button class="btn btn-sm btn-dark">Create bonus</button>
+  </form></details>
 <h2 class="h6">Recent pricing changes</h2>
 <table class="table table-sm bg-white"><tbody>
   {% for h in history %}<tr><td class="small">{{ h.created_at|opsdt }}</td><td>{{ h.admin_username }}</td><td class="small">{{ h.action }}</td><td class="small">{{ h.detail }}</td></tr>{% else %}<tr><td class="text-muted">No changes yet.</td></tr>{% endfor %}

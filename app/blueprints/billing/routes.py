@@ -10,7 +10,7 @@ from app.decorators import admin_required
 from app.models.tenant import User
 from app.models.billing import SubscriptionPayment
 from app.billing import plans, paystack, service, quotes
-from app.billing.access import access_state, billing_enforced, trial_days_left, user_limit
+from app.billing.access import access_state, billing_enforced, trial_days_left, user_limit, utcnow
 
 log = logging.getLogger("acquiral.billing")
 
@@ -45,40 +45,49 @@ def enforce_billing():
 def _plan_cards():
     """One dict per plan for the templates, priced from the database.
     `prices` is what the customer pays (ex-VAT), `listed` the list price,
-    `was` the list price when a discount applies, `off` the discount percent.
-    All pre-formatted, so templates do no money maths."""
+    `was` the list price when a discount applies, `off` the discount percent,
+    `bonus` the free months a new subscriber gets. All pre-formatted."""
     cards = []
+    now = utcnow()
+    running = quotes.running_bonuses(now)
     for key, p in plans.PLANS.items():
-        prices, listed, was, off, saving = {}, {}, {}, {}, {}
+        prices, listed, was, off, saving, bonus = {}, {}, {}, {}, {}, {}
         for cur in quotes.sellable_currencies():
-            prices[cur], listed[cur], was[cur], off[cur] = {}, {}, {}, {}
+            prices[cur], listed[cur], was[cur], off[cur], bonus[cur] = {}, {}, {}, {}, {}
             qs = {i: quotes.quote(key, i, cur) for i in plans.INTERVALS}
             for i, q in qs.items():
                 if q is None:
-                    prices[cur][i], listed[cur][i], was[cur][i], off[cur][i] = "—", "—", None, None
+                    prices[cur][i], listed[cur][i], was[cur][i], off[cur][i], bonus[cur][i] = "—", "—", None, None, 0
                     continue
                 prices[cur][i] = plans.format_money(q["net_minor"], cur, minor=True)
                 listed[cur][i] = plans.format_money(q["list_minor"], cur, minor=True)
                 was[cur][i] = listed[cur][i] if q["discount_minor"] else None
                 off[cur][i] = f"{q['discount_bp'] / 100:g}" if q["discount_minor"] else None
+                b = quotes.pick_bonus(running, key, i, cur, now)
+                bonus[cur][i] = b["bonus_months"] if b else 0
             m, a = qs.get("monthly"), qs.get("annual")
             s = (m["list_minor"] * 12 - a["net_minor"]) if m and a else 0
             saving[cur] = plans.format_money(s, cur, minor=True) if s > 0 else None
         cards.append({"key": key, "name": p["name"], "tagline": p["tagline"],
                       "feature_list": p["feature_list"], "max_users": p["max_users"],
-                      "prices": prices, "listed": listed, "was": was, "off": off, "saving": saving})
+                      "prices": prices, "listed": listed, "was": was, "off": off, "saving": saving,
+                      "bonus": bonus})
     return cards
 
 
-def _quote_table():
-    """Every plan x period x currency quote, for the billing page summary."""
+def _quote_table(org):
+    """Every plan x period x currency quote for this organisation, for the
+    billing page summary (including any bonus months it is eligible for)."""
     table = {}
+    now = utcnow()
+    running = quotes.running_bonuses(now) if quotes.bonus_eligible(org) else []
     for key in plans.PLANS:
         for i in plans.INTERVALS:
-            for cur in plans.CURRENCIES:
+            for cur in quotes.sellable_currencies():
                 q = quotes.quote(key, i, cur)
                 if q is None:
                     continue
+                b = quotes.pick_bonus(running, key, i, cur, now)
                 money = lambda v: plans.format_money(v, cur, minor=True)
                 table[f"{key}|{i}|{cur}"] = {
                     "list": money(q["list_minor"]),
@@ -87,6 +96,8 @@ def _quote_table():
                     "campaign_pct": q["campaign_bp"] / 100,
                     "net": money(q["net_minor"]), "vat": money(q["vat_minor"]), "vat_pct": q["vat_bp"] / 100,
                     "total": money(q["total_minor"]), "total_minor": q["total_minor"],
+                    "bonus_months": b["bonus_months"] if b else 0, "bonus_name": b["name"] if b else None,
+                    "period_months": 12 if i == "annual" else 1,
                 }
     return table
 
@@ -135,6 +146,9 @@ def checkout():
     interval = request.form.get("interval", "")
     currency = request.form.get("currency", plans.DEFAULT_CURRENCY)
     email = request.form.get("email", "").strip()
+    mode = request.form.get("mode", "subscribe")
+    if mode not in ("subscribe", "once"):
+        abort(400)
 
     if plan_key not in plans.PLANS or interval not in plans.INTERVALS or currency not in plans.CURRENCIES:
         flash("Choose a plan, billing period and currency.", "error")
@@ -145,9 +159,20 @@ def checkout():
     if not EMAIL_RE.match(email):
         flash("Enter a valid billing email — receipts and renewal notices go there.", "error")
         return redirect(url_for("billing.billing_page"))
-    if access_state(org) in ("active", "past_due"):
-        flash("You already have a live subscription. Cancel it first (it stays active until the "
-              "end of the period you paid for), then choose the new plan.", "error")
+    state = access_state(org)
+    recurring_live = state in ("active", "past_due") and bool(org.paystack_subscription_code)
+    prepaid_live = state == "active" and not org.paystack_subscription_code
+    if mode == "subscribe" and (recurring_live or prepaid_live):
+        if recurring_live:
+            flash("You already have a live subscription. Cancel it first (it stays active until the "
+                  "end of the period you paid for), then choose the new plan.", "error")
+        else:
+            until = org.current_period_end.strftime("%d %b %Y") if org.current_period_end else "the end of this period"
+            flash(f"You're paid up until {until}. Pay for the next period, or subscribe once this one has ended.", "error")
+        return redirect(url_for("billing.billing_page"))
+    if mode == "once" and recurring_live:
+        flash("You have a recurring subscription. Cancel it first (it stays active until the end of the "
+              "period you paid for), then you can pay one period at a time.", "error")
         return redirect(url_for("billing.billing_page"))
 
     active_users = User.query.filter_by(organization_id=org.id, active=True).count()
@@ -166,25 +191,26 @@ def checkout():
     if expected and expected != str(q["total_minor"]):
         flash("The price changed while you were on this page. Please review the new total and confirm again.", "error")
         return redirect(url_for("billing.billing_page"))
-    try:
-        offer = quotes.get_or_create_offer(q)
-    except paystack.PaystackError as e:
-        log.error("Could not create the Paystack plan for org %s: %s", org.id, e)
-        flash("We couldn't prepare the payment just now. Please try again in a moment.", "error")
-        return redirect(url_for("billing.billing_page"))
 
     reference = f"acq_{org.id.hex[:12]}_{uuid.uuid4().hex[:16]}"
+    callback_url = url_for("billing.callback", _external=True)
+    metadata = {"organization_id": str(org.id), "plan_key": plan_key, "interval": interval, "currency": currency}
     try:
-        init = paystack.initialize_transaction(
-            email=email, amount_minor=q["total_minor"], currency=currency,
-            plan_code=offer.paystack_plan_code, reference=reference,
-            callback_url=url_for("billing.callback", _external=True),
-            metadata={"organization_id": str(org.id), "plan_key": plan_key, "interval": interval,
-                      "currency": currency, "offer_id": str(offer.id)},
-        )
+        if mode == "once":
+            metadata.update({"mode": "once", "list_minor": q["list_minor"], "discount_minor": q["discount_minor"],
+                             "vat_bp": q["vat_bp"], "vat_minor": q["vat_minor"]})
+            init = paystack.initialize_transaction(
+                email=email, amount_minor=q["total_minor"], currency=currency, plan_code=None,
+                reference=reference, callback_url=callback_url, metadata=metadata)
+        else:
+            offer = quotes.get_or_create_offer(q)
+            metadata["offer_id"] = str(offer.id)
+            init = paystack.initialize_transaction(
+                email=email, amount_minor=q["total_minor"], currency=currency, plan_code=offer.paystack_plan_code,
+                reference=reference, callback_url=callback_url, metadata=metadata)
     except paystack.PaystackError as e:
-        log.error("Paystack initialize failed for org %s: %s", org.id, e)
-        flash("We couldn't start the payment just now. Please try again in a moment.", "error")
+        log.error("Could not start the %s payment for org %s: %s", mode, org.id, e)
+        flash("We couldn't prepare the payment just now. Please try again in a moment.", "error")
         return redirect(url_for("billing.billing_page"))
 
 
@@ -215,11 +241,20 @@ def callback():
     if str(meta.get("organization_id")) != str(org.id):
         abort(403)
     if data.get("status") != "success":
-        flash("The payment wasn't completed, so you haven't been charged. You can try again.", "error")
+        if data.get("status") in ("pending", "ongoing", "processing", "queued"):
+            flash("We're waiting for your bank to confirm the payment. Your plan will activate "
+                  "automatically as soon as it does.", "success")
+        else:
+            flash("The payment wasn't completed, so you haven't been charged. You can try again.", "error")
         return redirect(url_for("billing.billing_page"))
 
     service.apply_successful_charge(org, data)
-    flash("Payment received — thank you! Your subscription is active.", "success")
+    if meta.get("mode") == "once":
+        db.session.refresh(org)
+        until = org.current_period_end.strftime("%d %b %Y") if org.current_period_end else "the end of the period"
+        flash(f"Payment received — thank you! You're paid up until {until}.", "success")
+    else:
+        flash("Payment received — thank you! Your subscription is active.", "success")
     return redirect(url_for("billing.billing_page"))
 
 

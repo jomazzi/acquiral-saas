@@ -9,15 +9,14 @@ is unique, and state updates only ever move current_period_end forward.
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
-
+ 
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models.tenant import Organization
 from app.models.billing import SubscriptionPayment
-""" from app.billing import plans """
 from app.billing.access import utcnow
-from app.billing import plans, quotes
+from app.billing import paystack, plans, quotes
 from app.models.pricing import PriceOffer
 
 log = logging.getLogger("acquiral.billing")
@@ -129,6 +128,34 @@ def breakdown_for(offer, meta, amount):
     return None, lst, disc, vat
 
 
+def _start_deferred_subscription(org, data, offer, start):
+    """The first payment was a plain card charge, so bonus months could be
+    added. Now schedule the recurring subscription to begin when the paid
+    period, bonus included, ends. Never raises: the payment is already recorded."""
+    auth = data.get("authorization") if isinstance(data.get("authorization"), dict) else {}
+    customer = data.get("customer") if isinstance(data.get("customer"), dict) else {}
+    if offer is None or not auth.get("authorization_code") or not auth.get("reusable") \
+            or not customer.get("customer_code"):
+        log.warning("Org %s paid up front but automatic renewal can't be set up (reusable card: %s)",
+                    org.id, bool(auth.get("reusable")))
+        return False
+    try:
+        sub = paystack.create_subscription(
+            customer=customer["customer_code"], plan_code=offer.paystack_plan_code,
+            authorization=auth["authorization_code"], start_date=start)
+        org.paystack_subscription_code = sub.get("subscription_code") or org.paystack_subscription_code
+        org.paystack_email_token = sub.get("email_token") or org.paystack_email_token
+        db.session.commit()
+        return True
+    except paystack.PaystackError as e:
+        db.session.rollback()
+        log.error("Could not schedule the subscription for org %s: %s", org.id, e)
+    except Exception:
+        db.session.rollback()
+        log.exception("Could not record the subscription for org %s", org.id)
+    return False
+
+
 def apply_successful_charge(org, data):
     """Record a successful charge and (re)activate the subscription.
     Returns True if this charge was new, False if already processed."""
@@ -142,7 +169,8 @@ def apply_successful_charge(org, data):
     plan_key, interval, currency = plan_from_charge(data)
     customer = data.get("customer") if isinstance(data.get("customer"), dict) else {}
     meta = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
-    is_once = meta.get("mode") == "once"
+    mode = meta.get("mode")
+    is_once = mode == "once"
     amount = int(data.get("amount") or 0)
     offer = offer_from_charge(data)
     if offer is not None and offer.total_minor != amount:
@@ -156,11 +184,23 @@ def apply_successful_charge(org, data):
         db.session.rollback()
         return False
 
+    # Bonus months: only on a new subscriber's first payment, and only if
+    # we offered it (the amount comes from the metadata we sent at checkout).
+    bonus_months, bonus_name = 0, None
+    if mode in ("once", "subscribe_bonus") \
+            and SubscriptionPayment.query.filter_by(organization_id=org.id).first() is None:
+        try:
+            bonus_months = max(0, min(int(meta.get("bonus_months") or 0), quotes.MAX_BONUS_MONTHS))
+        except (TypeError, ValueError):
+            bonus_months = 0
+        bonus_name = (str(meta.get("bonus_name") or "")[:120] or None) if bonus_months else None
+
     db.session.add(SubscriptionPayment(
         organization_id=org.id, reference=reference,
         amount_minor=amount, currency=data.get("currency") or currency or "NGN",
         plan_key=plan_key, plan_interval=interval, paid_at=paid_at,
         offer_id=offer_id, list_minor=list_minor, discount_minor=discount_minor, vat_minor=vat_minor,
+        bonus_months=bonus_months or None, bonus_name=bonus_name,
     ))
 
     # A one-time payment adds a period on top of whatever is already paid for.
@@ -178,9 +218,12 @@ def apply_successful_charge(org, data):
         org.paystack_email_token = None
     org.billing_status = "active"
     new_end = base + timedelta(days=plans.PERIOD_DAYS.get(org.plan_interval or "monthly", 31))
+    if bonus_months:
+        new_end = plans.add_months(new_end, bonus_months)
     # Never move the period backwards (a replayed older event).
     if not org.current_period_end or new_end > org.current_period_end:
         org.current_period_end = new_end
+    period_end = org.current_period_end
 
     try:
         db.session.commit()
@@ -189,54 +232,8 @@ def apply_successful_charge(org, data):
         # other one recorded it, which is all we wanted.
         db.session.rollback()
         return False
-    return True
-
-    reference = data.get("reference")
-    if not reference or data.get("status") != "success":
-        return False
-
-    paid_at = parse_paystack_time(data.get("paid_at") or data.get("paidAt")) or utcnow()
-    plan_key, interval, currency = plan_from_charge(data)
-    amount = int(data.get("amount") or 0)
-    offer = offer_from_charge(data)
-    if offer is not None and offer.total_minor != amount:
-        offer = None  # don't attach a breakdown that doesn't add up to what was charged
-    customer = data.get("customer") if isinstance(data.get("customer"), dict) else {}
-
-    # Tenant context for the RLS-secured payments table. The webhook has
-    # no logged-in user, so nothing else has set it.
-    set_tenant(org.id)
-    if SubscriptionPayment.query.filter_by(reference=reference).first():
-        db.session.rollback()
-        return False
-
-    db.session.add(SubscriptionPayment(
-        organization_id=org.id, reference=reference,
-        amount_minor=amount, currency=data.get("currency") or currency or "NGN",
-        plan_key=plan_key, plan_interval=interval, paid_at=paid_at,
-        offer_id=offer.id if offer else None,
-        list_minor=offer.list_minor if offer else None,
-        discount_minor=offer.discount_minor if offer else None,
-        vat_minor=offer.vat_minor if offer else None,
-    ))
-
-    if plan_key:
-        org.plan_key, org.plan_interval, org.plan_currency = plan_key, interval, currency
-    if customer.get("customer_code"):
-        org.paystack_customer_code = customer["customer_code"]
-    org.billing_status = "active"
-    new_end = paid_at + timedelta(days=plans.PERIOD_DAYS.get(org.plan_interval or "monthly", 31))
-    # Never move the period backwards (a replayed older event).
-    if not org.current_period_end or new_end > org.current_period_end:
-        org.current_period_end = new_end
-
-    try:
-        db.session.commit()
-    except IntegrityError:
-        # Lost a race with the other path (webhook vs callback) -- the
-        # other one recorded it, which is all we wanted.
-        db.session.rollback()
-        return False
+    if mode == "subscribe_bonus":
+        _start_deferred_subscription(org, data, offer, period_end)
     return True
 
 

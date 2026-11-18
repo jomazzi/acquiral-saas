@@ -10,7 +10,7 @@ PAYSTACK_PLAN_* env var at the new plan code.
 There is one Paystack plan per plan x interval x currency (8 in all).
 """
 import os
-
+import calendar
 TRIAL_DAYS = 7
 
 INTERVALS = ("monthly", "annual")
@@ -131,3 +131,9 @@ def lookup_by_plan_code(plan_code):
 def max_users_for(plan_key):
     plan = PLANS.get(plan_key)
     return plan["max_users"] if plan else None
+def add_months(dt, n):
+    """dt plus n calendar months, clamped to the end of a shorter month
+    (30 Nov + 3 months = 28 Feb)."""
+    y, m = divmod(dt.month - 1 + n, 12)
+    year, month = dt.year + y, m + 1
+    return dt.replace(year=year, month=month, day=min(dt.day, calendar.monthrange(year, month)[1]))

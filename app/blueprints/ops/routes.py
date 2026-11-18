@@ -405,10 +405,15 @@ def pricing():
     for c in camps:
         c["status"] = ("off" if not c["active"] else "scheduled" if c["starts_at"] > now
                        else "running" if c["ends_at"] > now else "ended")
+    bonuses = store.rows("select id::text as id, name, bonus_months, plan_key, interval, currency, starts_at, ends_at, "
+                         "active from bonuses order by ends_at desc limit 50")
+    for b in bonuses:
+        b["status"] = ("off" if not b["active"] else "scheduled" if b["starts_at"] > now
+                       else "running" if b["ends_at"] > now else "ended")
     history = store.rows("select created_at, admin_username, action, detail from ops_audit_log "
-                         "where action like 'pricing_%' or action like 'campaign_%' order by id desc limit 30")
+                         "where action like 'pricing_%' or action like 'campaign_%' or action like 'bonus_%' order by id desc limit 30")
     return render_template("ops/pricing.html", rows=rows, taxes=taxes, camps=camps, history=history,
-                           vat_pct={k: v / 100 for k, v in vat.items()}, plans=plans)
+                           vat_pct={k: v / 100 for k, v in vat.items()}, plans=plans, bonuses=bonuses)
 
 
 @ops_bp.route("/pricing/price", methods=["POST"])
@@ -523,3 +528,48 @@ def pricing_currency():
                   (sellable, utcnow(), g.ops["username"], currency))
     _audit("pricing_currency", detail=f"{currency}: {'on sale' if sellable else 'hidden'}")
     return _back(f"{currency} is now {'on sale' if sellable else 'hidden from customers'}.", "success")
+@ops_bp.route("/pricing/bonuses", methods=["POST"])
+@ops_required
+def bonus_create():
+    name = request.form.get("name", "").strip()
+    try:
+        months = int(request.form.get("months", ""))
+    except ValueError:
+        months = 0
+    plan_key = request.form.get("plan_key", "") or None
+    interval = request.form.get("interval", "") or None
+    currency = request.form.get("currency", "") or None
+    starts, ends = _wat_in(request.form.get("starts")), _wat_in(request.form.get("ends"))
+    now = utcnow()
+    if not 3 <= len(name) <= 120 or not 1 <= months <= 12:
+        return _back("Give the bonus a name and a number of free months between 1 and 12.")
+    if (plan_key and plan_key not in plans.PLANS) or (interval and interval not in plans.INTERVALS) \
+            or (currency and currency not in plans.CURRENCIES):
+        abort(400)
+    if starts is None or ends is None or ends <= starts or ends <= now or ends - starts > timedelta(days=120):
+        return _back("Check the dates: it must end after it starts and in the future, and last at most 120 days.")
+    if months > 6 and not request.form.get("confirm_large"):
+        return _back("More than 6 free months needs the confirmation box ticked.")
+    if not _stepup():
+        return _back(BAD_CODE)
+    store.execute(
+        "insert into bonuses (name, bonus_months, plan_key, interval, currency, starts_at, ends_at, active, created_by) "
+        "values (%s,%s,%s,%s,%s,%s,%s,true,%s)",
+        (name, months, plan_key, interval, currency, starts, ends, g.ops["username"]))
+    _audit("bonus_create", detail=(f"{name}: +{months} months, {plan_key or 'all plans'}/{interval or 'all periods'}/"
+                                   f"{currency or 'all currencies'}, {starts:%Y-%m-%d %H:%M} to {ends:%Y-%m-%d %H:%M} UTC"))
+    return _back(f"Bonus '{name}' created.", "success")
+
+
+@ops_bp.route("/pricing/bonuses/<uuid:bid>/toggle", methods=["POST"])
+@ops_required
+def bonus_toggle(bid):
+    row = store.one("select name, active from bonuses where id=%s::uuid", (str(bid),))
+    if row is None:
+        abort(404)
+    if not _stepup():
+        return _back(BAD_CODE)
+    new = not row["active"]
+    store.execute("update bonuses set active=%s where id=%s::uuid", (new, str(bid)))
+    _audit("bonus_toggle", detail=f"{row['name']}: {'on' if new else 'off'}")
+    return _back(f"Bonus '{row['name']}' is now {'on' if new else 'off'}.", "success")

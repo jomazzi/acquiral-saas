@@ -26,10 +26,10 @@
         <p class="mb-1"><strong>{{ plans.PLANS[org.plan_key].name if org.plan_key else 'Subscription' }}</strong>
           {% if org.plan_interval %}&middot; {{ org.plan_interval }}{% endif %}{% if org.plan_currency %} &middot; {{ org.plan_currency }}{% endif %}</p>
         {% if org.current_period_end %}
-        <p class="text-muted mb-1">{{ 'Renews around' if state == 'active' else 'Was due' }} {{ org.current_period_end.strftime('%d %b %Y') }}.</p>
+        <p class="text-muted mb-1">{{ ('Renews around' if org.paystack_subscription_code else 'Paid until') if state == 'active' else ('Was due' if org.paystack_subscription_code else 'Ended on') }} {{ org.current_period_end.strftime('%d %b %Y') }}.</p>
         {% endif %}
         {% if state == 'past_due' %}
-        <p class="text-muted mb-1">We couldn't collect your last payment. Check your card with Paystack's email, or subscribe again below.</p>
+        <p class="text-muted mb-1">{% if org.paystack_subscription_code %} We couldn't collect your last payment. Check your card with Paystack's email, or subscribe again below.{% else %}Your paid period has ended. Pay for the next period below to keep making changes.{% endif %}         {% if not org.paystack_subscription_code and state == 'active' %}<p class="text-muted mb-1">This plan doesn't renew by itself. Pay for the next period before it ends.</p>{% endif %}</p>
         {% endif %}
       {% elif state == 'canceling' %}
         <p class="mb-1"><span class="badge bg-secondary">Cancelled</span></p>
@@ -112,9 +112,15 @@
           <div class="d-flex justify-content-between fw-bold"><span>Total today</span><span id="q-total"></span></div>
           <div class="small text-muted mt-1" id="q-note"></div>
         </div>
-        <button class="btn btn-gold" {% if not enforced %}disabled{% endif %}>
-          <i class="bi bi-lock"></i> Continue to secure payment
+        {% if not prepaid %}
+        <button class="btn btn-gold" name="mode" value="subscribe" {% if not enforced %}disabled{% endif %}>
+          <i class="bi bi-arrow-repeat"></i> Subscribe (card, renews automatically)
         </button>
+        {% endif %}
+        <button class="btn btn-outline-dark" name="mode" value="once" {% if not enforced %}disabled{% endif %}>
+          <i class="bi bi-wallet2"></i> {{ 'Pay for the next period' if prepaid else 'Pay once, no auto-renew' }}
+        </button>
+        <div class="text-muted small mt-2">Subscriptions are paid by card through Paystack. A single payment can also be made by bank transfer, OPay or USSD, and covers one month or one year. Renewal is up to you.</div>
         <span class="text-muted small ms-2">Card payment via Paystack</span>
       </form>
       <script>
@@ -141,8 +147,9 @@
             document.getElementById('q-vat-label').textContent = 'VAT (' + q.vat_pct + '%)';
             document.getElementById('q-vat').textContent = q.vat;
             document.getElementById('q-total').textContent = q.total;
-            document.getElementById('q-note').textContent = ((q.standing_pct || q.campaign_pct) ? 'This price stays the same for as long as your subscription continues. ' : '') +
-              'Renews at ' + q.total + ' per ' + (interval === 'annual' ? 'year' : 'month') + ' until cancelled.';
+            document.getElementById('q-note').textContent = 'Subscribe: renews at ' + q.total + ' per ' + (interval === 'annual' ? 'year' : 'month') +
+              ' until cancelled' + ((q.standing_pct || q.campaign_pct) ? ', at this same price for as long as you stay' : '') +
+              '. Pay once: ' + q.total + ' for one ' + (interval === 'annual' ? 'year' : 'month') + ', no renewal.';
             document.getElementById('expected-total').value = q.total_minor;
           }
           form.querySelectorAll('input').forEach(function (r) { r.addEventListener('change', sync); });
