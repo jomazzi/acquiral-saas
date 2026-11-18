@@ -85,3 +85,4 @@ class Bonus(db.Model):
     active = db.Column(db.Boolean, nullable=False, default=True)
     created_by = db.Column(db.String(80))
     created_at = db.Column(db.DateTime, server_default=NOW_UTC)
+

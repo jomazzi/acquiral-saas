@@ -131,7 +131,7 @@ def billing_page():
         # A live recurring subscription must be cancelled before starting
         # another, or the customer would be billed for both.
         has_live_subscription=recurring_live, prepaid=prepaid,
-        quote_table=_quote_table(), campaign=quotes.banner(),
+        quote_table=_quote_table(org), campaign=quotes.banner(),
     )
 
 
