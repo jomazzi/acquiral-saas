@@ -102,11 +102,13 @@
                  value="{{ org.billing_email or '' }}" placeholder="finance@yourorganisation.org">
           <div class="form-text">Paystack sends your receipts and renewal notices here.</div>
         </div>
-                <input type="hidden" name="expected_total" id="expected-total" value="">
+        <input type="hidden" name="expected_bonus" id="expected-bonus" value="0">
+        <input type="hidden" name="expected_total" id="expected-total" value="">
         <div class="border rounded p-3 mb-3 bg-light" id="quote-box">
           <div class="d-flex justify-content-between"><span>Price</span><span id="q-list"></span></div>
           <div class="d-flex justify-content-between text-success" id="q-std-row"><span id="q-std-label"></span><span id="q-std"></span></div>
           <div class="d-flex justify-content-between text-success" id="q-camp-row"><span id="q-camp-label"></span><span id="q-camp"></span></div>
+          <div class="d-flex justify-content-between text-success" id="q-bonus-row"><span id="q-bonus-label"></span><span>Free</span></div>
           <div class="d-flex justify-content-between" id="q-vat-row"><span id="q-vat-label"></span><span id="q-vat"></span></div>
           <hr class="my-2">
           <div class="d-flex justify-content-between fw-bold"><span>Total today</span><span id="q-total"></span></div>
@@ -143,14 +145,22 @@
             show('q-camp-row', q.campaign_pct);
             document.getElementById('q-camp-label').textContent = (q.campaign || 'Offer') + ' (-' + q.campaign_pct + '%)';
             document.getElementById('q-camp').textContent = '-' + q.campaign_amt;
+            show('q-bonus-row', q.bonus_months);
+            document.getElementById('q-bonus-label').textContent = (q.bonus_name || 'Bonus') + ' (+' + q.bonus_months + ' month' + (q.bonus_months === 1 ? '' : 's') + ')';
+            document.getElementById('expected-bonus').value = q.bonus_months || 0;
             show('q-vat-row', q.vat_pct);
             document.getElementById('q-vat-label').textContent = 'VAT (' + q.vat_pct + '%)';
             document.getElementById('q-vat').textContent = q.vat;
             document.getElementById('q-total').textContent = q.total;
-            document.getElementById('q-note').textContent = 'Subscribe: renews at ' + q.total + ' per ' + (interval === 'annual' ? 'year' : 'month') +
-              ' until cancelled' + ((q.standing_pct || q.campaign_pct) ? ', at this same price for as long as you stay' : '') +
-              '. Pay once: ' + q.total + ' for one ' + (interval === 'annual' ? 'year' : 'month') + ', no renewal.';
             document.getElementById('expected-total').value = q.total_minor;
+            var per = interval === 'annual' ? 'year' : 'month';
+            var note = '';
+            if (q.bonus_months) { note += 'Your first payment covers ' + (q.period_months + q.bonus_months) + ' months (' + q.period_months + ' paid + ' + q.bonus_months + ' free). '; }
+            note += 'Subscribe: renews at ' + q.total + ' per ' + per + ' until cancelled' +
+              ((q.standing_pct || q.campaign_pct) ? ', at this same price for as long as you stay' : '') +
+              (q.bonus_months ? ', starting after your bonus months' : '') + '. Pay once: ' + q.total + ' for one ' + per +
+              (q.bonus_months ? ' plus your bonus months' : '') + ', no renewal.';
+            document.getElementById('q-note').textContent = note;
           }
           form.querySelectorAll('input').forEach(function (r) { r.addEventListener('change', sync); });
           sync();
@@ -173,7 +183,7 @@
         <td>{{ plans.PLANS[p.plan_key].name if p.plan_key in plans.PLANS else '—' }}{% if p.plan_interval %} &middot; {{ p.plan_interval }}{% endif %}</td>
                 <td class="text-end">{{ plans.format_money(p.amount_minor, p.currency, minor=True) }}
           {% if p.vat_minor %}<div class="small text-muted">incl. VAT {{ plans.format_money(p.vat_minor, p.currency, minor=True) }}</div>{% endif %}
-          {% if p.discount_minor %}<div class="small text-success">discount {{ plans.format_money(p.discount_minor, p.currency, minor=True) }}</div>{% endif %}</td>
+          {% if p.discount_minor %}<div class="small text-success">discount {{ plans.format_money(p.discount_minor, p.currency, minor=True) }}</div>{% endif %}{% if p.bonus_months %}<div class="small text-success">+{{ p.bonus_months }} bonus month{{ '' if p.bonus_months == 1 else 's' }}</div>{% endif %}</td>
         <td class="text-muted small">{{ p.reference }}</td>
       </tr>
       {% endfor %}

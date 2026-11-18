@@ -58,7 +58,7 @@
       <div class="text-center">
         <h1 class="mb-3">Simple pricing that grows with your organisation.</h1>
         <p class="lead mb-4">Start with a {{ trial_days }}-day free trial — no card needed. Choose the plan that fits your team and the features you need.</p>
-                {% if campaign %}<div class="alert alert-warning d-inline-block mb-4"><strong>{{ campaign.name }}:</strong> {{ campaign.percent }}% off{% if campaign.ends %} until {{ campaign.ends }}{% endif %}</div>{% endif %}
+                {% if campaign %}        {% if bonus %}<div class="alert alert-success d-inline-block mb-4 ms-2"><strong>{{ bonus.name }}:</strong> {{ bonus.headline }} — new subscribers, until {{ bonus.ends }}</div>{% endif %}<div class="alert alert-warning d-inline-block mb-4"><strong>{{ campaign.name }}:</strong> {{ campaign.percent }}% off{% if campaign.ends %} until {{ campaign.ends }}{% endif %}</div>{% endif %}
         <div class="d-flex flex-wrap justify-content-center gap-3">
           <div class="interval-toggle" role="group" aria-label="Currency" id="currency-toggle">
             {% for cur in currencies %}<button type="button" data-currency="{{ cur }}" class="{{ 'active' if loop.first else '' }}">{{ cur }}</button>{% endfor %}
@@ -87,6 +87,9 @@
           </div>
           <div class="saving-note">
             {% for cur in currencies %}{% if c.saving[cur] %}<span data-saving data-cur="{{ cur }}" style="display:none">You save {{ c.saving[cur] }} a year</span>{% endif %}{% endfor %}
+          </div>
+          <div class="saving-note">
+            {% for cur in currencies %}{% for i in ['monthly', 'annual'] %}{% if c.bonus[cur][i] %}<span data-bonus data-cur="{{ cur }}" data-int="{{ i }}" style="display:none">+{{ c.bonus[cur][i] }} bonus month{{ '' if c.bonus[cur][i] == 1 else 's' }} free for new subscribers</span>{% endif %}{% endfor %}{% endfor %}
           </div>
           <p class="mt-2 mb-3"><strong>{% if c.max_users == 1 %}1 user{% else %}Up to {{ c.max_users }} users{% endif %}</strong></p>
           {% if current_user.is_authenticated and current_user.is_admin %}
@@ -120,6 +123,7 @@
         document.querySelectorAll('[data-price]').forEach(function (el) { el.style.display = (el.dataset.cur === state.cur && el.dataset.int === state.int) ? '' : 'none'; });
         document.querySelectorAll('[data-per]').forEach(function (el) { el.style.display = (el.dataset.int === state.int) ? '' : 'none'; });
         document.querySelectorAll('[data-saving]').forEach(function (el) { el.style.display = (el.dataset.cur === state.cur && state.int === 'annual') ? '' : 'none'; });
+        document.querySelectorAll('[data-bonus]').forEach(function (el) { el.style.display = (el.dataset.cur === state.cur && el.dataset.int === state.int) ? '' : 'none'; });
       }
       document.querySelectorAll('#currency-toggle button').forEach(function (b) { b.addEventListener('click', function () { state.cur = b.dataset.currency; render(); }); });
       document.querySelectorAll('#interval-toggle button').forEach(function (b) { b.addEventListener('click', function () { state.int = b.dataset.interval; render(); }); });

@@ -106,7 +106,7 @@ def _quote_table(org):
 def pricing():
     return render_template("billing/pricing.html", cards=_plan_cards(), features=plans.FEATURES,
                            trial_days=plans.TRIAL_DAYS, currencies=quotes.sellable_currencies(),
-                           campaign=quotes.banner())                       
+                           campaign=quotes.banner(), bonus=quotes.bonus_banner())                      
 
 @billing_bp.route("/billing")
 @login_required
