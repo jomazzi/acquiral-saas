@@ -978,10 +978,12 @@
                 <i class="bi bi-graph-up-arrow"></i>
               </div>
               <div>
-                <div class="badge-text">November Mega Bonus: Pay for 12 months, get 15 on annual plans </div>
-                <div class="badge-sub">— New subscribers, until 30 Nov 2026.<a href="https://acq.admiralsentinel.com/pricing"> See pricing</a></div>
+                <div class="badge-text">{% set p = promo() if promo is defined else {} %}
+{% if p.bonus %}{{ p.bonus.name }}: s </div>
+                <div class="badge-sub">{{ p.bonus.headline }}{% else %}99.8% Audit Pass{% endif %}</div>
               </div>
             </div>
+
 
             <!-- Floating Widget 2: Bottom Left African Tax Pill -->
             <div class="floating-badge-left d-none d-sm-block">
