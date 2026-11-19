@@ -980,7 +980,7 @@
               <div>
                 <div class="badge-text">{% set p = promo() if promo is defined else {} %}
 {% if p.bonus %}{{ p.bonus.name }}: 
-                {{ p.bonus.headline }}on annual plans</div><div class="badge-sub"> — new subscribers, until {{ p.bonus.ends }}<a href="{{ url_for('billing.pricing') }}" style="margin-left:.5rem;font-weight:600;">See pricing</a>{% else %}99.8% Audit Pass{% endif %}</div>
+                {{ p.bonus.headline }} on annual plans</div><div class="badge-sub"> — new subscribers, until {{ p.bonus.ends }}<a href="{{ url_for('billing.pricing') }}" style="margin-left:.5rem;font-weight:600;">See pricing</a>{% else %}99.8% Audit Pass{% endif %}</div>
               </div>
             </div>
 
