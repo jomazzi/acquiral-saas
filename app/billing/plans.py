@@ -66,7 +66,7 @@ PLANS = {
             "Fixed-asset register with automatic depreciation",
             "Nigerian payroll under the Nigeria Tax Act 2025",
             "Invoicing, vendor bills and bank reconciliation",
-            "Multi-currency (NGN, USD, EUR, GBP)",
+            "Multi-currency (NGN, USD, EUR, GBP.)",
             "Instant financial statements formatted for funders and boards",
             "Multi-Donor Ledgers",
             "Indirect cost allocation",
