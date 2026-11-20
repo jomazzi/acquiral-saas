@@ -42,8 +42,14 @@ PLANS = {
             "Double-entry journal, trial balance, income statement, balance sheet",
             "Fixed-asset register with automatic depreciation",
             "Invoicing, vendor bills and bank reconciliation",
+            "Instant financial statements formatted for funders and boards",
             "Books in naira (NGN)",
+            "Multi-Donor Ledgers",
+            "Indirect cost allocation",
+            "Sovereign Deployment (Cloud or Local LAN)",
         ],
+
+
     },
     "organisation": {
         "name": "Organisation",
@@ -61,6 +67,11 @@ PLANS = {
             "Nigerian payroll under the Nigeria Tax Act 2025",
             "Invoicing, vendor bills and bank reconciliation",
             "Multi-currency (NGN, USD, EUR, GBP)",
+            "Instant financial statements formatted for funders and boards",
+            "Multi-Donor Ledgers",
+            "Indirect cost allocation",
+            "Real-time exchange rate revaluation tracking",
+            "Sovereign Deployment (Cloud or Local LAN)",
         ],
     },
 }
