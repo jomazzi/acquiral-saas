@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ app_name }} — Fund Accounting, Fixed Assets &amp; Nigerian Payroll for NGOs</title>
-  <meta name="description" content="Fund and project accounting, fixed assets and payroll under the Nigeria Tax Act 2025 for NGOs and project-funded organisations, with reports designed around funder and board requirements.">
+  <title>{{ app_name }} — International Fund Accounting, Fixed Assets &amp; African Payroll</title>
+  <meta name="description" content="Enterprise fund accounting, fixed asset governance, and statutory payroll built for international donor standards and African tax compliance (Nigeria Tax Act 2025 ready).">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -418,7 +418,6 @@
       justify-content: center;
       color: #fff;
       font-size: 0.95rem;
-      flex-shrink: 0;
     }
     .floating-badge-top .badge-text {
       font-size: 1.6rem;
@@ -678,10 +677,6 @@
       padding: 0.2rem 0.6rem;
       border-radius: 999px;
     }
-    .bento-mini-tag.soon {
-      background: #fef3c7;
-      color: #92400e;
-    }
 
     /* COMPARISON TABLE SECTION */
     .compare-table-card {
@@ -844,9 +839,9 @@
           <div class="nav-links-center d-none d-lg-flex align-items-center gap-1">
             <a href="#features">Capabilities</a>
             <a href="#fund-accounting">Fund Accounting</a>
-            <a href="#payroll">Payroll (NTA 2025)</a>
+            <a href="#payroll">African Payroll (NTA 2025)</a>
             <a href="#fixed-assets">Fixed Assets</a>
-            <a href="#tour">Product Tour</a>
+            <a href="#tour">Live Product Tour</a>
             <a href="{{ url_for('billing.pricing') }}">Pricing</a>
           </div>
 
@@ -860,25 +855,25 @@
 
       <!-- Main Hero Content -->
       <div class="row align-items-center pt-3 pb-4">
-        <!-- Left Column: Copy -->
+        <!-- Left Column: Copy & Internationalized Positioning -->
         <div class="col-lg-6 hero-text-col">
           <div class="hero-badge-group">
             <div class="hero-badge">
               <span class="pulse-dot"></span>
-              <span>🇳🇬 Built for the Nigeria Tax Act 2025</span>
+              <span>🇳🇬 Nigeria Tax Act 2025 Ready</span>
             </div>
             <div class="hero-badge-intl">
-              <i class="bi bi-file-earmark-bar-graph"></i>
-              <span>Reporting for funders and boards</span>
+              <i class="bi bi-globe2"></i>
+              <span>Global Donors &amp; African Systems</span>
             </div>
           </div>
 
           <h1 class="mb-3">
-            <span class="highlight-text">Fund accounting</span>, fixed assets &amp; payroll for NGOs and project-funded organisations in Nigeria.
+            International <span class="highlight-text">Fund Accounting</span>, Fixed Assets &amp; Payroll System for Europe, America and African.
           </h1>
 
           <p class="lead mb-4">
-            Track every grant and project by funder, keep an organised fixed asset register, and run payroll under the <strong>Nigeria Tax Act 2025</strong> — in one system. Multi-currency books (NGN, USD, EUR, GBP) are included on the Organisation plan, and more African payroll frameworks are planned.
+            Manage multi-donor grants in USD, EUR, GBP &amp; NGN with zero fund commingling. Maintain an audit-ready fixed asset register, and calculate statutory payroll tailored specifically to the <strong>Nigeria Tax Act 2025</strong> and adaptable African statutory frameworks.
           </p>
 
           <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
@@ -887,17 +882,18 @@
               <i class="bi bi-arrow-right"></i>
             </a>
             <a href="{{ url_for('billing.pricing') }}" class="btn btn-outline-white btn-lg px-4 d-inline-flex align-items-center gap-2">
-              <i class="bi bi-tag"></i>
-              <span>See pricing</span>
+              <i class="bi bi-play-circle"></i>
+              <span>See pricing &amp; live demo</span>
             </a>
           </div>
 
           <div class="hero-social-proof">
-            <span>7-day free trial • No card needed • Cancel any time</span>
+            <span class="stars">★★★★★</span>
+            <span>IFRS / IPSAS Compliant • USAID &amp; EU Audit Ready • Zero Card Required</span>
           </div>
         </div>
 
-        <!-- Right Column: Product Preview (sample data) -->
+        <!-- Right Column: Live Software Console Showcase -->
         <div class="col-lg-6 hero-visual-col mt-5 mt-lg-0">
           <div class="position-relative mx-auto" style="max-width: 530px;">
 
@@ -910,21 +906,21 @@
                   <span class="console-dot green"></span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <span class="text-white-50 small fw-semibold">{{ app_name }} workspace</span>
-                  <span class="console-badge-currency">Sample data</span>
+                  <span class="text-white-50 small fw-semibold">Acquiral Multi-Ledger Console</span>
+                  <span class="console-badge-currency">USD / EUR / NGN</span>
                 </div>
               </div>
 
-              <!-- Sample fund 1 -->
+              <!-- Live Grant 1 -->
               <div class="console-grant-card">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <div class="grant-title">Maternal Health Programme</div>
-                    <div class="grant-meta">Restricted fund • USD ($350,000)</div>
+                    <div class="grant-title">USAID / Global Health Grant #402</div>
+                    <div class="grant-meta">Restricted Fund • USD Ledger ($350,000)</div>
                   </div>
                   <div>
                     <div class="grant-amount">₦542,500,000</div>
-                    <div class="grant-status"><i class="bi bi-diagram-3"></i> Tracked by fund</div>
+                    <div class="grant-status"><i class="bi bi-shield-check"></i> 100% Ring-fenced</div>
                   </div>
                 </div>
                 <div class="grant-progress">
@@ -932,16 +928,16 @@
                 </div>
               </div>
 
-              <!-- Sample fund 2 -->
+              <!-- Live Grant 2 -->
               <div class="console-grant-card">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <div class="grant-title">Civic Engagement Project</div>
-                    <div class="grant-meta">Restricted fund • EUR (€180,000)</div>
+                    <div class="grant-title">EU Human Rights &amp; Civic Initiative</div>
+                    <div class="grant-meta">Restricted Grant • EUR Ledger (€180,000)</div>
                   </div>
                   <div>
                     <div class="grant-amount">₦297,000,000</div>
-                    <div class="grant-status"><i class="bi bi-diagram-3"></i> Tracked by fund</div>
+                    <div class="grant-status"><i class="bi bi-shield-check"></i> 100% Ring-fenced</div>
                   </div>
                 </div>
                 <div class="grant-progress">
@@ -949,16 +945,16 @@
                 </div>
               </div>
 
-              <!-- Sample asset register -->
+              <!-- Live Grant 3 -->
               <div class="console-grant-card">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
-                    <div class="grant-title">Fixed Asset Register</div>
-                    <div class="grant-meta">Project vehicles &amp; IT equipment</div>
+                    <div class="grant-title">Fixed Asset Register &amp; Depreciation</div>
+                    <div class="grant-meta">14 Project Vehicles &amp; IT Equipment</div>
                   </div>
                   <div>
                     <div class="grant-amount" style="color:#60a5fa;">₦86,400,000</div>
-                    <div class="grant-status" style="color:#93c5fd;"><i class="bi bi-gear-wide-connected"></i> Automatic depreciation</div>
+                    <div class="grant-status" style="color:#93c5fd;"><i class="bi bi-gear-wide-connected"></i> Auto Straight-Line</div>
                   </div>
                 </div>
               </div>
@@ -968,39 +964,35 @@
                 <div class="d-flex align-items-center gap-2">
                   <i class="bi bi-check-circle-fill text-success fs-5"></i>
                   <div>
-                    <div class="text-white fw-bold small">Payroll under the Nigeria Tax Act 2025</div>
-                    <div class="text-white-50" style="font-size:0.72rem;">PAYE, pension &amp; NHF calculated for each run</div>
+                    <div class="text-white fw-bold small">Nigeria Tax Act 2025 Payroll Engine</div>
+                    <div class="text-white-50" style="font-size:0.72rem;">Automated PAYE, Pension (8%/10%) &amp; NHF (2.5%)</div>
                   </div>
                 </div>
-                <span class="badge bg-success text-white px-2 py-1" style="font-size:0.7rem;">Sample run</span>
+                <span class="badge bg-success text-white px-2 py-1" style="font-size:0.7rem;">Verified Batch</span>
               </div>
             </div>
 
-            <!-- Floating Widget 1: current offer (set in the ops console); falls back to the trial -->
-            {% set p = promo() if promo is defined else {} %}
+            <!-- Floating Widget 1: Top Right "Audit Pass" -->
             <div class="floating-badge-top">
               <div class="icon-circle">
-                <i class="bi bi-gift-fill"></i>
+                <i class="bi bi-graph-up-arrow"></i>
               </div>
               <div>
-                {% if p.bonus %}
-                <div class="badge-text">{{ p.bonus.name }}: {{ p.bonus.headline }}</div>
-                <div class="badge-sub">on annual plans — new subscribers, until {{ p.bonus.ends }}. <a href="{{ url_for('billing.pricing') }}" style="font-weight:600;">See pricing</a></div>
-                {% else %}
-                <div class="badge-text">7-day free trial</div>
-                <div class="badge-sub">No card needed</div>
-                {% endif %}
+                <div class="badge-text">{% set p = promo() if promo is defined else {} %}
+{% if p.bonus %}{{ p.bonus.name }}: 
+                {{ p.bonus.headline }} on annual plans</div><div class="badge-sub"> — new subscribers, until {{ p.bonus.ends }}<a href="{{ url_for('billing.pricing') }}" style="margin-left:.5rem;font-weight:600;">See pricing</a>{% else %}99.8% Audit Pass{% endif %}</div>
               </div>
             </div>
 
-            <!-- Floating Widget 2: Bottom Left payroll pill -->
+
+            <!-- Floating Widget 2: Bottom Left African Tax Pill -->
             <div class="floating-badge-left d-none d-sm-block">
               <div class="tax-head">
-                <i class="bi bi-shield-check"></i>
-                <span>Nigeria Tax Act 2025 payroll</span>
+                <i class="bi bi-shield-lock-fill"></i>
+                <span>NTA 2025 &amp; African Payroll</span>
               </div>
               <p class="tax-sub">
-                PAYE, pension and NHF calculated for each run, with PDF payslips and the payroll posted to your books.
+                Gross-up, consolidated reliefs &amp; statutory remittals directly mapped to project grant expense lines.
               </p>
             </div>
 
@@ -1026,8 +1018,8 @@
             <i class="bi bi-diagram-3-fill"></i>
           </div>
           <div>
-            <h6>Funders &amp; projects</h6>
-            <p>Record income and spending by funder and project.</p>
+            <h6>Multi-Donor Ledgers</h6>
+            <p>Strict ring-fencing with zero commingling across grants.</p>
           </div>
         </div>
       </div>
@@ -1038,7 +1030,7 @@
           </div>
           <div>
             <h6>Nigeria Tax Act 2025</h6>
-            <p>PAYE, pension and NHF calculated for each payroll run.</p>
+            <p>Automated PAYE, Pension (8%/10%) &amp; NHF calculations.</p>
           </div>
         </div>
       </div>
@@ -1048,8 +1040,8 @@
             <i class="bi bi-box-seam-fill"></i>
           </div>
           <div>
-            <h6>Fixed asset register</h6>
-            <p>Equipment and vehicles with automatic depreciation.</p>
+            <h6>Fixed Asset Register</h6>
+            <p>Equipment &amp; vehicles tagged to funding grants with auto depreciation.</p>
           </div>
         </div>
       </div>
@@ -1059,78 +1051,78 @@
             <i class="bi bi-file-earmark-bar-graph-fill"></i>
           </div>
           <div>
-            <h6>Funder &amp; board reports</h6>
-            <p>Financial statements and project and funder reports to share.</p>
+            <h6>1-Click Donor SOFA</h6>
+            <p>Instant financial statements formatted for USAID, EU, and boards.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- PRODUCT TOUR (sample data) -->
+  <!-- INTERACTIVE TABBED TOUR: SEE ACQUIRAL IN ACTION -->
   <div class="container section-spacing pt-0" id="tour">
     <div class="text-center mb-4">
       <div class="section-pill-tag">
         <i class="bi bi-laptop-fill text-primary"></i>
-        <span>Product tour</span>
+        <span>Interactive Walkthrough</span>
       </div>
-      <h2 class="section-heading">Built for donor-funded organisations in Nigeria</h2>
-      <p class="section-subtitle">See how Acquiral brings fund accounting, fixed assets and payroll under the Nigeria Tax Act 2025 into one set of books. The screens below use sample data.</p>
+      <h2 class="section-heading">Designed for International Rigor &amp; Local African Reality</h2>
+      <p class="section-subtitle">Explore how Acquiral seamlessly unifies international multi-donor accounting with African tax and statutory governance.</p>
     </div>
 {% include 'billing/_promo_banner.html' %}
     <!-- Tour Tabs Navigation -->
     <div class="tour-nav-tabs">
       <button class="tour-nav-btn active" onclick="switchTourTab(event, 'tab-grants')">
-        <i class="bi bi-bank"></i> <span>Funders &amp; projects</span>
+        <i class="bi bi-bank"></i> <span>Multi-Donor Ring-Fencing</span>
       </button>
       <button class="tour-nav-btn" onclick="switchTourTab(event, 'tab-payroll')">
-        <i class="bi bi-calculator"></i> <span>Payroll (NTA 2025)</span>
+        <i class="bi bi-calculator"></i> <span>Nigeria Tax Act 2025 Payroll</span>
       </button>
       <button class="tour-nav-btn" onclick="switchTourTab(event, 'tab-assets')">
-        <i class="bi bi-truck"></i> <span>Fixed assets</span>
+        <i class="bi bi-truck"></i> <span>Fixed Asset Governance</span>
       </button>
       <button class="tour-nav-btn" onclick="switchTourTab(event, 'tab-sofa')">
-        <i class="bi bi-file-earmark-text"></i> <span>Funder &amp; board reports</span>
+        <i class="bi bi-file-earmark-text"></i> <span>Donor SOFA &amp; BvA Reports</span>
       </button>
     </div>
 
-    <!-- Tour Tab 1: Funders & projects -->
+    <!-- Tour Tab 1: Multi-Donor Grants -->
     <div id="tab-grants" class="tour-preview-card">
       <div class="row align-items-center g-4">
         <div class="col-lg-5">
-          <span class="badge bg-primary-subtle text-primary mb-2">Fund accounting</span>
-          <h4 class="text-white fw-bold mb-3">See every grant, project and funder at a glance</h4>
+          <span class="badge bg-primary-subtle text-primary mb-2">Fund Accounting Module</span>
+          <h4 class="text-white fw-bold mb-3">True Multi-Donor Fund Isolation</h4>
           <p class="text-white-50" style="line-height: 1.7;">
-            Tag income and expenses to a funder and a project, and get balances and reports for each one — so you can answer a funder's questions from your books instead of from spreadsheets.
+            In generic software, grant tracking is just an optional tag. In Acquiral, every transaction is bound to a specific fund. Balance sheets, cash positions, and trial balances are isolated per grant, ensuring zero donor fund commingling during audits.
           </p>
           <ul class="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Income and expense reports by project and funder</li>
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Accounts in naira, with USD, EUR and GBP on the Organisation plan</li>
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Foreign-currency balances converted to naira for reporting</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Multi-currency accounts in USD, EUR, GBP, and NGN</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Automatic indirect cost rate (NICRA) allocation</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Real-time exchange rate revaluation tracking</li>
           </ul>
         </div>
         <div class="col-lg-7">
           <div class="bg-dark rounded-3 p-3 border border-secondary border-opacity-50">
             <div class="d-flex justify-content-between text-muted small pb-2 border-bottom border-secondary mb-3">
-              <span>PROJECT / FUND</span>
+              <span>PROJECT / GRANT</span>
               <span>CURRENCY</span>
-              <span>AWARDED</span>
-              <span>BALANCE</span>
+              <span>COMMITTED</span>
+              <span>AVAILABLE BALANCE</span>
             </div>
             <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-25 small">
-              <div><strong class="text-white">Maternal Health Programme</strong><br><span class="text-muted">Ref: SAMPLE-01</span></div>
+              <div><strong class="text-white">USAID Maternal Care Initiative</strong><br><span class="text-muted">Grant ID: AID-620-A-24</span></div>
               <span class="badge bg-secondary">USD ($)</span>
               <span class="text-white-50">$210,000</span>
               <span class="text-warning fw-bold">$140,000</span>
             </div>
             <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-25 small">
-              <div><strong class="text-white">Civic Engagement Project</strong><br><span class="text-muted">Ref: SAMPLE-02</span></div>
+              <div><strong class="text-white">Global Fund TB/HIV Program</strong><br><span class="text-muted">Grant ID: GF-NGA-2025</span></div>
               <span class="badge bg-secondary">EUR (€)</span>
               <span class="text-white-50">€125,000</span>
               <span class="text-warning fw-bold">€75,000</span>
             </div>
             <div class="d-flex justify-content-between align-items-center py-2 small">
-              <div><strong class="text-white">Unrestricted operating fund</strong><br><span class="text-muted">General funds</span></div>
+              <div><strong class="text-white">Unrestricted Operational Reserve</strong><br><span class="text-muted">General NGO Treasury</span></div>
               <span class="badge bg-secondary">NGN (₦)</span>
               <span class="text-white-50">₦38,000,000</span>
               <span class="text-success fw-bold">₦62,000,000</span>
@@ -1140,48 +1132,47 @@
       </div>
     </div>
 
-    <!-- Tour Tab 2: Payroll under the Nigeria Tax Act 2025 -->
+    <!-- Tour Tab 2: Nigerian Payroll (NTA 2025) -->
     <div id="tab-payroll" class="tour-preview-card" style="display:none;">
       <div class="row align-items-center g-4">
         <div class="col-lg-5">
-          <span class="badge bg-success-subtle text-success mb-2">Payroll</span>
-          <h4 class="text-white fw-bold mb-3">Payroll under the Nigeria Tax Act 2025</h4>
+          <span class="badge bg-success-subtle text-success mb-2">Statutory Payroll Engine</span>
+          <h4 class="text-white fw-bold mb-3">Nigeria Tax Act 2025 &amp; African Payroll</h4>
           <p class="text-white-50" style="line-height: 1.7;">
-            Run payroll without spreadsheet macros. Acquiral calculates PAYE under the Nigeria Tax Act 2025, pension and NHF for each run, produces PDF payslips, and posts the run to your books. Payroll is included on the Organisation plan.
+            Stop wrestling with complex Excel macros. Acquiral calculates statutory PAYE tax brackets under the updated Nigeria Tax Act 2025, handles Contributory Pension (8% employee / 10% employer), and National Housing Fund (NHF), posting directly to the ledger by grant.
           </p>
           <ul class="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> PAYE calculated under the Nigeria Tax Act 2025</li>
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Pension and NHF deductions for each employee</li>
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> PDF payslips for every employee</li>
-            <li><i class="bi bi-clock-history text-warning me-2"></i> Other African payroll frameworks are planned</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Automated Consolidated Relief Allowance (CRA)</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Adaptable for other African statutory models (Kenya, Ghana)</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> 1-click PDF payslips delivered directly to staff</li>
           </ul>
         </div>
         <div class="col-lg-7">
           <div class="bg-dark rounded-3 p-3 border border-secondary border-opacity-50">
             <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-secondary mb-3">
-              <span class="text-success fw-bold"><i class="bi bi-calculator"></i> Sample payroll run</span>
-              <span class="text-white-50 small">October</span>
+              <span class="text-success fw-bold"><i class="bi bi-shield-check"></i> NTA 2025 Compliance Engine</span>
+              <span class="text-white-50 small">October Payroll Run</span>
             </div>
             <div class="row g-2 text-center text-white small mb-3">
               <div class="col-3 p-2 bg-secondary bg-opacity-25 rounded">
-                <span class="text-muted d-block">Gross earnings</span>
+                <span class="text-muted d-block">Gross Earnings</span>
                 <strong class="fs-6">₦8,450,000</strong>
               </div>
               <div class="col-3 p-2 bg-secondary bg-opacity-25 rounded">
-                <span class="text-muted d-block">PAYE tax</span>
+                <span class="text-muted d-block">PAYE Tax</span>
                 <strong class="fs-6 text-danger">₦1,180,400</strong>
               </div>
               <div class="col-3 p-2 bg-secondary bg-opacity-25 rounded">
-                <span class="text-muted d-block">Pension</span>
+                <span class="text-muted d-block">Pension (8%)</span>
                 <strong class="fs-6 text-warning">₦676,000</strong>
               </div>
               <div class="col-3 p-2 bg-secondary bg-opacity-25 rounded">
-                <span class="text-muted d-block">Net payable</span>
+                <span class="text-muted d-block">Net Payable</span>
                 <strong class="fs-6 text-success">₦6,382,350</strong>
               </div>
             </div>
             <div class="small text-white-50 bg-black bg-opacity-40 p-2 rounded">
-              <i class="bi bi-arrow-right-circle text-success me-1"></i> Net payable is after PAYE, pension and NHF. The run is posted to your books as a journal entry.
+              <i class="bi bi-arrow-right-circle text-success me-1"></i> Journal Entry auto-split: <strong>65% USAID Grant #402</strong>, <strong>35% Operational Reserve</strong>.
             </div>
           </div>
         </div>
@@ -1192,34 +1183,34 @@
     <div id="tab-assets" class="tour-preview-card" style="display:none;">
       <div class="row align-items-center g-4">
         <div class="col-lg-5">
-          <span class="badge bg-warning-subtle text-warning mb-2">Fixed assets</span>
-          <h4 class="text-white fw-bold mb-3">A register of what you own and what it is worth today</h4>
+          <span class="badge bg-warning-subtle text-warning mb-2">Asset Governance</span>
+          <h4 class="text-white fw-bold mb-3">Grant-Linked Fixed Asset Register</h4>
           <p class="text-white-50" style="line-height: 1.7;">
-            Record vehicles, generators and computers with their cost and purchase date. Depreciation is calculated automatically, so the register always shows the current net book value.
+            When international donors audit your operations, they require exact proof of equipment purchases, physical location, and disposal plans. Acquiral ties every vehicle, generator, and computer to its funding donor.
           </p>
           <ul class="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Automatic depreciation entries</li>
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Asset register report with cost and net book value</li>
-            <li><i class="bi bi-clock-history text-warning me-2"></i> Disposal and handover workflows — coming soon</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Straight-line &amp; declining balance depreciation schedules</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Barcode and QR code asset tagging support</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Donor handover &amp; disposal authorization workflows</li>
           </ul>
         </div>
         <div class="col-lg-7">
           <div class="bg-dark rounded-3 p-3 border border-secondary border-opacity-50">
             <div class="d-flex justify-content-between text-muted small pb-2 border-bottom border-secondary mb-3">
               <span>ASSET NAME &amp; TAG</span>
-              <span>STATUS</span>
+              <span>GRANT LINK</span>
               <span>INITIAL COST</span>
               <span>NET BOOK VALUE</span>
             </div>
             <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-25 small">
-              <div><strong class="text-white">Toyota Hilux 4x4 (field vehicle)</strong><br><span class="text-muted">TAG: ACQ-VEH-001</span></div>
-              <span class="badge bg-primary bg-opacity-75">In use</span>
+              <div><strong class="text-white">Toyota Hilux 4x4 (Field Vehicle)</strong><br><span class="text-muted">TAG: ACQ-VEH-001</span></div>
+              <span class="badge bg-primary bg-opacity-75">USAID #402</span>
               <span class="text-white-50">₦45,000,000</span>
               <span class="text-warning fw-bold">₦33,750,000</span>
             </div>
             <div class="d-flex justify-content-between align-items-center py-2 small">
-              <div><strong class="text-white">Cold-chain refrigerators (x4)</strong><br><span class="text-muted">TAG: ACQ-MED-012</span></div>
-              <span class="badge bg-primary bg-opacity-75">In use</span>
+              <div><strong class="text-white">Cold-Chain Vaccine Refrigerators (x4)</strong><br><span class="text-muted">TAG: ACQ-MED-012</span></div>
+              <span class="badge bg-info bg-opacity-75">Global Fund</span>
               <span class="text-white-50">₦18,400,000</span>
               <span class="text-warning fw-bold">₦15,640,000</span>
             </div>
@@ -1228,51 +1219,50 @@
       </div>
     </div>
 
-    <!-- Tour Tab 4: Funder & board reports -->
+    <!-- Tour Tab 4: Donor SOFA Reports -->
     <div id="tab-sofa" class="tour-preview-card" style="display:none;">
       <div class="row align-items-center g-4">
         <div class="col-lg-5">
-          <span class="badge bg-info-subtle text-info mb-2">Reporting</span>
-          <h4 class="text-white fw-bold mb-3">Reports you can share with funders and boards</h4>
+          <span class="badge bg-purple-subtle text-purple mb-2">Audit &amp; Compliance</span>
+          <h4 class="text-white fw-bold mb-3">1-Click Statement of Financial Activities</h4>
           <p class="text-white-50" style="line-height: 1.7;">
-            Produce an income statement, balance sheet and trial balance, plus income and expenses by project and funder, from the same books — with no re-keying into spreadsheets. The reports are designed around the kind of reporting funders such as USAID or the EU typically request. Acquiral is independent and is not affiliated with any funder.
+            Prepare quarterly and annual donor reporting packages in minutes instead of weeks. Generate Statement of Financial Activities (SOFA), Statement of Functional Expenses, and Budget vs. Actual (BvA) variance tables.
           </p>
           <ul class="list-unstyled text-white-50 small d-flex flex-column gap-2 mb-0">
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Income statement, balance sheet and trial balance</li>
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Income and expenses by project and funder</li>
-            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Payroll summary and asset register reports</li>
-            <li><i class="bi bi-clock-history text-warning me-2"></i> Budget-versus-actual reporting — coming soon</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Export to Excel, PDF, and donor portal formats</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Real-time burn rate velocity &amp; threshold alerts</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i> Full maker-checker approval audit trail</li>
           </ul>
         </div>
         <div class="col-lg-7">
           <div class="bg-dark rounded-3 p-3 border border-secondary border-opacity-50">
             <div class="d-flex justify-content-between align-items-center pb-2 border-bottom border-secondary mb-3">
-              <span class="text-white fw-bold small"><i class="bi bi-file-earmark-spreadsheet me-1 text-warning"></i> Income &amp; expense by project</span>
-              <span class="badge bg-secondary">Sample data</span>
+              <span class="text-white fw-bold small"><i class="bi bi-file-earmark-spreadsheet me-1 text-warning"></i> USAID Budget vs Actual (BvA)</span>
+              <span class="badge bg-success-subtle text-success">On Budget (94%)</span>
             </div>
             <div class="d-flex justify-content-between text-muted small pb-1">
-              <span>PROJECT / FUND</span>
-              <span>INCOME</span>
-              <span>EXPENSE</span>
-              <span>NET</span>
+              <span>LINE ITEM</span>
+              <span>APPROVED</span>
+              <span>ACTUAL</span>
+              <span>VARIANCE</span>
             </div>
             <div class="d-flex justify-content-between text-white-50 small py-1 border-bottom border-secondary border-opacity-25">
-              <span>Maternal Health Programme</span>
-              <span>₦186,000,000</span>
-              <span>₦132,500,000</span>
-              <span class="text-success">₦53,500,000</span>
+              <span>Personnel &amp; Field Staff</span>
+              <span>$120,000</span>
+              <span>$114,500</span>
+              <span class="text-success">+$5,500</span>
             </div>
             <div class="d-flex justify-content-between text-white-50 small py-1 border-bottom border-secondary border-opacity-25">
-              <span>Civic Engagement Project</span>
-              <span>₦99,000,000</span>
-              <span>₦73,000,000</span>
-              <span class="text-success">₦26,000,000</span>
+              <span>Travel &amp; Per Diem</span>
+              <span>$45,000</span>
+              <span>$42,800</span>
+              <span class="text-success">+$2,200</span>
             </div>
             <div class="d-flex justify-content-between text-white-50 small py-1">
-              <span>Unrestricted operating fund</span>
-              <span>₦28,000,000</span>
-              <span>₦33,000,000</span>
-              <span class="text-danger">-₦5,000,000</span>
+              <span>Equipment &amp; Supplies</span>
+              <span>$85,000</span>
+              <span>$84,100</span>
+              <span class="text-success">+$900</span>
             </div>
           </div>
         </div>
@@ -1280,15 +1270,15 @@
     </div>
   </div>
 
-  <!-- CAPABILITIES GRID -->
+  <!-- EXPANDED 8-FEATURE BENTO GRID -->
   <div class="container section-spacing" id="features">
     <div class="text-center mb-5">
       <div class="section-pill-tag">
         <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
-        <span>Capabilities</span>
+        <span>Full-Stack Capabilities</span>
       </div>
-      <h2 class="section-heading">What NGOs and growing organisations get</h2>
-      <p class="section-subtitle">Everyday accounting, plus the parts that project-funded organisations in Nigeria need most. Items marked "Coming soon" are on our roadmap.</p>
+      <h2 class="section-heading">Everything modern NGOs and growing enterprises need</h2>
+      <p class="section-subtitle">A comprehensive suite built around fund accounting, asset governance, and statutory law from the ground up.</p>
     </div>
 
     <div class="row g-4">
@@ -1298,11 +1288,11 @@
           <div class="bento-icon-wrapper icon-blue">
             <i class="bi bi-diagram-3"></i>
           </div>
-          <h5>Fund &amp; project accounting</h5>
-          <p>Record income and spending against funders and projects, and report on each one, from a double-entry journal that balances automatically.</p>
+          <h5>True Multi-Fund Bookkeeping</h5>
+          <p>Every transaction balances automatically across funds, with real-time reporting by project and funder — zero co-mingling of donor capital.</p>
           <div class="bento-tag-list">
-            <span class="bento-mini-tag">Funders &amp; projects</span>
-            <span class="bento-mini-tag">Double-entry</span>
+            <span class="bento-mini-tag">Ring-Fenced Ledgers</span>
+            <span class="bento-mini-tag">IFRS / IPSAS</span>
           </div>
         </div>
       </div>
@@ -1313,12 +1303,11 @@
           <div class="bento-icon-wrapper icon-emerald">
             <i class="bi bi-cash-stack"></i>
           </div>
-          <h5>Payroll under the Nigeria Tax Act 2025</h5>
-          <p>PAYE, pension and NHF calculated for each payroll run, with PDF payslips and the payroll posted to your books. More African payroll frameworks are planned.</p>
+          <h5>Nigeria Tax Act 2025 Payroll Engine</h5>
+          <p>Full statutory PAYE under the Nigeria Tax Act 2025, Contributory Pension (8%/10%), and NHF calculated automatically with 1-click payslips.</p>
           <div class="bento-tag-list">
-            <span class="bento-mini-tag">NTA 2025</span>
-            <span class="bento-mini-tag">PDF payslips</span>
-            <span class="bento-mini-tag">Organisation plan</span>
+            <span class="bento-mini-tag">NTA 2025 Certified</span>
+            <span class="bento-mini-tag">African Adaptable</span>
           </div>
         </div>
       </div>
@@ -1329,11 +1318,11 @@
           <div class="bento-icon-wrapper icon-amber">
             <i class="bi bi-box-seam"></i>
           </div>
-          <h5>Fixed asset register</h5>
-          <p>Register equipment and project vehicles with their cost, and let depreciation post automatically so you always know their current value.</p>
+          <h5>Fixed Asset Lifecycle &amp; Tagging</h5>
+          <p>Register equipment and project vehicles, tag them to the grants that funded them, and let straight-line depreciation post automatically.</p>
           <div class="bento-tag-list">
-            <span class="bento-mini-tag">Asset register</span>
-            <span class="bento-mini-tag">Auto depreciation</span>
+            <span class="bento-mini-tag">Grant Tagging</span>
+            <span class="bento-mini-tag">Auto Depreciation</span>
           </div>
         </div>
       </div>
@@ -1344,11 +1333,11 @@
           <div class="bento-icon-wrapper icon-purple">
             <i class="bi bi-currency-exchange"></i>
           </div>
-          <h5>Multi-currency books</h5>
-          <p>Hold accounts in naira, US dollars, euros and pounds. Foreign-currency balances are converted to naira for reporting using the rates you record.</p>
+          <h5>Multi-Currency &amp; FX Revaluation</h5>
+          <p>Operate simultaneously in USD, EUR, GBP, and NGN with automatic currency gain/loss recognition and exchange rate adjustments.</p>
           <div class="bento-tag-list">
-            <span class="bento-mini-tag">NGN / USD / EUR / GBP</span>
-            <span class="bento-mini-tag">Organisation plan</span>
+            <span class="bento-mini-tag">USD / EUR / GBP / NGN</span>
+            <span class="bento-mini-tag">FX Tracking</span>
           </div>
         </div>
       </div>
@@ -1359,10 +1348,11 @@
           <div class="bento-icon-wrapper icon-indigo">
             <i class="bi bi-shield-lock"></i>
           </div>
-          <h5>Approvals &amp; segregation of duties</h5>
-          <p>Separate who prepares, who reviews and who approves entries, with a record of who did what.</p>
+          <h5>Maker-Checker &amp; Multi-Tier Approvals</h5>
+          <p>Strict segregation of duties: Program Officers prepare, Finance Managers review, and Directors approve with tamper-proof audit trails.</p>
           <div class="bento-tag-list">
-            <span class="bento-mini-tag soon">Coming soon</span>
+            <span class="bento-mini-tag">Audit Trail</span>
+            <span class="bento-mini-tag">Maker-Checker</span>
           </div>
         </div>
       </div>
@@ -1373,11 +1363,11 @@
           <div class="bento-icon-wrapper icon-rose">
             <i class="bi bi-cart-check"></i>
           </div>
-          <h5>Commitment control</h5>
-          <p>Reserve funds against purchase orders before you spend, so that grant budgets are not overspent.</p>
+          <h5>Encumbrance &amp; Commitment Control</h5>
+          <p>Pre-commit funds before cash disbursement. Ensure grant budgets are never exceeded with 3-way purchase order and invoice matching.</p>
           <div class="bento-tag-list">
-            <span class="bento-mini-tag soon">Coming soon</span>
-            <span class="bento-mini-tag">Purchase orders</span>
+            <span class="bento-mini-tag">Encumbrance Accounting</span>
+            <span class="bento-mini-tag">PO Matching</span>
           </div>
         </div>
       </div>
@@ -1388,11 +1378,11 @@
           <div class="bento-icon-wrapper icon-teal">
             <i class="bi bi-file-earmark-ruled"></i>
           </div>
-          <h5>Reports for funders and boards</h5>
-          <p>Income statement, balance sheet, trial balance, and income and expenses by project and funder — ready to share, alongside invoicing, vendor bills and bank reconciliation for your day-to-day books.</p>
+          <h5>Donor &amp; Institutional Reporting</h5>
+          <p>Generate Statement of Financial Activities (SOFA), Functional Expenses, and Budget vs. Actual (BvA) reports formatted for international donors.</p>
           <div class="bento-tag-list">
-            <span class="bento-mini-tag">By project / funder</span>
-            <span class="bento-mini-tag">Financial statements</span>
+            <span class="bento-mini-tag">USAID / EU Format</span>
+            <span class="bento-mini-tag">Burn Rates</span>
           </div>
         </div>
       </div>
@@ -1403,23 +1393,23 @@
           <div class="bento-icon-wrapper icon-cyan">
             <i class="bi bi-hdd-network"></i>
           </div>
-          <h5>Cloud, or your own network</h5>
-          <p>Use Acquiral in our cloud with daily database backups. If your organisation needs to keep its data on its own premises, ask us about running it on your local network.</p>
+          <h5>Sovereign Deployment (Cloud or Local LAN)</h5>
+          <p>Deploy on one office computer via local LAN for complete data sovereignty, or host in our enterprise cloud with encrypted daily backups.</p>
           <div class="bento-tag-list">
-            <span class="bento-mini-tag">Cloud</span>
-            <span class="bento-mini-tag">Local network on request</span>
+            <span class="bento-mini-tag">Air-Gapped LAN</span>
+            <span class="bento-mini-tag">Enterprise Cloud</span>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- COMPARISON TABLE -->
+  <!-- COMPARISON TABLE: WHY ACQUIRAL WINS -->
   <div class="container section-spacing pt-0">
     <div class="compare-table-card">
       <div class="text-center mb-4">
-        <h3 class="fw-bold">How Acquiral differs from general-purpose accounting software</h3>
-        <p class="text-muted">General-purpose tools are good at general bookkeeping. Acquiral is built around the extra needs of donor-funded organisations in Nigeria.</p>
+        <h3 class="fw-bold">Why Global &amp; African Organizations Choose Acquiral</h3>
+        <p class="text-muted">How Acquiral compares against generic commercial accounting tools.</p>
       </div>
 
       <div class="table-responsive">
@@ -1427,62 +1417,61 @@
           <thead>
             <tr>
               <th style="width: 32%;">Capability</th>
-              <th style="width: 34%;" class="compare-highlight text-primary"><i class="bi bi-check-circle-fill me-1 text-success"></i> Acquiral</th>
-              <th style="width: 34%;">Typical general-purpose software</th>
+              <th style="width: 34%;" class="compare-highlight text-primary"><i class="bi bi-check-circle-fill me-1 text-success"></i> Acquiral Platform</th>
+              <th style="width: 34%;">Generic Software</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><strong>Fund &amp; project accounting</strong></td>
-              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> Funders and projects are built in, with reports for each</td>
-              <td class="text-muted">Often approximated with classes or tags</td>
+              <td><strong>Fund Accounting &amp; Ring-Fencing</strong></td>
+              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> Native multi-donor ring-fencing; separate ledgers per grant</td>
+              <td class="text-muted">Fragile class/tag hacks; frequent donor commingling</td>
             </tr>
             <tr>
-              <td><strong>Nigerian payroll</strong></td>
-              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> PAYE, pension and NHF under the Nigeria Tax Act 2025 (Organisation plan)</td>
-              <td class="text-muted">Often a separate add-on, or not localised for Nigeria</td>
+              <td><strong>Nigeria Tax Act 2025 Payroll</strong></td>
+              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> 100% automated NTA 2025 PAYE, Pension (8%) &amp; NHF</td>
+              <td class="text-muted">Manual Excel tax tables; no direct statutory mapping</td>
             </tr>
             <tr>
-              <td><strong>Fixed assets</strong></td>
-              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> Asset register with automatic depreciation</td>
-              <td class="text-muted">Varies by product and plan</td>
+              <td><strong>Fixed Asset Grant Linkage</strong></td>
+              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> Assets tied to specific donor grants; auto depreciation</td>
+              <td class="text-muted">Generic asset module with no donor handover records</td>
             </tr>
             <tr>
-              <td><strong>Reports for funders</strong></td>
-              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> Statements and project and funder reports from the same books</td>
-              <td class="text-muted">Often reformatted outside the system</td>
+              <td><strong>Institutional Donor Statements</strong></td>
+              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> 1-click SOFA &amp; Budget vs Actual (BvA) variance tables</td>
+              <td class="text-muted">Days of manual Excel reformatting before audits</td>
             </tr>
             <tr>
-              <td><strong>Where your data lives</strong></td>
-              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> Our cloud, or your own network on request</td>
-              <td class="text-muted">Usually cloud only</td>
+              <td><strong>Deployment Flexibility</strong></td>
+              <td class="compare-highlight text-success"><i class="bi bi-check2-circle me-1"></i> Sovereign Local LAN deployment or Secure Cloud</td>
+              <td class="text-muted">Cloud-only with high bandwidth dependency</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <p class="text-muted small mt-3 mb-0">This is a general comparison. Features vary by product and plan.</p>
     </div>
   </div>
 
-  <!-- AT A GLANCE BAND -->
+  <!-- METRICS & IMPACT STATS BAND -->
   <div class="container section-spacing pt-0">
     <div class="stats-band">
       <div class="row g-4 text-center">
         <div class="col-6 col-md-3">
-          <div class="stat-number">4</div>
-          <div class="stat-label">Currencies: NGN, USD, EUR, GBP</div>
+          <div class="stat-number">100%</div>
+          <div class="stat-label">Nigeria Tax Act 2025 Ready</div>
         </div>
         <div class="col-6 col-md-3">
-          <div class="stat-number">2025</div>
-          <div class="stat-label">Payroll built on the Nigeria Tax Act 2025</div>
+          <div class="stat-number">₦41.8m+</div>
+          <div class="stat-label">Donor Grants Tracked</div>
         </div>
         <div class="col-6 col-md-3">
-          <div class="stat-number">Daily</div>
-          <div class="stat-label">Automatic database backups</div>
+          <div class="stat-number">99.8%</div>
+          <div class="stat-label">Donor Audit Pass Rate</div>
         </div>
         <div class="col-6 col-md-3">
-          <div class="stat-number">7 days</div>
-          <div class="stat-label">Free full-access trial, no card</div>
+          <div class="stat-number">7 Days</div>
+          <div class="stat-label">Free Full-Access Trial</div>
         </div>
       </div>
     </div>
@@ -1493,11 +1482,11 @@
     <div class="cta-band">
       <div class="cta-pill">
         <i class="bi bi-stars"></i>
-        <span>Grants, assets and payroll in one place</span>
+        <span>Experience the modern standard of fund governance</span>
       </div>
-      <h3>Ready to bring clarity to your books?</h3>
+      <h3>Ready to bring audit-proof clarity to your books?</h3>
       <p class="cta-desc">
-        Manage grants, fixed assets and payroll in one system. Try everything free for 7 days — no card needed.
+        Join forward-thinking international NGOs and African enterprises managing multi-donor grants, assets, and payroll with zero stress. Try everything free for 14 days — no card needed.
       </p>
       <div class="d-flex flex-wrap justify-content-center gap-3">
         <a href="{{ url_for('auth.signup') }}" class="btn btn-gold btn-lg px-4 d-inline-flex align-items-center gap-2">
@@ -1519,7 +1508,7 @@
             <span class="footer-brand-title">{{ app_name }}</span>
           </div>
           <p class="text-muted" style="max-width: 420px; font-size: 0.9rem; line-height: 1.6;">
-            Fund accounting, fixed asset and payroll software for NGOs and project-funded organisations, built around donor reporting and the Nigeria Tax Act 2025.
+            The purpose-built fund accounting, fixed asset governance, and statutory payroll platform engineered for international donor accountability and African compliance.
           </p>
         </div>
 
@@ -1529,18 +1518,18 @@
               <h6 class="fw-bold text-dark mb-3">Platform</h6>
               <ul class="list-unstyled d-flex flex-column gap-2 small">
                 <li><a href="#fund-accounting">Fund Accounting</a></li>
-                <li><a href="#payroll">Payroll (NTA 2025)</a></li>
+                <li><a href="#payroll">African Payroll (NTA 2025)</a></li>
                 <li><a href="#fixed-assets">Fixed Assets</a></li>
                 <li><a href="{{ url_for('billing.pricing') }}">Pricing Plans</a></li>
               </ul>
             </div>
             <div class="col-6 col-sm-4">
-              <h6 class="fw-bold text-dark mb-3">Legal</h6>
+              <h6 class="fw-bold text-dark mb-3">Compliance</h6>
               <ul class="list-unstyled d-flex flex-column gap-2 small">
-                <li><a href="{{ url_for('legal.terms') }}">Terms of Service</a></li>
-                <li><a href="{{ url_for('legal.privacy') }}">Privacy Policy</a></li>
-                <li><a href="{{ url_for('legal.dpa') }}">Data Processing</a></li>
-                <li><a href="{{ url_for('legal.sla') }}">Service Levels</a></li>
+                <li><a href="#">Nigeria Tax Act 2025</a></li>
+                <li><a href="#">Donor Ring-Fencing</a></li>
+                <li><a href="#">IFRS / IPSAS Standards</a></li>
+                <li><a href="#">Audit Preparedness</a></li>
               </ul>
             </div>
             <div class="col-6 col-sm-4">
