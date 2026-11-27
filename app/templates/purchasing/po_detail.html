@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% block title %}Purchase Order {{ po.po_number }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <h3 class="mb-0">{{ po.po_number }}</h3>
+      <span class="badge {{ po.status_badge }}">{{ po.status_label }}</span>
+      {% if po.is_encumbered %}
+      <span class="badge bg-warning text-dark"><i class="bi bi-lock-fill me-1"></i> Funds Encumbered</span>
+      {% endif %}
+    </div>
+    <p class="text-muted small mb-0">Project: <strong>{{ po.project.name if po.project else '—' }}</strong> &bull; Vendor: <strong>{{ po.vendor.name if po.vendor else '—' }}</strong></p>
+  </div>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('purchasing.purchase_orders_list') }}">
+    <i class="bi bi-arrow-left me-1"></i> Back to PO List
+  </a>
+</div>
+
+<!-- Workflow Stepper -->
+<div class="card card-metric p-3 mb-4">
+  <div class="row text-center g-2">
+    <div class="col-3">
+      <div class="p-2 rounded {{ 'bg-primary text-white' if po.status != 'draft' else 'bg-light text-dark border' }}">
+        <i class="bi bi-pencil-square d-block fs-5"></i>
+        <div class="small fw-bold">1. Prepared</div>
+        <div class="small" style="font-size:0.75rem;">{{ po.preparer.full_name or po.preparer.username if po.preparer else 'Draft' }}</div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="p-2 rounded {{ 'bg-primary text-white' if po.status in ['pending_director_approval', 'approved_committed', 'fulfilled'] else ('bg-warning text-dark' if po.status == 'pending_finance_review' else 'bg-light text-muted border') }}">
+        <i class="bi bi-cash-stack d-block fs-5"></i>
+        <div class="small fw-bold">2. Finance Review</div>
+        <div class="small" style="font-size:0.75rem;">{{ po.reviewer.full_name or po.reviewer.username if po.reviewer else ('Pending Review' if po.status == 'pending_finance_review' else '—') }}</div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="p-2 rounded {{ 'bg-primary text-white' if po.status in ['approved_committed', 'fulfilled'] else ('bg-info text-dark' if po.status == 'pending_director_approval' else 'bg-light text-muted border') }}">
+        <i class="bi bi-check-circle d-block fs-5"></i>
+        <div class="small fw-bold">3. Approval &amp; Reservation</div>
+        <div class="small" style="font-size:0.75rem;">{{ po.approver.full_name or po.approver.username if po.approver else ('Awaiting Executive' if po.status == 'pending_director_approval' else '—') }}</div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="p-2 rounded {{ 'bg-success text-white' if po.status == 'fulfilled' else 'bg-light text-muted border' }}">
+        <i class="bi bi-file-earmark-check d-block fs-5"></i>
+        <div class="small fw-bold">4. Fulfilled / Invoiced</div>
+        <div class="small" style="font-size:0.75rem;">{{ 'Bill Generated' if po.bill else 'Pending Invoice' }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Left Column: Details & Lines -->
+  <div class="col-lg-8">
+    <!-- PO Header Information -->
+    <div class="card card-metric p-3 mb-3">
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <div class="text-muted small">Vendor / Payee</div>
+          <div class="fw-bold fs-6">{{ po.vendor.name if po.vendor else '—' }}</div>
+          {% if po.vendor and po.vendor.email %}<div class="text-muted small">{{ po.vendor.email }}</div>{% endif %}
+          {% if po.vendor and po.vendor.phone %}<div class="text-muted small">{{ po.vendor.phone }}</div>{% endif %}
+        </div>
+        <div class="col-sm-6">
+          <div class="text-muted small">Project / Grant Allocation</div>
+          <div class="fw-bold fs-6 text-primary">{{ po.project.name if po.project else '—' }}</div>
+          {% if po.project and po.project.funder %}
+          <div class="text-muted small">Funder: {{ po.project.funder.name }}</div>
+          {% endif %}
+        </div>
+        <div class="col-sm-4">
+          <div class="text-muted small">PO Date</div>
+          <div>{{ po.po_date.strftime('%d %b %Y') if po.po_date else '—' }}</div>
+        </div>
+        <div class="col-sm-4">
+          <div class="text-muted small">Expected Delivery</div>
+          <div>{{ po.delivery_date.strftime('%d %b %Y') if po.delivery_date else '—' }}</div>
+        </div>
+        <div class="col-sm-4">
+          <div class="text-muted small">Reference</div>
+          <div>{{ po.reference or '—' }}</div>
+        </div>
+        {% if po.notes %}
+        <div class="col-12">
+          <div class="text-muted small">Notes / Procurement Description</div>
+          <div class="p-2 bg-light rounded small">{{ po.notes }}</div>
+        </div>
+        {% endif %}
+        {% if po.status == 'rejected' and po.rejection_reason %}
+        <div class="col-12">
+          <div class="alert alert-danger py-2 small mb-0">
+            <strong><i class="bi bi-x-circle me-1"></i> Rejection Reason:</strong> {{ po.rejection_reason }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Line Items Table -->
+    <div class="card card-metric p-3 mb-3">
+      <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-list-ul me-1"></i> Order Line Items</h6>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description</th>
+              <th class="text-end">Amount (₦)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in po.lines %}
+            <tr>
+              <td>
+                <span class="badge bg-light text-dark border">{{ line.account.code }}</span>
+                <span class="small">{{ line.account.name }}</span>
+              </td>
+              <td>{{ line.description or '—' }}</td>
+              <td class="text-end fw-semibold">₦{{ "{:,.2f}".format(line.amount) }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td>Procurement Line</td>
+              <td>{{ po.notes or 'General Procurement' }}</td>
+              <td class="text-end fw-semibold">₦{{ "{:,.2f}".format(po.amount) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="border-top">
+              <th colspan="2" class="text-end fs-6">Total Committed Amount:</th>
+              <th class="text-end fs-6 text-primary fw-bold">₦{{ "{:,.2f}".format(po.total) }}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cryptographic Chained Audit Trail -->
+    <div class="card card-metric p-3">
+      <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+        <h6 class="mb-0"><i class="bi bi-shield-check me-1"></i> Tamper-Proof Audit Trail (SHA-256)</h6>
+        {% if audit_valid %}
+        <span class="badge bg-success-subtle text-success border border-success">
+          <i class="bi bi-check2-circle me-1"></i> Audit Signatures Verified
+        </span>
+        {% else %}
+        <span class="badge bg-danger-subtle text-danger border border-danger">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ audit_msg }}
+        </span>
+        {% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm small align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Action</th>
+              <th>Actor</th>
+              <th>Details</th>
+              <th>Hash Signature</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in po.audit_trail %}
+            <tr>
+              <td class="text-nowrap">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') if entry.timestamp else '—' }}</td>
+              <td>
+                <span class="badge bg-light text-dark border">{{ entry.action }}</span>
+              </td>
+              <td>{{ entry.actor.full_name or entry.actor.username if entry.actor else 'System' }}</td>
+              <td>{{ entry.details or '—' }}</td>
+              <td class="font-monospace text-muted" style="font-size:0.75rem;" title="{{ entry.current_hash }}">
+                {{ entry.current_hash[:8] }}...{{ entry.current_hash[-6:] }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-2">No audit logs recorded yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Budget Status & Approval Action Bar -->
+  <div class="col-lg-4">
+    <!-- Project Budget Health Widget -->
+    {% if project_summary %}
+    <div class="card card-metric p-3 mb-3 border-{{ 'danger' if project_summary.is_overspent else 'primary' }}">
+      <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+        <h6 class="mb-0"><i class="bi bi-speedometer2 me-1"></i> Project Budget Gauge</h6>
+        <span class="badge bg-light text-dark border">{{ po.project.name }}</span>
+      </div>
+
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span>Total Grant Budget:</span>
+          <span class="fw-bold text-dark">₦{{ "{:,.2f}".format(project_summary.budget) }}</span>
+        </div>
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span>Actual Spent:</span>
+          <span class="fw-semibold text-primary">₦{{ "{:,.2f}".format(project_summary.actual_spent) }} ({{ project_summary.spent_pct }}%)</span>
+        </div>
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span>Active Reserved (POs):</span>
+          <span class="fw-semibold text-warning">₦{{ "{:,.2f}".format(project_summary.reserved_funds) }} ({{ project_summary.reserved_pct }}%)</span>
+        </div>
+        <hr class="my-2">
+        <div class="d-flex justify-content-between fw-bold">
+          <span>Net Available:</span>
+          <span class="{{ 'text-danger' if project_summary.is_overspent else 'text-success' }}">
+            ₦{{ "{:,.2f}".format(project_summary.available_budget) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Utilization Progress Bar -->
+      <div class="progress" style="height: 10px;">
+        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ project_summary.spent_pct }}%;" title="Spent: {{ project_summary.spent_pct }}%"></div>
+        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ project_summary.reserved_pct }}%;" title="Reserved: {{ project_summary.reserved_pct }}%"></div>
+      </div>
+      <div class="d-flex justify-content-between mt-1 text-muted" style="font-size:0.75rem;">
+        <span>Spent</span>
+        <span>Reserved</span>
+        <span>Available</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Segregation of Duties Action Bar -->
+    <div class="card card-metric p-3 mb-3">
+      <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-person-check me-1"></i> Workflow Actions</h6>
+
+      <!-- Segregation of Duties Rule Alert -->
+      {% if po.preparer_id == current_user.id and po.status in ['pending_finance_review', 'pending_director_approval'] %}
+      <div class="alert alert-warning py-2 small mb-3">
+        <i class="bi bi-shield-lock me-1"></i> <strong>Segregation of Duties Enforced:</strong> You prepared this purchase order. An independent Finance Manager or Director must review and approve it.
+      </div>
+      {% endif %}
+
+      <div class="d-grid gap-2">
+        <!-- 1. Submit if draft -->
+        {% if can_submit %}
+        <form method="post" action="{{ url_for('purchasing.po_submit', po_id=po.id) }}">
+          <button class="btn btn-primary w-100">
+            <i class="bi bi-send me-1"></i> Submit for Finance Review
+          </button>
+        </form>
+        {% endif %}
+
+        <!-- 2. Finance Manager Review -->
+        {% if can_finance_review %}
+        <form method="post" action="{{ url_for('purchasing.po_finance_review', po_id=po.id) }}">
+          {% if current_user.can_approve(po.total) %}
+          <button class="btn btn-success w-100">
+            <i class="bi bi-check2-circle me-1"></i> Approve &amp; Reserve Funds (Limit ₦{{ "{:,.0f}".format(current_user.approval_limit or 0) }})
+          </button>
+          {% else %}
+          <button class="btn btn-warning w-100 text-dark">
+            <i class="bi bi-arrow-up-circle me-1"></i> Review &amp; Escalate to Director (Exceeds ₦{{ "{:,.0f}".format(current_user.approval_limit or 0) }})
+          </button>
+          {% endif %}
+        </form>
+        {% endif %}
+
+        <!-- 3. Director Executive Approval -->
+        {% if can_director_approve %}
+        <form method="post" action="{{ url_for('purchasing.po_director_approve', po_id=po.id) }}">
+          <button class="btn btn-success w-100">
+            <i class="bi bi-patch-check-fill me-1"></i> Grant Director Executive Approval
+          </button>
+        </form>
+        {% endif %}
+
+        <!-- 4. Reject Action -->
+        {% if can_reject %}
+        <button class="btn btn-outline-danger w-100" type="button" data-bs-toggle="collapse" data-bs-target="#rejectCollapse">
+          <i class="bi bi-x-circle me-1"></i> Reject Purchase Order
+        </button>
+        <div class="collapse mt-2" id="rejectCollapse">
+          <div class="p-2 border rounded bg-light">
+            <form method="post" action="{{ url_for('purchasing.po_reject', po_id=po.id) }}">
+              <div class="mb-2">
+                <label class="form-label small fw-bold mb-1">Reason for Rejection *</label>
+                <textarea name="reason" class="form-control form-control-sm" rows="2" placeholder="Specify why this requisition is rejected..." required></textarea>
+              </div>
+              <button class="btn btn-danger btn-sm w-100">Confirm Rejection</button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- 5. Convert to Vendor Bill (Liquidate Commitment) -->
+        {% if can_fulfill %}
+        <form method="post" action="{{ url_for('purchasing.po_convert_to_bill', po_id=po.id) }}">
+          <button class="btn btn-primary w-100">
+            <i class="bi bi-receipt me-1"></i> Convert to Vendor Bill (Liquidate)
+          </button>
+        </form>
+        {% endif %}
+
+        <!-- Link to generated Bill if already fulfilled -->
+        {% if po.bill %}
+        <a class="btn btn-outline-primary w-100" href="{{ url_for('purchasing.bill_detail', bill_id=po.bill.id) }}">
+          <i class="bi bi-file-earmark-text me-1"></i> View Bill {{ po.bill.bill_number }}
+        </a>
+        {% endif %}
+
+        <!-- 6. Cancel PO -->
+        {% if can_cancel %}
+        <form method="post" action="{{ url_for('purchasing.po_cancel', po_id=po.id) }}" onsubmit="return confirm('Are you sure you want to cancel this purchase order? Any reserved funds will be released back to the project available budget.');">
+          <button class="btn btn-sm btn-outline-secondary w-100">
+            <i class="bi bi-slash-circle me-1"></i> Cancel Purchase Order
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

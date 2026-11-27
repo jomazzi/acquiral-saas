@@ -671,10 +671,13 @@ def _by_project_summaries(start, end, prior_start, prior_end):
         expense = sum(l.debit_base - l.credit_base for l in lines if l.account.type == "Expense")
         prior_income = sum(l.credit_base - l.debit_base for l in prior_lines if l.account.type == "Income")
         prior_expense = sum(l.debit_base - l.credit_base for l in prior_lines if l.account.type == "Expense")
+        reserved = p.reserved_funds
         summaries.append({
             "project": p, "funder": p.funder, "income": income, "expense": expense,
             "net": income - expense, "budget": p.budget or 0,
+            "reserved": reserved,
             "remaining": (p.budget or 0) - expense,
+            "available": (p.budget or 0) - expense - reserved,
             "prior_income": prior_income, "prior_expense": prior_expense,
             "prior_net": prior_income - prior_expense,
         })

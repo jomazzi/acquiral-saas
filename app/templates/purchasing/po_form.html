@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}New Purchase Order{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">New Purchase Order</h3>
+    <p class="text-muted small mb-0">Create a requisition to encumber funds against a project budget.</p>
+  </div>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('purchasing.purchase_orders_list') }}">
+    <i class="bi bi-arrow-left me-1"></i> Back to PO List
+  </a>
+</div>
+
+<form method="post" id="poForm">
+  <div class="row g-3">
+    <!-- Main Information -->
+    <div class="col-lg-8">
+      <div class="card card-metric p-3 mb-3">
+        <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-file-earmark-text me-1"></i> General Details</h6>
+        <div class="row g-2">
+          <div class="col-md-6 mb-2">
+            <label class="form-label small fw-semibold">Vendor / Supplier *</label>
+            <select name="vendor_id" class="form-select" required>
+              <option value="">Choose vendor...</option>
+              {% for v in vendors %}
+              <option value="{{ v.id }}">{{ v.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6 mb-2">
+            <label class="form-label small fw-semibold">Charge to Project / Grant *</label>
+            <select name="project_id" id="projectSelect" class="form-select" required onchange="updateProjectBudgetCard()">
+              <option value="">Select project...</option>
+              {% for p in projects %}
+              <option value="{{ p.id }}" 
+                      data-budget="{{ p.budget or 0 }}" 
+                      data-spent="{{ p.actual_spent }}" 
+                      data-reserved="{{ p.reserved_funds }}" 
+                      data-available="{{ p.available_budget }}">
+                {{ p.name }} (Avail: ₦{{ "{:,.2f}".format(p.available_budget) }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4 mb-2">
+            <label class="form-label small fw-semibold">PO Date *</label>
+            <input type="date" name="po_date" class="form-control" value="{{ today }}" required>
+          </div>
+          <div class="col-md-4 mb-2">
+            <label class="form-label small fw-semibold">Expected Delivery Date</label>
+            <input type="date" name="delivery_date" class="form-control">
+          </div>
+          <div class="col-md-4 mb-2">
+            <label class="form-label small fw-semibold">External Reference</label>
+            <input type="text" name="reference" class="form-control" placeholder="e.g. Quotation # / Requisition #">
+          </div>
+          <div class="col-12 mb-2">
+            <label class="form-label small fw-semibold">Notes / Procurement Purpose</label>
+            <textarea name="notes" class="form-control" rows="2" placeholder="Describe the purpose of this procurement, donor activity code, or deliverables..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Line Items Card -->
+      <div class="card card-metric p-3">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+          <h6 class="mb-0"><i class="bi bi-list-check me-1"></i> Itemized Expense Lines</h6>
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="addLine()">
+            <i class="bi bi-plus-circle me-1"></i> Add Line
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm" id="linesTable">
+            <thead>
+              <tr>
+                <th style="width: 32%;">Category / Account</th>
+                <th style="width: 44%;">Description</th>
+                <th style="width: 20%;" class="text-end">Amount (₦)</th>
+                <th style="width: 4%;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <select name="account_id[]" class="form-select form-select-sm" required>
+                    <option value="">Select category...</option>
+                    {% for a in expense_accounts %}
+                    <option value="{{ a.id }}">{{ a.code }} — {{ a.name }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td>
+                  <input type="text" name="description[]" class="form-control form-control-sm" placeholder="Line item detail" required>
+                </td>
+                <td>
+                  <input type="number" step="0.01" min="0.01" name="amount[]" class="form-control form-control-sm text-end line-amount" placeholder="0.00" oninput="calculateTotal()" required>
+                </td>
+                <td class="text-center align-middle">
+                  <button type="button" class="btn btn-link text-danger p-0" onclick="removeLine(this)"><i class="bi bi-x-circle"></i></button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="2" class="text-end">Total Purchase Order:</th>
+                <th class="text-end" id="poTotalDisplay">₦0.00</th>
+                <th></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar: Budget Insight & Actions -->
+    <div class="col-lg-4">
+      <!-- Live Budget Gauge Card -->
+      <div class="card card-metric p-3 mb-3 border-primary" id="budgetInsightCard">
+        <h6 class="border-bottom pb-2 mb-2"><i class="bi bi-pie-chart me-1"></i> Project Budget Insight</h6>
+        <div id="noProjectAlert" class="text-muted small">
+          Select a project on the left to review its real-time budget and available reservation capacity.
+        </div>
+        <div id="projectDataArea" style="display:none;">
+          <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>Approved Budget:</span>
+            <span class="fw-semibold text-dark" id="displayBudget">₦0.00</span>
+          </div>
+          <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>Actual Spent:</span>
+            <span class="fw-semibold text-dark" id="displaySpent">₦0.00</span>
+          </div>
+          <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>Currently Reserved (POs):</span>
+            <span class="fw-semibold text-warning" id="displayReserved">₦0.00</span>
+          </div>
+          <hr class="my-2">
+          <div class="d-flex justify-content-between fw-bold mb-2">
+            <span>Available Balance:</span>
+            <span class="text-success" id="displayAvailable">₦0.00</span>
+          </div>
+          <div id="budgetWarningAlert" class="alert alert-danger py-2 small mb-0" style="display:none;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Budget Exceeded!</strong> This PO amount exceeds the available project budget.
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Card -->
+      <div class="card card-metric p-3">
+        <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-send me-1"></i> Submission</h6>
+        <p class="small text-muted mb-3">
+          Submitting for review initiates the maker-checker segregation workflow and reserves grant funds.
+        </p>
+        <div class="d-grid gap-2">
+          <button type="submit" name="action" value="submit" class="btn btn-primary" id="submitBtn">
+            <i class="bi bi-arrow-right-circle me-1"></i> Submit for Finance Review
+          </button>
+          <button type="submit" name="action" value="draft" class="btn btn-outline-secondary">
+            <i class="bi bi-save me-1"></i> Save as Draft
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<script>
+function calculateTotal() {
+  let total = 0;
+  document.querySelectorAll('.line-amount').forEach(inp => {
+    total += parseFloat(inp.value || 0);
+  });
+  document.getElementById('poTotalDisplay').innerText = '₦' + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  checkBudgetThreshold(total);
+}
+
+function updateProjectBudgetCard() {
+  const sel = document.getElementById('projectSelect');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) {
+    document.getElementById('noProjectAlert').style.display = 'block';
+    document.getElementById('projectDataArea').style.display = 'none';
+    return;
+  }
+  const budget = parseFloat(opt.dataset.budget || 0);
+  const spent = parseFloat(opt.dataset.spent || 0);
+  const reserved = parseFloat(opt.dataset.reserved || 0);
+  const available = parseFloat(opt.dataset.available || 0);
+
+  document.getElementById('displayBudget').innerText = '₦' + budget.toLocaleString('en-US', {minimumFractionDigits: 2});
+  document.getElementById('displaySpent').innerText = '₦' + spent.toLocaleString('en-US', {minimumFractionDigits: 2});
+  document.getElementById('displayReserved').innerText = '₦' + reserved.toLocaleString('en-US', {minimumFractionDigits: 2});
+  document.getElementById('displayAvailable').innerText = '₦' + available.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+  document.getElementById('noProjectAlert').style.display = 'none';
+  document.getElementById('projectDataArea').style.display = 'block';
+
+  calculateTotal();
+}
+
+function checkBudgetThreshold(currentTotal) {
+  const sel = document.getElementById('projectSelect');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  const available = parseFloat(opt.dataset.available || 0);
+  const warnAlert = document.getElementById('budgetWarningAlert');
+  if (currentTotal > available) {
+    warnAlert.style.display = 'block';
+  } else {
+    warnAlert.style.display = 'none';
+  }
+}
+
+function addLine() {
+  const tbody = document.querySelector('#linesTable tbody');
+  const firstRow = tbody.querySelector('tr');
+  const clone = firstRow.cloneNode(true);
+  clone.querySelectorAll('input').forEach(i => i.value = '');
+  tbody.appendChild(clone);
+}
+
+function removeLine(btn) {
+  const tbody = document.querySelector('#linesTable tbody');
+  if (tbody.querySelectorAll('tr').length > 1) {
+    btn.closest('tr').remove();
+    calculateTotal();
+  }
+}
+</script>
+{% endblock %}

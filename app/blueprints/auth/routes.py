@@ -14,7 +14,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 
 from app.extensions import db
 from app.decorators import admin_required
-from app.models.tenant import Organization, User
+from app.models.tenant import Organization, User, USER_ROLES
 from app.models.accounting import seed_default_accounts
 from app.billing import plans
 from app.billing.access import utcnow, user_limit
@@ -245,7 +245,13 @@ def users_list():
     if request.method == "POST":
         username = request.form["username"].strip()
         full_name = request.form["full_name"].strip()
-        role = request.form["role"]
+        role = request.form.get("role", "user")
+        approval_limit_raw = request.form.get("approval_limit", "0")
+        try:
+            approval_limit = float(approval_limit_raw or 0.0)
+        except (ValueError, TypeError):
+            approval_limit = 0.0
+
         password = request.form["password"]
         exists = User.query.filter_by(
             organization_id=current_user.organization_id, username=username
@@ -259,11 +265,11 @@ def users_list():
                   "Upgrade your plan on the Billing page to add more.", "error")
         else:
             u = User(organization_id=current_user.organization_id, username=username,
-                      full_name=full_name, role=role)
+                      full_name=full_name, role=role, approval_limit=approval_limit)
             u.set_password(password)
             db.session.add(u)
             db.session.commit()
-            flash(f"User {username} created.", "success")
+            flash(f"User {username} created with role {USER_ROLES.get(role, role)}.", "success")
         return redirect(url_for("auth.users_list"))
 
     all_users = (
@@ -271,7 +277,26 @@ def users_list():
         .order_by(User.role.desc(), User.username)
         .all()
     )
-    return render_template("auth/users.html", all_users=all_users)
+    return render_template("auth/users.html", all_users=all_users, user_roles=USER_ROLES)
+
+
+@auth_bp.route("/users/<uuid:user_id>/update-role", methods=["POST"])
+@login_required
+@admin_required
+def user_update_role(user_id):
+    u = User.query.filter_by(id=user_id, organization_id=current_user.organization_id).first_or_404()
+    new_role = request.form.get("role", "user")
+    approval_limit_raw = request.form.get("approval_limit", "0")
+    try:
+        approval_limit = float(approval_limit_raw or 0.0)
+    except (ValueError, TypeError):
+        approval_limit = 0.0
+
+    u.role = new_role
+    u.approval_limit = approval_limit
+    db.session.commit()
+    flash(f"Role and approval limit updated for {u.username}.", "success")
+    return redirect(url_for("auth.users_list"))
 
 
 @auth_bp.route("/users/<uuid:user_id>/toggle", methods=["POST"])

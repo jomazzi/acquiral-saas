@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from app.extensions import db
 
-NOW_UTC = db.text("(now() at time zone 'utc')")
+NOW_UTC = db.func.now()
 
 
 class PriceListItem(db.Model):

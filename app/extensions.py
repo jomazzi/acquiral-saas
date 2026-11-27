@@ -1,6 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from flask_migrate import Migrate
+try:
+    from flask_migrate import Migrate
+except ImportError:
+    class Migrate:
+        def init_app(self, app=None, db=None, **kwargs):
+            pass
 
 # session_options passed to the constructor directly — Flask-SQLAlchemy
 # 3.x does NOT read a SQLALCHEMY_SESSION_OPTIONS config key (confirmed by

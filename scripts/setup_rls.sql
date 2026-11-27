@@ -49,6 +49,9 @@ BEGIN
         'vendors',
         'bills',
         'bill_lines',
+        'purchase_orders',
+        'po_lines',
+        'po_audit_trails',
         'subscription_payments',
         'payment_settings',
         'invoice_payments'

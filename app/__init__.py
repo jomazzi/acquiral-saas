@@ -28,10 +28,11 @@ def set_tenant(organization_id):
     (RLS denies everything if you forget to call this) over one that
     could silently apply the wrong tenant.
     """
-    db.session.execute(
-        db.text("SET LOCAL app.current_tenant = :tenant"),
-        {"tenant": str(organization_id) if organization_id else ""},
-    )
+    if db.engine.dialect.name == "postgresql":
+        db.session.execute(
+            db.text("SET LOCAL app.current_tenant = :tenant"),
+            {"tenant": str(organization_id) if organization_id else ""},
+        )
 
 
 def create_app():

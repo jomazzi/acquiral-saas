@@ -1,64 +1,157 @@
 {% extends "base.html" %}
-{% block title %}Users{% endblock %}
+{% block title %}Users &amp; Segregation of Duties{% endblock %}
 {% block content %}
-<h3 class="mb-3">Manage Users</h3>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">User Management &amp; Approval Authority</h3>
+    <p class="text-muted small mb-0">Assign maker-checker roles, financial approval thresholds, and access permissions.</p>
+  </div>
+</div>
 
 <div class="row g-3">
-  <div class="col-md-5">
+  <div class="col-lg-4">
     <div class="card card-metric p-3">
-      <h6>Add User</h6>
+      <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-person-plus me-1"></i> Add Organization User</h6>
       <form method="post">
         <div class="mb-2">
-          <input type="text" name="username" class="form-control" placeholder="Username" required>
+          <label class="form-label small text-muted mb-1">Username *</label>
+          <input type="text" name="username" class="form-control" placeholder="e.g. john.doe" required>
         </div>
         <div class="mb-2">
-          <input type="text" name="full_name" class="form-control" placeholder="Full name">
+          <label class="form-label small text-muted mb-1">Full Name</label>
+          <input type="text" name="full_name" class="form-control" placeholder="e.g. John Doe">
         </div>
         <div class="mb-2">
-          <select name="role" class="form-select">
-            <option value="user">Staff user</option>
-            <option value="admin">Admin</option>
+          <label class="form-label small text-muted mb-1">Role &amp; Segregation Tier *</label>
+          <select name="role" id="new_user_role" class="form-select" required>
+            <option value="program_officer">Program Officer (Prepares POs)</option>
+            <option value="finance_manager" selected>Finance &amp; Admin Manager (Reviews &amp; Approves)</option>
+            <option value="director">Director / Executive Approver (Executive Approval)</option>
+            <option value="admin">Administrator (Full Access)</option>
+            <option value="user">Staff User (General Access)</option>
+            <option value="auditor">Auditor (Read-Only)</option>
           </select>
         </div>
-        <div class="mb-2">
-          <input type="password" name="password" class="form-control" placeholder="Temporary password" required minlength="6">
+        <div class="mb-2" id="approval_limit_group">
+          <label class="form-label small text-muted mb-1">Approval Threshold Limit (₦)</label>
+          <div class="input-group">
+            <span class="input-group-text">₦</span>
+            <input type="number" step="0.01" min="0" name="approval_limit" class="form-control" placeholder="1000000.00" value="1000000">
+          </div>
+          <small class="text-muted d-block mt-1" style="font-size:0.75rem;">
+            POs above this limit will automatically escalate to the Director for executive approval.
+          </small>
         </div>
-        <button class="btn btn-primary btn-sm">Add User</button>
+        <div class="mb-3">
+          <label class="form-label small text-muted mb-1">Temporary Password *</label>
+          <input type="password" name="password" class="form-control" placeholder="Min. 6 characters" required minlength="6">
+        </div>
+        <button class="btn btn-primary w-100"><i class="bi bi-check2-circle me-1"></i> Add User</button>
       </form>
     </div>
   </div>
 
-  <div class="col-md-7">
+  <div class="col-lg-8">
     <div class="card card-metric p-3">
-      <table class="table table-sm align-middle">
-        <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-          {% for u in all_users %}
-          <tr>
-            <td>{{ u.username }}</td>
-            <td>{{ u.full_name or '—' }}</td>
-            <td><span class="badge {{ 'bg-dark' if u.role == 'admin' else 'bg-secondary' }}">{{ u.role }}</span></td>
-            <td>{{ 'Active' if u.active else 'Inactive' }}</td>
-            <td class="text-end">
-              <div class="d-flex gap-1 justify-content-end">
-                <form method="post" action="{{ url_for('auth.user_toggle', user_id=u.id) }}">
-                  <button class="btn btn-sm btn-outline-secondary" {% if u.id == current_user.id %}disabled{% endif %}>
-                    {{ 'Deactivate' if u.active else 'Activate' }}
+      <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-shield-check me-1"></i> Active Team &amp; Financial Delegation</h6>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th class="text-end">Approval Limit</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in all_users %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ u.full_name or u.username }}</div>
+                <div class="text-muted small">@{{ u.username }}</div>
+              </td>
+              <td>
+                {% if u.role == 'admin' %}
+                  <span class="badge bg-dark">Admin</span>
+                {% elif u.role == 'director' %}
+                  <span class="badge bg-primary">Director</span>
+                {% elif u.role == 'finance_manager' %}
+                  <span class="badge bg-info text-dark">Finance Manager</span>
+                {% elif u.role == 'program_officer' %}
+                  <span class="badge bg-warning text-dark">Program Officer</span>
+                {% elif u.role == 'auditor' %}
+                  <span class="badge bg-secondary">Auditor</span>
+                {% else %}
+                  <span class="badge bg-light text-dark border">Staff</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if u.role in ['director', 'admin'] %}
+                  <span class="badge bg-light text-dark border">Executive (Unlimited)</span>
+                {% elif u.role == 'finance_manager' %}
+                  <span class="fw-bold text-success">₦{{ "{:,.2f}".format(u.approval_limit or 0) }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge {{ 'bg-success' if u.active else 'bg-secondary' }}">
+                  {{ 'Active' if u.active else 'Inactive' }}
+                </span>
+              </td>
+              <td class="text-end">
+                <div class="d-flex gap-1 justify-content-end">
+                  <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-{{ u.id }}" title="Edit Role & Limit">
+                    <i class="bi bi-pencil"></i>
                   </button>
-                </form>
-                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#reset-{{ u.id }}">Reset PW</button>
-              </div>
-              <div class="collapse mt-2" id="reset-{{ u.id }}">
-                <form method="post" action="{{ url_for('auth.user_reset_password', user_id=u.id) }}" class="d-flex gap-1">
-                  <input type="password" name="new_password" class="form-control form-control-sm" placeholder="New password" minlength="6" required>
-                  <button class="btn btn-sm btn-primary">Set</button>
-                </form>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+                  <form method="post" action="{{ url_for('auth.user_toggle', user_id=u.id) }}" class="d-inline">
+                    <button class="btn btn-sm btn-outline-secondary" {% if u.id == current_user.id %}disabled{% endif %} title="{{ 'Deactivate' if u.active else 'Activate' }}">
+                      <i class="bi {{ 'bi-pause-circle' if u.active else 'bi-play-circle' }}"></i>
+                    </button>
+                  </form>
+                  <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#reset-{{ u.id }}" title="Reset Password">
+                    <i class="bi bi-key"></i>
+                  </button>
+                </div>
+
+                <!-- Collapse: Edit Role & Limit -->
+                <div class="collapse mt-2 text-start" id="edit-{{ u.id }}">
+                  <div class="p-2 border rounded bg-light">
+                    <form method="post" action="{{ url_for('auth.user_update_role', user_id=u.id) }}">
+                      <div class="mb-2">
+                        <label class="form-label small mb-1 fw-bold">Update Role</label>
+                        <select name="role" class="form-select form-select-sm">
+                          {% for r_key, r_name in user_roles.items() %}
+                          <option value="{{ r_key }}" {% if u.role == r_key %}selected{% endif %}>{{ r_name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="mb-2">
+                        <label class="form-label small mb-1 fw-bold">Approval Limit (₦)</label>
+                        <input type="number" step="0.01" min="0" name="approval_limit" class="form-control form-control-sm" value="{{ u.approval_limit or 0 }}">
+                      </div>
+                      <div class="d-flex justify-content-end gap-1">
+                        <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Collapse: Reset Password -->
+                <div class="collapse mt-2 text-start" id="reset-{{ u.id }}">
+                  <form method="post" action="{{ url_for('auth.user_reset_password', user_id=u.id) }}" class="d-flex gap-1">
+                    <input type="password" name="new_password" class="form-control form-control-sm" placeholder="New password" minlength="6" required>
+                    <button class="btn btn-sm btn-primary">Set</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>

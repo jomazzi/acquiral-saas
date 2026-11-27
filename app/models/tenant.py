@@ -43,6 +43,16 @@ class Organization(db.Model):
     paystack_email_token = db.Column(db.String(100))
 
 
+USER_ROLES = {
+    "admin": "Administrator",
+    "director": "Director / Executive Approver",
+    "finance_manager": "Finance & Admin Manager",
+    "program_officer": "Program Officer",
+    "user": "Staff User",
+    "auditor": "Auditor (Read-Only)",
+}
+
+
 class User(UserMixin, db.Model):
     """Deliberately NOT row-secured (see scripts/setup_rls.sql for why:
     logging in requires looking up a user to discover their tenant, which
@@ -56,7 +66,8 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), nullable=False)
     full_name = db.Column(db.String(150))
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), default="user")  # 'admin' or 'user'
+    role = db.Column(db.String(30), default="user")
+    approval_limit = db.Column(db.Float, default=0.0, nullable=False)
     active = db.Column(db.Boolean, default=True)
     email = db.Column(db.String(150), index=True)
     # True by default so existing users and staff created by an admin are never
@@ -79,6 +90,34 @@ class User(UserMixin, db.Model):
     @property
     def is_admin(self):
         return self.role == "admin"
+
+    @property
+    def is_director(self):
+        return self.role in ("director", "admin")
+
+    @property
+    def is_finance_manager(self):
+        return self.role in ("finance_manager", "admin")
+
+    @property
+    def is_program_officer(self):
+        return self.role in ("program_officer", "admin")
+
+    @property
+    def is_auditor(self):
+        return self.role in ("auditor", "admin")
+
+    @property
+    def role_label(self):
+        return USER_ROLES.get(self.role, self.role.replace("_", " ").title())
+
+    def can_approve(self, amount: float) -> bool:
+        """Determines if this user can approve a purchase order of given amount."""
+        if self.role in ("director", "admin"):
+            return True
+        if self.role == "finance_manager":
+            return (self.approval_limit or 0.0) >= amount
+        return False
 
     def get_id(self):
         return str(self.id)

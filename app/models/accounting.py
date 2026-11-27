@@ -40,6 +40,46 @@ class Project(TenantScopedMixin, db.Model):
     end_date = db.Column(db.Date)
     active = db.Column(db.Boolean, default=True)
 
+    @property
+    def actual_spent(self):
+        """Sum of actual expenses posted to the general ledger for this project."""
+        lines = JournalLine.query.filter_by(project_id=self.id).all()
+        return round(sum(l.debit_base - l.credit_base for l in lines if l.account and l.account.type == "Expense"), 2)
+
+    @property
+    def reserved_funds(self):
+        """Sum of committed/encumbered funds in approved POs not yet fulfilled or billed."""
+        from app.models.purchasing import PurchaseOrder
+        committed_pos = PurchaseOrder.query.filter_by(
+            project_id=self.id, status="approved_committed"
+        ).all()
+        return round(sum(p.amount for p in committed_pos), 2)
+
+    @property
+    def available_budget(self):
+        """Budget minus actual expenses minus reserved PO funds."""
+        return round((self.budget or 0.0) - self.actual_spent - self.reserved_funds, 2)
+
+    def get_budget_summary(self):
+        """Complete breakdown of project budget health and utilization percentages."""
+        total_budget = float(self.budget or 0.0)
+        spent = self.actual_spent
+        reserved = self.reserved_funds
+        available = self.available_budget
+        spent_pct = round((spent / total_budget * 100), 1) if total_budget > 0 else 0.0
+        reserved_pct = round((reserved / total_budget * 100), 1) if total_budget > 0 else 0.0
+        available_pct = max(0.0, round(100.0 - spent_pct - reserved_pct, 1)) if total_budget > 0 else 0.0
+        return {
+            "budget": total_budget,
+            "actual_spent": spent,
+            "reserved_funds": reserved,
+            "available_budget": available,
+            "spent_pct": min(100.0, spent_pct),
+            "reserved_pct": min(100.0, reserved_pct),
+            "available_pct": available_pct,
+            "is_overspent": available < 0,
+        }
+
 
 class Account(TenantScopedMixin, db.Model):
     __tablename__ = "accounts"

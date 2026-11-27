@@ -28,7 +28,9 @@
       <tr>
         <th>Project</th><th>Funder</th>
         <th class="text-right">Income</th><th class="text-right">Expense</th>
-        <th class="text-right">Net</th><th class="text-right">Budget</th><th class="text-right">Remaining</th>
+        <th class="text-right">Net</th><th class="text-right">Budget</th>
+        <th class="text-right text-warning">Encumbered (POs)</th>
+        <th class="text-right text-success">Available Balance</th>
         <th class="text-right border-left text-muted">Prior Yr Income</th>
         <th class="text-right text-muted">Prior Yr Expense</th>
         <th class="text-right text-muted">Prior Yr Net</th>
@@ -43,13 +45,14 @@
         <td class="text-right">{{ "{:,.2f}".format(s.expense) }}</td>
         <td class="text-right {{ 'text-success' if s.net >= 0 else 'text-danger' }}">{{ "{:,.2f}".format(s.net) }}</td>
         <td class="text-right">{{ "{:,.2f}".format(s.budget) if s.budget else '—' }}</td>
-        <td class="text-right">{{ "{:,.2f}".format(s.remaining) if s.budget else '—' }}</td>
+        <td class="text-right text-warning">{{ "{:,.2f}".format(s.reserved) if s.reserved else '—' }}</td>
+        <td class="text-right fw-bold {{ 'text-success' if s.available >= 0 else 'text-danger' }}">{{ "{:,.2f}".format(s.available) if s.budget else '—' }}</td>
         <td class="text-right border-left text-muted">{{ "{:,.2f}".format(s.prior_income) }}</td>
         <td class="text-right text-muted">{{ "{:,.2f}".format(s.prior_expense) }}</td>
         <td class="text-right text-muted">{{ "{:,.2f}".format(s.prior_net) }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="10" class="text-muted">No projects yet.</td></tr>
+      <tr><td colspan="11" class="text-muted">No projects yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>

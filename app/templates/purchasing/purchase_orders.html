@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Purchase Orders &amp; Commitments{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Purchase Orders &amp; Encumbrances</h3>
+    <p class="text-muted small mb-0">Pre-spend commitment controls, maker-checker workflows, and grant budget reservations.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('purchasing.po_new') }}">
+    <i class="bi bi-plus-lg me-1"></i> New Purchase Order
+  </a>
+</div>
+
+<!-- Key Commitment Metrics -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card card-metric p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Active Reserved Funds</div>
+      <div class="fs-4 fw-bold text-success mt-1">₦{{ "{:,.2f}".format(total_encumbered) }}</div>
+      <div class="text-muted small mt-1">Encumbered against projects before billing</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-metric p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Pending Finance Review</div>
+      <div class="fs-4 fw-bold text-warning mt-1">{{ count_pending_finance }}</div>
+      <div class="text-muted small mt-1">Awaiting Finance Manager limit check</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-metric p-3">
+      <div class="text-muted small text-uppercase fw-semibold">Pending Director Approval</div>
+      <div class="fs-4 fw-bold text-info mt-1">{{ count_pending_director }}</div>
+      <div class="text-muted small mt-1">High-value POs escalated for executive sign-off</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Tabs -->
+<ul class="nav nav-pills mb-3">
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if filter_status == 'all' else '' }}" href="{{ url_for('purchasing.purchase_orders_list', status='all') }}">All POs</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if filter_status == 'pending_review' else '' }}" href="{{ url_for('purchasing.purchase_orders_list', status='pending_review') }}">
+      Pending Approvals {% if (count_pending_finance + count_pending_director) > 0 %}<span class="badge bg-danger ms-1">{{ count_pending_finance + count_pending_director }}</span>{% endif %}
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if filter_status == 'approved_committed' else '' }}" href="{{ url_for('purchasing.purchase_orders_list', status='approved_committed') }}">Approved &amp; Reserved</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if filter_status == 'fulfilled' else '' }}" href="{{ url_for('purchasing.purchase_orders_list', status='fulfilled') }}">Fulfilled / Invoiced</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {{ 'active' if filter_status == 'draft' else '' }}" href="{{ url_for('purchasing.purchase_orders_list', status='draft') }}">Drafts</a>
+  </li>
+</ul>
+
+<!-- Purchase Orders Table -->
+<div class="card card-metric p-3">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          <th>PO #</th>
+          <th>Vendor</th>
+          <th>Project / Grant</th>
+          <th>Date</th>
+          <th class="text-end">Amount</th>
+          <th>Status</th>
+          <th>Workflow Parties</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for po in pos %}
+        <tr>
+          <td>
+            <a href="{{ url_for('purchasing.po_detail', po_id=po.id) }}" class="fw-bold text-decoration-none">
+              {{ po.po_number }}
+            </a>
+          </td>
+          <td>{{ po.vendor.name if po.vendor else '—' }}</td>
+          <td>
+            <span class="badge bg-light text-dark border">{{ po.project.name if po.project else '—' }}</span>
+          </td>
+          <td>{{ po.po_date.strftime('%d %b %Y') if po.po_date else '—' }}</td>
+          <td class="text-end fw-bold">₦{{ "{:,.2f}".format(po.total) }}</td>
+          <td>
+            <span class="badge {{ po.status_badge }}">{{ po.status_label }}</span>
+          </td>
+          <td class="small text-muted">
+            {% if po.preparer %}<div>Prep: {{ po.preparer.full_name or po.preparer.username }}</div>{% endif %}
+            {% if po.approver %}<div>Appr: {{ po.approver.full_name or po.approver.username }}</div>{% endif %}
+          </td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('purchasing.po_detail', po_id=po.id) }}">
+              View <i class="bi bi-chevron-right ms-1"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-4 text-muted">
+            <i class="bi bi-inbox fs-2 d-block mb-1"></i>
+            No purchase orders match this filter. Click "+ New Purchase Order" to create one.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
